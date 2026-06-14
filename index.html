@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PT. BUJM | KPI Commander</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css?v=2.3">
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 9999; background: url('autobot_bg.png') center center / cover no-repeat, var(--bg-dark); backdrop-filter: blur(10px); transform-style: preserve-3d; perspective: 1000px;">
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85);"></div>
+        <div class="scanner-line"></div>
+        <div class="login-box glass-panel" style="position: relative; z-index: 10000; padding: 40px; text-align: center; max-width: 420px; width: 90%; border-radius: 6px; box-shadow: 0 0 35px rgba(0, 229, 255, 0.25); border: 1px solid rgba(0, 229, 255, 0.3);">
+            <h2 style="color: var(--accent-blue); margin-bottom: 20px;"><i class="fa-solid fa-shield-halved"></i> COMMAND CENTER</h2>
+            <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 0.9rem;">Autentikasi diperlukan untuk mengakses data operasional.</p>
+            
+            <!-- Login via Nomor HP (Default) -->
+            <div id="login-phone-section">
+                <div style="margin-bottom: 20px; text-align: left;">
+                    <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; display: block;"><i class="fa-solid fa-phone"></i> Nomor HP</label>
+                    <input type="tel" id="login-phone" placeholder="Cth: 085249946694" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.5); color: white; font-size: 1rem; letter-spacing: 1px;">
+                </div>
+                
+                <button id="btn-login-phone" style="width: 100%; padding: 12px; border-radius: 8px; background: var(--accent-blue); color: white; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s;">
+                    <i class="fa-solid fa-right-to-bracket"></i> MASUK
+                </button>
+                <div id="login-phone-error" style="color: var(--accent-red); margin-top: 15px; font-size: 0.85rem; display: none;">
+                    <i class="fa-solid fa-circle-exclamation"></i> Nomor HP belum terdaftar!
+                </div>
+                
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 20px;">
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">Belum punya akses?</p>
+                    <button id="btn-login-request-wa" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(37, 211, 102, 0.15); color: #25D366; border: 1px solid #25D366; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.3s;">
+                        <i class="fa-brands fa-whatsapp"></i> Minta Akses via WhatsApp
+                    </button>
+                </div>
+            </div>
+
+            <!-- Admin Login (Hidden by default) -->
+            <div id="admin-login-section" style="display: none;">
+                <div style="margin-bottom: 15px; text-align: left;">
+                    <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; display: block;">Username</label>
+                    <input type="text" id="login-username" placeholder="Masukkan Username..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.5); color: white;">
+                </div>
+                <div style="margin-bottom: 25px; text-align: left;">
+                    <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; display: block;">Password</label>
+                    <input type="password" id="login-password" placeholder="Masukkan Password..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.5); color: white;">
+                </div>
+                <button id="btn-login" style="width: 100%; padding: 12px; border-radius: 8px; background: var(--accent-blue); color: white; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s;">
+                    <i class="fa-solid fa-right-to-bracket"></i> LOGIN ADMIN
+                </button>
+                <div id="login-error" style="color: var(--accent-red); margin-top: 15px; font-size: 0.85rem; display: none;">Kredensial tidak valid! Akses ditolak.</div>
+            </div>
+            
+            <!-- Toggle Admin Login -->
+            <div style="margin-top: 20px;">
+                <a id="toggle-admin-login" href="#" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: none; transition: color 0.2s;"><i class="fa-solid fa-user-shield"></i> Login sebagai Admin</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container hidden" id="main-app">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="brand">
+                <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <h2>BUJM Commander</h2>
+            </div>
+            
+            <div class="upload-zone" id="drop-zone" style="margin-top: 20px; border-color: var(--accent-blue);">
+                <input type="file" id="file-input" accept=".xlsx, .xls, .csv" multiple hidden>
+                <div class="upload-content">
+                    <i class="fa-solid fa-cloud-arrow-up" style="color: var(--accent-blue);"></i>
+                    <p>Drop ServiceOrderList + File Status</p>
+                    <span>(Auto-Merge & VLOOKUP)</span>
+                </div>
+            </div>
+
+            <div class="upload-zone" id="drop-zone-prod" style="margin-top: 15px; border-color: var(--accent-blue);">
+                <input type="file" id="file-input-prod" accept=".xlsx, .xls, .csv" multiple hidden>
+                <div class="upload-content">
+                    <i class="fa-solid fa-file-invoice-dollar" style="color: var(--accent-blue);"></i>
+                    <p>Drop DailyStatement</p>
+                    <span>(Productivity Auto-Merge)</span>
+                </div>
+            </div>
+
+            <div class="upload-zone" id="drop-zone-queue" style="margin-top: 15px; border-color: var(--accent-orange);">
+                <input type="file" id="file-input-queue" accept=".csv" multiple hidden>
+                <div class="upload-content">
+                    <i class="fa-solid fa-users-rectangle" style="color: var(--accent-orange);"></i>
+                    <p>Drag & Drop Queue Report</p>
+                    <span>(CS Auto-Merge CSV)</span>
+                </div>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator"></div>
+                <span>System Ready</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="page-title">
+                    <h1>Executive Dashboard</h1>
+                    <p>Real-time KPI Tracking & Analysis</p>
+                </div>
+                <div class="user-profile" style="display: flex; gap: 15px; align-items: center;">
+                    <button id="btn-contacts" style="background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;"><i class="fa-solid fa-address-book"></i> Kontak Teknisi</button>
+                    <button id="btn-rules" style="background: rgba(249, 115, 22, 0.2); color: var(--accent-orange); border: 1px solid var(--accent-orange); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;"><i class="fa-solid fa-gear"></i> Rules Config</button>
+                    <button id="btn-manage-users" style="background: rgba(139, 92, 246, 0.2); color: var(--accent-purple); border: 1px solid var(--accent-purple); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; display: none;"><i class="fa-solid fa-users-gear"></i> Kelola User</button>
+                    <div class="avatar"><i class="fa-solid fa-user-tie"></i></div>
+                    <div class="user-info">
+                        <span class="name">Optimus Prime</span>
+                        <span class="role">Manager Access</span>
+                    </div>
+                </div>
+            </header>
+
+            <div id="loading-overlay" class="loading-overlay hidden">
+                <div class="spinner"></div>
+                <p>Analyzing Data...</p>
+            </div>
+
+            <div class="dashboard-grid" id="dashboard-content">
+                <!-- Summary Cards -->
+                <div class="card glass-panel span-10">
+                    <h3 style="color: var(--text-main); margin-bottom: 15px;"><i class="fa-solid fa-chart-pie" style="color: var(--accent-blue);"></i> OVERALL SUMMARY</h3>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        
+                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #3b82f6; text-align:center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Service Orders</div>
+                            <div class="value" id="val-total-so" style="font-size: 1.5rem; font-weight: 700; color: #3b82f6; margin: 5px 0;">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-clipboard-list"></i> Unit</div>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #ef4444; text-align:center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total LTP (Aging)</div>
+                            <div class="value" id="val-total-ltp" style="font-size: 1.5rem; font-weight: 700; color: #ef4444; margin: 5px 0;">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-fire"></i> Pending</div>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #a855f7; text-align:center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Ex-LTP</div>
+                            <div class="value" id="val-total-exltp" style="font-size: 1.5rem; font-weight: 700; color: #a855f7; margin: 5px 0;">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-skull-crossbones"></i> Pending</div>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #f97316; text-align:center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">MPU Penalties</div>
+                            <div class="value" id="val-total-mpu" style="font-size: 1.5rem; font-weight: 700; color: #f97316; margin: 5px 0;">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-screwdriver-wrench"></i> Violations</div>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #f97316; text-align:center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">UB Penalties</div>
+                            <div class="value" id="val-total-ub" style="font-size: 1.5rem; font-weight: 700; color: #f97316; margin: 5px 0;">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-mobile-screen"></i> Violations</div>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #eab308; text-align:center;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">X09 Violations</div>
+                            <div class="value" id="val-total-x09" style="font-size: 1.5rem; font-weight: 700; color: #eab308; margin: 5px 0;">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-ban"></i> Violations</div>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #10b981; text-align:center; position:relative;">
+                            <div style="position:absolute; top:5px; right:5px; font-size:0.6rem; background:#10b981; color:white; padding:2px 5px; border-radius:4px;">NEW</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Q-Waiting < 10 Mins</div>
+                            <div class="value" id="val-q-waiting" style="font-size: 1.5rem; font-weight: 700; color: #10b981; margin: 5px 0;">0%</div>
+                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-stopwatch"></i> SLA CS Target</div>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #3b82f6; text-align:center; position:relative;">
+                            <div style="position:absolute; top:5px; right:5px; font-size:0.6rem; background:#3b82f6; color:white; padding:2px 5px; border-radius:4px;">NEW</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Q-Handling < 10 Mins</div>
+                            <div class="value" id="val-q-handling" style="font-size: 1.5rem; font-weight: 700; color: #3b82f6; margin: 5px 0;">0%</div>
+                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-stopwatch"></i> SLA CS Target</div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Charts Area -->
+                <div class="card glass-panel chart-container span-5">
+                    <div class="card-header">
+                        <h3>LTP Breakdown by Product (Aging Only)</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="ltpChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card glass-panel chart-container span-5">
+                    <div class="card-header">
+                        <h3>Delay Responsibility (AGING vs SEIN)</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="responsibilityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Data Tables Area -->
+                <div class="card glass-panel table-container span-10">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-building"></i> Branch Performance Breakdown</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="branch-table">
+                            <thead>
+                                <tr>
+                                    <th>Branch (ASC)</th>
+                                    <th style="text-align:center;">Total S/O</th>
+                                    <th style="text-align:center;">LTP (Aging)</th>
+                                    <th style="text-align:center;">Ex-LTP</th>
+                                    <th style="text-align:center;">MPU Violations</th>
+                                    <th style="text-align:center;">UB Violations</th>
+                                    <th style="text-align:center;">X09 Violations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card glass-panel table-container span-5">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-triangle-exclamation"></i> Critical MPU Violations (IW)</h3>
+                            <button id="btnShareMpu" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table id="mpu-table">
+                            <thead>
+                                <tr>
+                                    <th>Job No / ASC</th>
+                                    <th>Model</th>
+                                    <th>Parts Replaced</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card glass-panel table-container span-5">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-mobile-screen"></i> UB Repair Violations (Folding/Flip)</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Larangan keras: Unit Fold/Flip (SM-F) In-Warranty mengganti part OCTA</p>
+                            </div>
+                            <button id="btnShareUb" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table id="ub-table">
+                            <thead>
+                                <tr>
+                                    <th>Job No / ASC</th>
+                                    <th>Model</th>
+                                    <th>Parts Replaced</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card glass-panel table-container span-5">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h3 style="color: var(--accent-orange); font-size: 1.1rem;"><i class="fa-solid fa-box-open"></i> Pending Delivery (Repair Completed)</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Unit selesai servis namun belum di-Tarik/Delivered (Silakan klik angka untuk me-WA PIC)</p>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="btnBlastRC" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: #25D366; border: 1px solid #25D366;" title="Kirim WA satu per satu secara otomatis ke setiap PIC cabang (dengan jeda 17 detik)"><i class="fa-solid fa-paper-plane"></i> Blast All</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="rc-table">
+                            <thead>
+                                <tr>
+                                    <th>Branch (ASC)</th>
+                                    <th>Total Unit (RC)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card glass-panel table-container span-5">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h3 style="color: var(--accent-red); font-size: 1.1rem;"><i class="fa-solid fa-triangle-exclamation"></i> Aging Dosa Cabang (> 7 Hari)</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Daftar bill pending murni kesalahan cabang dengan umur aging di atas 7 hari (Tanpa Dosa SEIN)</p>
+                            </div>
+                            <button id="btnShareDosaCabang" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table id="dosa-cabang-table">
+                            <thead>
+                                <tr>
+                                    <th>Branch (ASC)</th>
+                                    <th>Total Unit (Dosa)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card glass-panel table-container span-5">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h3 style="color: var(--accent-red);"><i class="fa-solid fa-skull"></i> Wall of Shame: Worst Technicians</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">All Technicians with Branch Fault (Dosa Cabang)</p>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="btnBlastShame" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: #25D366; border: 1px solid #25D366;" title="Kirim WA satu per satu secara otomatis ke setiap teknisi (dengan jeda 17 detik)"><i class="fa-solid fa-paper-plane"></i> Blast All</button>
+                                <button id="btnShareShame" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="shame-table">
+                            <thead>
+                                <tr>
+                                    <th>Branch (ASC)</th>
+                                    <th>Engineer Name</th>
+                                    <th style="text-align:center;">Aging Units</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card glass-panel table-container span-5">
+                    <div class="card-header">
+                        <h3 style="color: var(--accent-blue);"><i class="fa-solid fa-trophy"></i> Wall of Fame: Top Performers</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);"><span style="color: var(--accent-blue); font-weight: bold;">Periode Juni 2026</span> &bull; Ranked by Total Good Delivered (GD)</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="fame-table">
+                            <thead>
+                                <tr>
+                                    <th>Branch</th>
+                                    <th>Engineer Name</th>
+                                    <th style="cursor:pointer; color:var(--accent-blue); text-align:center;" onclick="openAllProdModal()"><i class="fa-solid fa-hand-pointer"></i> Total GD</th>
+                                    <th style="text-align:center;">Avg GD/Day</th>
+                                    <th style="text-align:center;">Repair</th>
+                                    <th style="text-align:center;">Cancel</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Waiting for Productivity Data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- DTS MX Table -->
+                <div class="card glass-panel table-container span-5">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h3 style="color: var(--accent-green);"><i class="fa-solid fa-list-check"></i> Daily Tracking Sistem (DTS) - MX</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Real-time productivity & aging monitor for Carry-In (MX) Technicians</p>
+                            </div>
+                            <button id="btnExportDts" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="dts-mx-table">
+                            <thead>
+                                <tr>
+                                    <th>BRANCH</th>
+                                    <th>NAMA</th>
+                                    <th style="text-align:center;">VOL IN</th>
+                                    <th style="text-align:center;">RC</th>
+                                    <th style="text-align:center;">GD</th>
+                                    <th style="text-align:center;">SISA AGING</th>
+                                    <th style="text-align:center;">CUST</th>
+                                    <th style="text-align:center;">SEIN</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Menunggu data diunggah...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- DTS IH Table -->
+                <div class="card glass-panel table-container span-5">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-house-chimney-user"></i> Daily Tracking Sistem (DTS) - CE</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Produktivitas Kunjungan (Visits) Teknisi CE (VD/DA) HARI INI</p>
+                            </div>
+                            <button id="btnExportDtsIh" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="dts-ih-table">
+                            <thead>
+                                <tr>
+                                    <th>BRANCH</th>
+                                    <th>NAMA TEKNISI</th>
+                                    <th style="text-align:center;">TOTAL VISITS</th>
+                                    <th style="text-align:center;">RC VISITS</th>
+                                    <th style="text-align:center;">GD VISITS</th>
+                                    <th style="text-align:center;">PENDING VISITS</th>
+                                    <th style="text-align:center;">SISA AGING</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dinamis via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- CS Performance (Queue) Table -->
+                <div class="card glass-panel table-container span-10">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-users-viewfinder"></i> Front Desk / CS Performance</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-muted);">Queue Waiting Time & Handling Time Analysis (Target: < 10 Menit)</p>
+                            </div>
+                            <button id="btnExportQueue" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="queue-table">
+                            <thead>
+                                <tr>
+                                    <th>BRANCH (ASC)</th>
+                                    <th style="text-align:center;">TOTAL Q</th>
+                                    <th style="text-align:center;">AVG WAITING TIME</th>
+                                    <th style="text-align:center;">AVG HANDLING TIME</th>
+                                    <th style="text-align:center;">Q-WAITING < 10 MINS</th>
+                                    <th style="text-align:center;">Q-HANDLING < 10 MINS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Menunggu Queue Report (CSV) diunggah...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state">
+                <i class="fa-regular fa-folder-open"></i>
+                <h2>No Data Loaded</h2>
+                <p>Upload a ServiceOrderList Excel file from the sidebar to generate the KPI Dashboard.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Pop-up -->
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Bill Details</h2>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div id="modal-extra-info"></div>
+            <div class="modal-body table-responsive">
+                <table id="modal-table">
+                    <thead id="modal-thead">
+                        <tr>
+                            <th>Job No / S.O.</th>
+                            <th>Customer Name</th>
+                            <th>Model</th>
+                            <th>Reason</th>
+                            <th>Pending Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contacts Database Modal -->
+    <div id="contacts-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close-modal" id="close-contacts-modal">&times;</span>
+            <h2 style="margin-bottom: 5px; color: var(--accent-blue);"><i class="fa-solid fa-address-book"></i> Database Nomor WA Teknisi</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Daftar nama di bawah ditarik otomatis dari data Excel. Masukkan awalan 08 atau 628.</p>
+            
+            <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Nama Teknisi</th>
+                            <th>Nomor WhatsApp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contacts-table-body">
+                        <!-- Injected via JS -->
+                        <tr><td colspan="2" style="text-align: center; color: var(--text-muted); padding: 20px;">Upload file Excel dulu untuk memunculkan daftar teknisi.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <button id="btn-save-contacts" style="width: 100%; background: var(--accent-green); color: white; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background 0.3s;">
+                <i class="fa-solid fa-save"></i> SIMPAN KONTAK
+            </button>
+        </div>
+    </div>
+
+    <!-- Rules Config Modal -->
+    <div id="rules-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-modal" id="close-rules-modal">&times;</span>
+            <h2 style="margin-bottom: 5px; color: var(--accent-orange);"><i class="fa-solid fa-gear"></i> Rules Configuration</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Tambahkan kata kunci Model dan Reason yang tidak dikenali sistem agar dapat dikategorikan otomatis.</p>
+            
+            <div style="display: flex; gap: 20px;">
+                <!-- Model Rules -->
+                <div style="flex: 1; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="color: var(--accent-blue); margin-bottom: 10px; font-size: 1rem;"><i class="fa-solid fa-mobile-screen"></i> Custom Models</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="rule-model-keyword" placeholder="Kata Kunci (Cth: SM-A)" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white;">
+                        <select id="rule-model-category" style="padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white;">
+                            <option value="MX">MX (Mobile)</option>
+                            <option value="VD">VD (TV/Visual)</option>
+                            <option value="DA">DA (Home App)</option>
+                        </select>
+                        <button id="btn-add-model-rule" style="background: var(--accent-blue); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table class="data-table" style="font-size: 0.8rem;">
+                            <thead><tr><th>Keyword</th><th>Category</th><th>Aksi</th></tr></thead>
+                            <tbody id="custom-models-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Reason Rules -->
+                <div style="flex: 1; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="color: var(--accent-red); margin-bottom: 10px; font-size: 1rem;"><i class="fa-solid fa-triangle-exclamation"></i> Custom Reasons</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="rule-reason-keyword" placeholder="Kata Kunci Reason (Ketik Persis)" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white;">
+                        <select id="rule-reason-category" style="padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white;">
+                            <option value="SEIN">SEIN (Pending Part)</option>
+                            <option value="AGING">AGING (Pending Branch)</option>
+                        </select>
+                        <button id="btn-add-reason-rule" style="background: var(--accent-red); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table class="data-table" style="font-size: 0.8rem;">
+                            <thead><tr><th>Keyword</th><th>Category</th><th>Aksi</th></tr></thead>
+                            <tbody id="custom-reasons-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Rules Password Modal -->
+    <div id="rules-password-modal" class="modal hidden" style="z-index: 10001;">
+        <div class="modal-content" style="max-width: 420px; text-align: center; padding: 35px;">
+            <span class="close-modal" id="close-rules-pw-modal">&times;</span>
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">🔐</div>
+            <h2 style="margin-bottom: 5px; color: var(--accent-orange);"><i class="fa-solid fa-shield-halved"></i> Akses Terbatas</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px;">Menu Rules Config memerlukan password khusus dari Admin.</p>
+            
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; display: block;">Password</label>
+                <input type="password" id="rules-pw-input" placeholder="Masukkan password..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.5); color: white; font-size: 1rem;">
+            </div>
+            <div id="rules-pw-error" style="color: var(--accent-red); margin-bottom: 10px; font-size: 0.85rem; display: none;">
+                <i class="fa-solid fa-circle-exclamation"></i> Password salah! Akses ditolak.
+            </div>
+            
+            <button id="btn-rules-pw-submit" style="width: 100%; padding: 12px; border-radius: 8px; background: var(--accent-orange); color: white; border: none; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s; margin-bottom: 15px;">
+                <i class="fa-solid fa-key"></i> UNLOCK
+            </button>
+            
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 5px;">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">Belum punya password?</p>
+                <button id="btn-request-access-wa" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(37, 211, 102, 0.15); color: #25D366; border: 1px solid #25D366; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.3s;">
+                    <i class="fa-brands fa-whatsapp"></i> Minta Akses via WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- User Management Modal -->
+    <div id="users-modal" class="modal hidden" style="z-index: 10001;">
+        <div class="modal-content" style="max-width: 550px; padding: 30px;">
+            <span class="close-modal" id="close-users-modal">&times;</span>
+            <h2 style="margin-bottom: 5px; color: var(--accent-purple);"><i class="fa-solid fa-users-gear"></i> Kelola Akses User</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Tambah atau hapus nomor HP yang diizinkan login ke Dashboard.</p>
+            
+            <!-- Add New User -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" id="new-user-name" placeholder="Nama User" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.4); color: white;">
+                <input type="tel" id="new-user-phone" placeholder="Nomor HP (08xxx)" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.4); color: white;">
+                <button id="btn-add-user" style="padding: 10px 15px; border-radius: 6px; background: var(--accent-purple); color: white; border: none; cursor: pointer; font-weight: 600;"><i class="fa-solid fa-user-plus"></i></button>
+            </div>
+            
+            <!-- User List -->
+            <div style="max-height: 350px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <table class="data-table" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th>Nomor HP</th>
+                            <th style="text-align:center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="approved-users-list">
+                        <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:20px;">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
