@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PT. BUJM | KPI Commander</title>
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Styles -->
-    <link rel="stylesheet" href="styles.css?v=2.3">
+    <link rel="stylesheet" href="styles.css?v=3.2">
     <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
 </head>
 <body>
     <div class="background-effects">
@@ -91,6 +92,15 @@
                 </div>
             </div>
 
+            <div class="upload-zone" id="redo-drop-zone" style="margin-top: 15px; border-color: var(--accent-red);">
+                <input type="file" id="redo-file-input" accept="image/*" multiple hidden>
+                <div class="upload-content">
+                    <i class="fa-solid fa-camera-retro" style="color: var(--accent-red);"></i>
+                    <p>Upload Screenshot REDO</p>
+                    <span>(AI Auto-Scan GSPN Image)</span>
+                </div>
+            </div>
+
             <div class="upload-zone" id="drop-zone-prod" style="margin-top: 15px; border-color: var(--accent-blue);">
                 <input type="file" id="file-input-prod" accept=".xlsx, .xls, .csv" multiple hidden>
                 <div class="upload-content">
@@ -143,58 +153,64 @@
                 <!-- Summary Cards -->
                 <div class="card glass-panel span-10">
                     <h3 style="color: var(--text-main); margin-bottom: 15px;"><i class="fa-solid fa-chart-pie" style="color: var(--accent-blue);"></i> OVERALL SUMMARY</h3>
-                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         
-                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #3b82f6; text-align:center;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Service Orders</div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; border-left: 4px solid #3b82f6; text-align:center;">
+                            <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase;">Total Service Orders</div>
                             <div class="value" id="val-total-so" style="font-size: 1.5rem; font-weight: 700; color: #3b82f6; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-clipboard-list"></i> Unit</div>
+                            <div style="font-size: 0.70rem; color: var(--text-main);"><i class="fa-solid fa-clipboard-list"></i> Unit</div>
                         </div>
 
-                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #ef4444; text-align:center;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total LTP (Aging)</div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; border-left: 4px solid #ef4444; text-align:center;">
+                            <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase;">Total LTP (Aging)</div>
                             <div class="value" id="val-total-ltp" style="font-size: 1.5rem; font-weight: 700; color: #ef4444; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-fire"></i> Pending</div>
+                            <div style="font-size: 0.70rem; color: var(--text-main);"><i class="fa-solid fa-fire"></i> Pending</div>
                         </div>
 
-                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #a855f7; text-align:center;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Ex-LTP</div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; border-left: 4px solid #a855f7; text-align:center;">
+                            <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase;">Total Ex-LTP</div>
                             <div class="value" id="val-total-exltp" style="font-size: 1.5rem; font-weight: 700; color: #a855f7; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-skull-crossbones"></i> Pending</div>
+                            <div style="font-size: 0.70rem; color: var(--text-main);"><i class="fa-solid fa-skull-crossbones"></i> Pending</div>
                         </div>
 
-                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #f97316; text-align:center;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">MPU Penalties</div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; border-left: 4px solid #f97316; text-align:center;">
+                            <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase;">MPU Penalties</div>
                             <div class="value" id="val-total-mpu" style="font-size: 1.5rem; font-weight: 700; color: #f97316; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-screwdriver-wrench"></i> Violations</div>
+                            <div style="font-size: 0.70rem; color: var(--text-main);"><i class="fa-solid fa-screwdriver-wrench"></i> Violations</div>
                         </div>
 
-                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #f97316; text-align:center;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">UB Penalties</div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; border-left: 4px solid #f97316; text-align:center;">
+                            <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase;">UB Penalties</div>
                             <div class="value" id="val-total-ub" style="font-size: 1.5rem; font-weight: 700; color: #f97316; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-mobile-screen"></i> Violations</div>
+                            <div style="font-size: 0.70rem; color: var(--text-main);"><i class="fa-solid fa-mobile-screen"></i> Violations</div>
                         </div>
 
-                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #eab308; text-align:center;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">X09 Violations</div>
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; border-left: 4px solid #eab308; text-align:center;">
+                            <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase;">X09 Violations</div>
                             <div class="value" id="val-total-x09" style="font-size: 1.5rem; font-weight: 700; color: #eab308; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-ban"></i> Violations</div>
+                            <div style="font-size: 0.70rem; color: var(--text-main);"><i class="fa-solid fa-ban"></i> Violations</div>
                         </div>
 
-                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #10b981; text-align:center; position:relative;">
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; border-left: 4px solid #10b981; text-align:center; position:relative;">
                             <div style="position:absolute; top:5px; right:5px; font-size:0.6rem; background:#10b981; color:white; padding:2px 5px; border-radius:4px;">NEW</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Q-Waiting < 10 Mins</div>
+                            <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase;">Q-Waiting < 10 Mins</div>
                             <div class="value" id="val-q-waiting" style="font-size: 1.5rem; font-weight: 700; color: #10b981; margin: 5px 0;">0%</div>
-                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-stopwatch"></i> SLA CS Target</div>
+                            <div style="font-size: 0.70rem; color: var(--text-main);"><i class="fa-solid fa-stopwatch"></i> SLA CS Target</div>
                         </div>
 
-                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; border-left: 4px solid #3b82f6; text-align:center; position:relative;">
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; border-left: 4px solid #3b82f6; text-align:center; position:relative;">
                             <div style="position:absolute; top:5px; right:5px; font-size:0.6rem; background:#3b82f6; color:white; padding:2px 5px; border-radius:4px;">NEW</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Q-Handling < 10 Mins</div>
+                            <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase;">Q-Handling < 10 Mins</div>
                             <div class="value" id="val-q-handling" style="font-size: 1.5rem; font-weight: 700; color: #3b82f6; margin: 5px 0;">0%</div>
-                            <div style="font-size: 0.75rem; color: var(--text-main);"><i class="fa-solid fa-stopwatch"></i> SLA CS Target</div>
+                            <div style="font-size: 0.70rem; color: var(--text-main);"><i class="fa-solid fa-stopwatch"></i> SLA CS Target</div>
                         </div>
 
+                    
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; border-left: 4px solid var(--accent-purple); text-align:center;">
+                            <div style="font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase;">Total Redo</div>
+                            <div class="value" id="val-total-redo" style="font-size: 1.5rem; font-weight: 700; color: var(--accent-purple); margin: 5px 0;">0</div>
+                            <div style="font-size: 0.70rem; color: var(--text-main);"><i class="fa-solid fa-recycle"></i> Violations</div>
+                        </div>
                     </div>
                 </div>
 
@@ -233,6 +249,7 @@
                                     <th style="text-align:center;">MPU Violations</th>
                                     <th style="text-align:center;">UB Violations</th>
                                     <th style="text-align:center;">X09 Violations</th>
+                                    <th style="text-align:center;">REDO</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -241,7 +258,33 @@
                     </div>
                 </div>
 
-                <div class="card glass-panel table-container span-5">
+
+                <!-- Redo Table -->
+                <div class="glass-panel card span-3">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <h3 style="color: var(--accent-orange);">
+                                <i class="fa-solid fa-recycle" style="color: var(--accent-orange);"></i> Critikal Redo Violations
+                            </h3>
+                            <button id="btnShareRedo" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
+                        </div>
+                    </div>
+                    <div style="max-height: 250px; overflow-y: auto;">
+                        <table class="data-table" id="redo-table">
+                            <thead>
+                                <tr>
+                                    <th>Cabang</th>
+                                    <th>Teknisi / Job No</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada hasil scan OCR</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card glass-panel table-container span-4">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-triangle-exclamation"></i> Critical MPU Violations (IW)</h3>
@@ -252,9 +295,8 @@
                         <table id="mpu-table">
                             <thead>
                                 <tr>
-                                    <th>Job No / ASC</th>
-                                    <th>Model</th>
-                                    <th>Parts Replaced</th>
+                                    <th>Cabang</th>
+                                    <th>Teknisi / Job No</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -263,12 +305,12 @@
                     </div>
                 </div>
 
-                <div class="card glass-panel table-container span-5">
+                <div class="card glass-panel table-container span-3">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div>
                                 <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-mobile-screen"></i> UB Repair Violations (Folding/Flip)</h3>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);">Larangan keras: Unit Fold/Flip (SM-F) In-Warranty mengganti part OCTA</p>
+                                
                             </div>
                             <button id="btnShareUb" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
                         </div>
@@ -277,9 +319,8 @@
                         <table id="ub-table">
                             <thead>
                                 <tr>
-                                    <th>Job No / ASC</th>
-                                    <th>Model</th>
-                                    <th>Parts Replaced</th>
+                                    <th>Cabang</th>
+                                    <th>Teknisi / Job No</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -292,8 +333,8 @@
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div>
-                                <h3 style="color: var(--accent-orange); font-size: 1.1rem;"><i class="fa-solid fa-box-open"></i> Pending Delivery (Repair Completed)</h3>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);">Unit selesai servis namun belum di-Tarik/Delivered (Silakan klik angka untuk me-WA PIC)</p>
+                                <h3 style="color: var(--accent-blue); font-size: 1.1rem;"><i class="fa-solid fa-box-open"></i> Pending Delivery (Repair Completed)</h3>
+                                
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button id="btnBlastRC" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: #25D366; border: 1px solid #25D366;" title="Kirim WA satu per satu secara otomatis ke setiap PIC cabang (dengan jeda 17 detik)"><i class="fa-solid fa-paper-plane"></i> Blast All</button>
@@ -319,7 +360,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div>
                                 <h3 style="color: var(--accent-red); font-size: 1.1rem;"><i class="fa-solid fa-triangle-exclamation"></i> Aging Dosa Cabang (> 7 Hari)</h3>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);">Daftar bill pending murni kesalahan cabang dengan umur aging di atas 7 hari (Tanpa Dosa SEIN)</p>
+                                
                             </div>
                             <button id="btnShareDosaCabang" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
                         </div>
@@ -343,7 +384,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div>
                                 <h3 style="color: var(--accent-red);"><i class="fa-solid fa-skull"></i> Wall of Shame: Worst Technicians</h3>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);">All Technicians with Branch Fault (Dosa Cabang)</p>
+                                
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button id="btnBlastShame" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: #25D366; border: 1px solid #25D366;" title="Kirim WA satu per satu secara otomatis ke setiap teknisi (dengan jeda 17 detik)"><i class="fa-solid fa-paper-plane"></i> Blast All</button>
@@ -369,7 +410,7 @@
                 <div class="card glass-panel table-container span-5">
                     <div class="card-header">
                         <h3 style="color: var(--accent-blue);"><i class="fa-solid fa-trophy"></i> Wall of Fame: Top Performers</h3>
-                        <p style="font-size: 0.8rem; color: var(--text-muted);"><span style="color: var(--accent-blue); font-weight: bold;">Periode Juni 2026</span> &bull; Ranked by Total Good Delivered (GD)</p>
+                        
                     </div>
                     <div class="table-responsive">
                         <table id="fame-table">
@@ -397,7 +438,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div>
                                 <h3 style="color: var(--accent-green);"><i class="fa-solid fa-list-check"></i> Daily Tracking Sistem (DTS) - MX</h3>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);">Real-time productivity & aging monitor for Carry-In (MX) Technicians</p>
+                                
                             </div>
                             <button id="btnExportDts" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
                         </div>
@@ -429,7 +470,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div>
                                 <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-house-chimney-user"></i> Daily Tracking Sistem (DTS) - CE</h3>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);">Produktivitas Kunjungan (Visits) Teknisi CE (VD/DA) HARI INI</p>
+                                
                             </div>
                             <button id="btnExportDtsIh" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
                         </div>
@@ -460,7 +501,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div>
                                 <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-users-viewfinder"></i> Front Desk / CS Performance</h3>
-                                <p style="font-size: 0.8rem; color: var(--text-muted);">Queue Waiting Time & Handling Time Analysis (Target: < 10 Menit)</p>
+                                
                             </div>
                             <button id="btnExportQueue" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
                         </div>
@@ -660,6 +701,6 @@
     </div>
 
     <!-- Scripts -->
-    <script src="app.js"></script>
+    <script src="main.js" type="module"></script>
 </body>
 </html>
