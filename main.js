@@ -38,7 +38,7 @@ window.customReasons = [];
 initAuth(db);
 
 // Initialize Web Worker
-const analyzerWorker = new Worker('./src/worker.js', { type: 'module' });
+const analyzerWorker = new Worker(`./src/worker.js?v=${Date.now()}`, { type: 'module' });
 
 analyzerWorker.onmessage = function(e) {
     const { type, payload, error } = e.data;

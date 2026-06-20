@@ -49,30 +49,48 @@ export function parseExcelDate(dateVal, formatHint = null) {
     if (typeof dateVal === 'number') {
         dateObj = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
     } else if (typeof dateVal === 'string') {
-        const parts = dateVal.split(/[-/ :.]/);
-        if (parts.length >= 3) {
-            let p0 = parts[0].padStart(2, '0');
-            let p1 = parts[1].padStart(2, '0');
-            let year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-            
-            if (formatHint === 'DD/MM/YYYY') {
-                dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
-            } else if (formatHint === 'MM/DD/YYYY') {
-                dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
-            } else {
-                // Autodetect if no hint
-                if (parseInt(p0) > 12) {
-                    dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
-                } else if (parseInt(p1) > 12) {
-                    dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
-                } else {
-                    // Default to MM/DD/YYYY as JS native new Date() does
-                    dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
-                }
-            }
+        let str = dateVal.trim();
+        // If it contains letters (like "Jun"), native parsing handles it best
+        if (str.match(/[a-zA-Z]/)) {
+            dateObj = new Date(str);
         } else {
-            dateObj = new Date(dateVal);
+            const parts = str.split(/[-/ :.]/);
+            if (parts.length >= 3) {
+                // If year is first (YYYY-MM-DD)
+                if (parts[0].length === 4) {
+                    let y = parts[0];
+                    let m = parts[1].padStart(2, '0');
+                    let d = parts[2].padStart(2, '0');
+                    dateObj = new Date(`${y}-${m}-${d}T00:00:00`);
+                } else {
+                    let p0 = parts[0].padStart(2, '0');
+                    let p1 = parts[1].padStart(2, '0');
+                    let year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+                    
+                    if (formatHint === 'DD/MM/YYYY') {
+                        dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
+                    } else if (formatHint === 'MM/DD/YYYY') {
+                        dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
+                    } else {
+                        // Autodetect
+                        if (parseInt(p0) > 12) {
+                            dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
+                        } else if (parseInt(p1) > 12) {
+                            dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
+                        } else {
+                            dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`); // Fallback MM/DD/YYYY
+                        }
+                    }
+                }
+            } else {
+                dateObj = new Date(str);
+            }
         }
+    }
+    
+    // Validate the date
+    if (dateObj && isNaN(dateObj.getTime())) {
+        return null;
     }
     
     return dateObj;
