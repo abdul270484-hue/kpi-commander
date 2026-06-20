@@ -79,6 +79,23 @@ analyzerWorker.onmessage = function(e) {
     } else if (type === 'PRODUCTIVITY_DONE') {
         const fameList = payload;
         window.prodData = fameList; 
+        
+        if (fameList.length > 0 && fameList[0].debugHeaders) {
+            let debugHtml = `<div style="padding:10px; background:#333; color:#ffcc00; font-size:11px; margin-bottom:10px; border-radius:5px; word-wrap:break-word;">
+                <b>DEBUG HEADERS:</b> ${fameList[0].debugHeaders.join(" | ")} <br>
+                <b>DETECTED COLS:</b> Date=${fameList[0].detectedCols.date}, Branch=${fameList[0].detectedCols.branch}, Eng=${fameList[0].detectedCols.eng}, LabIW=${fameList[0].detectedCols.labIW}
+            </div>`;
+            const wrapper = document.querySelector('.table-wrapper');
+            if (wrapper) {
+                let existing = document.getElementById('debugHeadersDiv');
+                if (existing) existing.remove();
+                let div = document.createElement('div');
+                div.id = 'debugHeadersDiv';
+                div.innerHTML = debugHtml;
+                wrapper.parentNode.insertBefore(div, wrapper);
+            }
+        }
+        
         renderFameTable(fameList);
         if (typeof renderDtsIhTable === 'function') renderDtsIhTable();
         if (typeof renderDtsMxTable === 'function') renderDtsMxTable();

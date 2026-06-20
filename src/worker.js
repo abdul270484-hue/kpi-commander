@@ -34,19 +34,24 @@ function analyzeProductivity(data) {
     };
     
     // Check first 3 rows for headers to fix column mappings, but specifically avoid 'engineer id'
+    let debugHeaders = [];
     for (let i = 0; i < 3 && i < data.length; i++) {
         const r = data[i];
         if (!r) continue;
         let foundAny = false;
+        
+        // Save headers for debugging
+        debugHeaders = r.map(String);
+        
         for (let j = 0; j < r.length; j++) {
             const h = String(r[j]).trim().toLowerCase();
             if (!h) continue;
-            if (h.includes('complete date') || h === 'date') { col.date = j; foundAny = true; }
-            if (h.includes('asc name') || h === 'asc') { col.branch = j; foundAny = true; }
-            if (h.includes('engineer name') || (h === 'engineer' && !h.includes('id'))) { col.eng = j; foundAny = true; }
-            if (h === 'labor' || h.includes('labor iw') || h.includes('iw labor')) { 
-                if (!foundAny || col.labIW === 10) { col.labIW = j; foundAny = true; }
-            }
+            
+            // Only set if not already set by a previous matching column
+            if ((h.includes('date') || h.includes('waktu') || h.includes('selesai')) && !h.includes('ticket') && !h.includes('receipt') && !h.includes('update') && col.date === 4) { col.date = j; foundAny = true; }
+            if ((h.includes('asc name') || h === 'asc') && col.branch === 5) { col.branch = j; foundAny = true; }
+            if ((h.includes('engineer name') || h === 'engineer') && !h.includes('id') && col.eng === 7) { col.eng = j; foundAny = true; }
+            if ((h === 'labor' || h.includes('labor iw') || h.includes('iw labor')) && col.labIW === 10) { col.labIW = j; foundAny = true; }
         }
         if (foundAny) break;
     }
@@ -182,6 +187,11 @@ function analyzeProductivity(data) {
         if (cmp !== 0) return cmp;
         return b.gdCount - a.gdCount;
     });
+    
+    if (fameList.length > 0) {
+        fameList[0].debugHeaders = debugHeaders;
+        fameList[0].detectedCols = col;
+    }
     
     return fameList;
 }
