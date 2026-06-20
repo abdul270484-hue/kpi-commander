@@ -33,28 +33,30 @@ function analyzeProductivity(data) {
         date: 4, branch: 5, eng: 7, labIW: 10, labOOW: 16
     };
     
-    // Check first 3 rows for headers to fix column mappings, but specifically avoid 'engineer id'
-    let debugHeaders = [];
+    // Check first 3 rows for headers to fix column mappings
     for (let i = 0; i < 3 && i < data.length; i++) {
         const r = data[i];
         if (!r) continue;
         let foundAny = false;
-        
-        // Save headers for debugging
-        debugHeaders = r.map(String);
+        let bareEngineerCol = -1;
         
         for (let j = 0; j < r.length; j++) {
             const h = String(r[j]).trim().toLowerCase();
             if (!h) continue;
             
-            // Only set if not already set by a previous matching column (except if we find the exact goods delivered date)
             if (h === 'goods delivered date' || h === 'complete date') { col.date = j; foundAny = true; }
             else if ((h.includes('date') || h.includes('waktu') || h.includes('selesai')) && !h.includes('ticket') && !h.includes('receipt') && !h.includes('update') && !h.includes('billing') && col.date === 4) { col.date = j; foundAny = true; }
             
-            if ((h.includes('asc name') || h === 'asc') && col.branch === 5) { col.branch = j; foundAny = true; }
-            if ((h.includes('engineer name') || h === 'engineer') && !h.includes('id') && col.eng === 7) { col.eng = j; foundAny = true; }
-            if ((h === 'labor' || h.includes('labor iw') || h.includes('iw labor')) && col.labIW === 10) { col.labIW = j; foundAny = true; }
+            if ((h.includes('asc name') || h === 'asc' || h === 'branch name') && col.branch === 5) { col.branch = j; foundAny = true; }
+            
+            // Prioritize 'engineer name' over bare 'engineer' (which contains IDs)
+            if (h === 'engineer name') { col.eng = j; foundAny = true; }
+            else if (h === 'engineer' && bareEngineerCol === -1) { bareEngineerCol = j; foundAny = true; }
+            
+            if ((h === 'labor' || h.includes('labor iw') || h.includes('iw labor') || h.includes('in warranty')) && col.labIW === 10) { col.labIW = j; foundAny = true; }
         }
+        // Only use bare 'engineer' column if 'engineer name' was not found
+        if (col.eng === 7 && bareEngineerCol !== -1) col.eng = bareEngineerCol;
         if (foundAny) break;
     }
 
@@ -136,22 +138,10 @@ function analyzeProductivity(data) {
         if (!prodStats[engName]) prodStats[engName] = { 
             asc: branch, gdCount: 0, gdPrevMonth: 0, gdRepair: 0, gdCancel: 0, 
             laborIW: 0, laborOOW: 0, dtsGd: 0, dtsIhGdVisits: 0, dtsIhTotalVisits: 0, 
-            visitedJobs: new Set(), visitedGdJobs: new Set(), totalRawRows: 0,
-            debugDates: []
+            visitedJobs: new Set(), visitedGdJobs: new Set()
         };
         
-        // Count EVERY row for this engineer that has a date!
-        prodStats[engName].totalRawRows++;
-        
         const parsedGdDate = parseExcelDate(gdDate, formatHint, applyCorruptionFix);
-        
-        // Simpan 10 sampel tanggal pertama untuk Arif
-        if (engName.includes('ARIF') || engName === '8386031535') {
-            if (prodStats[engName].debugDates.length < 10) {
-                let pStr = parsedGdDate ? parsedGdDate.toISOString().slice(0,10) : 'INVALID';
-                prodStats[engName].debugDates.push(`${gdDate} -> ${pStr}`);
-            }
-        }
         
         if (!parsedGdDate || isNaN(parsedGdDate.getTime())) continue;
 
@@ -210,10 +200,7 @@ function analyzeProductivity(data) {
         return b.gdCount - a.gdCount;
     });
     
-    if (fameList.length > 0) {
-        fameList[0].debugHeaders = debugHeaders;
-        fameList[0].detectedCols = col;
-    }
+
     
     return fameList;
 }

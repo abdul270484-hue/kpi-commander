@@ -80,23 +80,6 @@ analyzerWorker.onmessage = function(e) {
         const fameList = payload;
         window.prodData = fameList; 
         
-        if (fameList.length > 0 && fameList[0].debugHeaders) {
-            let arifDebug = fameList.find(x => x.engineer.includes('ARIF') || x.engineer === '8386031535');
-            let dateSamples = arifDebug && arifDebug.debugDates ? arifDebug.debugDates.join(" | ") : "N/A";
-            
-            let debugHtml = `<div id="debugHeadersDiv" style="padding:10px; background:#333; color:#ffcc00; font-size:11px; margin-top:10px; border-radius:5px; word-wrap:break-word;">
-                <b>DEBUG HEADERS:</b> ${fameList[0].debugHeaders.join(" | ")} <br>
-                <b>DETECTED COLS:</b> Date=${fameList[0].detectedCols.date}, Branch=${fameList[0].detectedCols.branch}, Eng=${fameList[0].detectedCols.eng}, LabIW=${fameList[0].detectedCols.labIW} <br>
-                <b>DATE SAMPLES (ARIF):</b> ${dateSamples}
-            </div>`;
-            const headerElement = document.querySelector('#fame-table').closest('.card').querySelector('.card-header');
-            if (headerElement) {
-                let existing = document.getElementById('debugHeadersDiv');
-                if (existing) existing.remove();
-                headerElement.insertAdjacentHTML('beforeend', debugHtml);
-            }
-        }
-        
         renderFameTable(fameList);
         if (typeof renderDtsIhTable === 'function') renderDtsIhTable();
         if (typeof renderDtsMxTable === 'function') renderDtsMxTable();
@@ -770,7 +753,7 @@ function renderFameTable(fameList) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="font-size: 0.85rem; font-weight: 500;">${item.resolvedBranch}</td>
-                <td style="font-size: 0.85rem; font-weight: 500;">${item.engineer} <span style="font-size:0.75rem; color:#888;">(All Rows: ${item.totalRawRows})</span></td>
+                <td style="font-size: 0.85rem; font-weight: 500;">${item.engineer}</td>
                 <td style="text-align:center; color:var(--text-muted); font-size: 0.9rem;">${gdPrevText}</td>
                 <td style="text-align:center;"><span style="color:var(--accent-blue); font-size:1rem; font-weight: 700;">${gdCountText}</span></td>
                 <td style="text-align:center; font-weight:700; font-size:1rem;">${avgGdText}</td>
