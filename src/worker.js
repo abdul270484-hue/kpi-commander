@@ -47,8 +47,10 @@ function analyzeProductivity(data) {
             const h = String(r[j]).trim().toLowerCase();
             if (!h) continue;
             
-            // Only set if not already set by a previous matching column
-            if ((h.includes('date') || h.includes('waktu') || h.includes('selesai')) && !h.includes('ticket') && !h.includes('receipt') && !h.includes('update') && col.date === 4) { col.date = j; foundAny = true; }
+            // Only set if not already set by a previous matching column (except if we find the exact goods delivered date)
+            if (h === 'goods delivered date' || h === 'complete date') { col.date = j; foundAny = true; }
+            else if ((h.includes('date') || h.includes('waktu') || h.includes('selesai')) && !h.includes('ticket') && !h.includes('receipt') && !h.includes('update') && !h.includes('billing') && col.date === 4) { col.date = j; foundAny = true; }
+            
             if ((h.includes('asc name') || h === 'asc') && col.branch === 5) { col.branch = j; foundAny = true; }
             if ((h.includes('engineer name') || h === 'engineer') && !h.includes('id') && col.eng === 7) { col.eng = j; foundAny = true; }
             if ((h === 'labor' || h.includes('labor iw') || h.includes('iw labor')) && col.labIW === 10) { col.labIW = j; foundAny = true; }
@@ -56,26 +58,36 @@ function analyzeProductivity(data) {
         if (foundAny) break;
     }
 
-    // Step 0.5: Detect Date Format for strings
-    let formatHint = 'MM/DD/YYYY'; // Default to MM/DD/YYYY
+    // Step 0.5: Detect Date Format and Excel Corruption Signature
+    let formatHint = 'MM/DD/YYYY'; 
+    let hasStringDates = false;
+    let hasNumberDates = false;
+    
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
-        if (!row || !row[col.date]) continue;
-        if (typeof row[col.date] === 'string') {
+        if (!row || row[col.date] == null) continue;
+        
+        if (typeof row[col.date] === 'number') {
+            hasNumberDates = true;
+        } else if (typeof row[col.date] === 'string') {
+            hasStringDates = true;
             const parts = row[col.date].split(/[-/ :.]/);
             if (parts.length >= 3) {
                 const p0 = parseInt(parts[0], 10);
                 const p1 = parseInt(parts[1], 10);
                 if (p0 > 12) {
                     formatHint = 'DD/MM/YYYY';
-                    break;
                 } else if (p1 > 12) {
                     formatHint = 'MM/DD/YYYY';
-                    break;
                 }
             }
         }
     }
+    
+    // The Excel Corruption Signature:
+    // If a file has BOTH string dates (day > 12) AND number dates (day <= 12),
+    // and the format is DD/MM/YYYY, it means Excel corrupted the day<=12 dates by swapping day/month.
+    let applyCorruptionFix = (hasStringDates && hasNumberDates && formatHint === 'DD/MM/YYYY');
     
     // Step 1: Find the most recent date in the dataset to act as the "Current Month" reference
     let maxDate = 0;
@@ -85,7 +97,7 @@ function analyzeProductivity(data) {
         if (!row || row.length === 0) continue; 
         const gdDate = row[col.date];
         if (!gdDate) continue;
-        const parsedGdDate = parseExcelDate(gdDate, formatHint);
+        const parsedGdDate = parseExcelDate(gdDate, formatHint, applyCorruptionFix);
         if (parsedGdDate && !isNaN(parsedGdDate.getTime())) {
             if (parsedGdDate.getTime() > maxDate) {
                 maxDate = parsedGdDate.getTime();
@@ -131,7 +143,7 @@ function analyzeProductivity(data) {
         // Count EVERY row for this engineer that has a date!
         prodStats[engName].totalRawRows++;
         
-        const parsedGdDate = parseExcelDate(gdDate, formatHint);
+        const parsedGdDate = parseExcelDate(gdDate, formatHint, applyCorruptionFix);
         
         // Simpan 10 sampel tanggal pertama untuk Arif
         if (engName.includes('ARIF') || engName === '8386031535') {
@@ -175,7 +187,7 @@ function analyzeProductivity(data) {
         else if (laborOOW > 0 && laborOOW < 100000) prodStats[engName].gdCancel++;
         else prodStats[engName].gdRepair++;
         
-        if (isDateToday(gdDate, formatHint)) {
+        if (isDateToday(gdDate, formatHint, applyCorruptionFix)) {
             prodStats[engName].dtsGd++;
             
             if (!prodJobNo || !prodStats[engName].visitedJobs.has(prodJobNo)) {

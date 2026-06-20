@@ -42,12 +42,26 @@ export function getCategory(model, customModels = []) {
     return 'UNKNOWN';
 }
 
-export function parseExcelDate(dateVal, formatHint = null) {
-    if (!dateVal) return null;
+export function parseExcelDate(dateVal, formatHint = null, applyCorruptionFix = false) {
+    if (dateVal == null) return null;
     let dateObj = null;
     
     if (typeof dateVal === 'number') {
         dateObj = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
+        
+        // Anti-Corruption logic: Excel may have swapped day and month when reading DD/MM/YYYY
+        if (applyCorruptionFix && formatHint === 'DD/MM/YYYY') {
+            let m = dateObj.getMonth(); // 0-11
+            let d = dateObj.getDate(); // 1-31
+            let y = dateObj.getFullYear();
+            
+            // Only swap if day <= 12, because these are the only dates Excel could successfully misinterpret
+            if (m < 12 && d <= 12) {
+                // E.g., original 02/06/2026 (June 2) -> Excel parses as Feb 6 (m=1, d=6).
+                // We want to reconstruct June 2. New month = d - 1. New day = m + 1.
+                dateObj = new Date(y, d - 1, m + 1);
+            }
+        }
     } else if (typeof dateVal === 'string') {
         let str = dateVal.trim();
         // If it contains letters (like "Jun"), native parsing handles it best
@@ -96,8 +110,8 @@ export function parseExcelDate(dateVal, formatHint = null) {
     return dateObj;
 }
 
-export function isDateToday(dateVal, formatHint = null) {
-    let parsedDate = parseExcelDate(dateVal, formatHint);
+export function isDateToday(dateVal, formatHint = null, applyCorruptionFix = false) {
+    let parsedDate = parseExcelDate(dateVal, formatHint, applyCorruptionFix);
     if (!parsedDate || isNaN(parsedDate.getTime())) return false;
     let today = new Date();
     return parsedDate.getDate() === today.getDate() &&
