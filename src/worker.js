@@ -28,6 +28,27 @@ function analyzeProductivity(data) {
     let prodStats = {};
     let uniqueWorkingDays = new Set();
     
+    // Step 0: Detect Date Format for strings
+    let formatHint = 'MM/DD/YYYY'; // Default to MM/DD/YYYY
+    for (let i = 2; i < data.length; i++) {
+        const row = data[i];
+        if (!row || !row[4]) continue;
+        if (typeof row[4] === 'string') {
+            const parts = row[4].split(/[-/ :.]/);
+            if (parts.length >= 3) {
+                const p0 = parseInt(parts[0], 10);
+                const p1 = parseInt(parts[1], 10);
+                if (p0 > 12) {
+                    formatHint = 'DD/MM/YYYY';
+                    break;
+                } else if (p1 > 12) {
+                    formatHint = 'MM/DD/YYYY';
+                    break;
+                }
+            }
+        }
+    }
+    
     // Step 1: Find the most recent date in the dataset to act as the "Current Month" reference
     let maxDate = 0;
     for (let i = 2; i < data.length; i++) {
@@ -35,7 +56,7 @@ function analyzeProductivity(data) {
         if (!row || row.length === 0 || !row[0]) continue;
         const gdDate = row[4];
         if (!gdDate) continue;
-        const parsedGdDate = parseExcelDate(gdDate);
+        const parsedGdDate = parseExcelDate(gdDate, formatHint);
         if (parsedGdDate && !isNaN(parsedGdDate.getTime())) {
             if (parsedGdDate.getTime() > maxDate) {
                 maxDate = parsedGdDate.getTime();
@@ -77,7 +98,7 @@ function analyzeProductivity(data) {
             visitedJobs: new Set(), visitedGdJobs: new Set() 
         };
         
-        const parsedGdDate = parseExcelDate(gdDate);
+        const parsedGdDate = parseExcelDate(gdDate, formatHint);
         if (!parsedGdDate || isNaN(parsedGdDate.getTime())) continue;
 
         const gdMonth = parsedGdDate.getMonth();
@@ -112,7 +133,7 @@ function analyzeProductivity(data) {
         else if (laborOOW > 0 && laborOOW < 100000) prodStats[engName].gdCancel++;
         else prodStats[engName].gdRepair++;
         
-        if (isDateToday(gdDate)) {
+        if (isDateToday(gdDate, formatHint)) {
             prodStats[engName].dtsGd++;
             
             if (!prodJobNo || !prodStats[engName].visitedJobs.has(prodJobNo)) {

@@ -42,12 +42,11 @@ export function getCategory(model, customModels = []) {
     return 'UNKNOWN';
 }
 
-export function parseExcelDate(dateVal) {
+export function parseExcelDate(dateVal, formatHint = null) {
     if (!dateVal) return null;
     let dateObj = null;
     
     if (typeof dateVal === 'number') {
-        // Excel serial number is exact, no ambiguity.
         dateObj = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
     } else if (typeof dateVal === 'string') {
         const parts = dateVal.split(/[-/ :.]/);
@@ -56,11 +55,20 @@ export function parseExcelDate(dateVal) {
             let p1 = parts[1].padStart(2, '0');
             let year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
             
-            // Assume DD/MM/YYYY by default for Indonesia, unless p1 > 12 (then it must be MM/DD/YYYY)
-            if (parseInt(p1) > 12) {
+            if (formatHint === 'DD/MM/YYYY') {
+                dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
+            } else if (formatHint === 'MM/DD/YYYY') {
                 dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
             } else {
-                dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
+                // Autodetect if no hint
+                if (parseInt(p0) > 12) {
+                    dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
+                } else if (parseInt(p1) > 12) {
+                    dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
+                } else {
+                    // Default to MM/DD/YYYY as JS native new Date() does
+                    dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
+                }
             }
         } else {
             dateObj = new Date(dateVal);
@@ -70,8 +78,8 @@ export function parseExcelDate(dateVal) {
     return dateObj;
 }
 
-export function isDateToday(dateVal) {
-    let parsedDate = parseExcelDate(dateVal);
+export function isDateToday(dateVal, formatHint = null) {
+    let parsedDate = parseExcelDate(dateVal, formatHint);
     if (!parsedDate || isNaN(parsedDate.getTime())) return false;
     let today = new Date();
     return parsedDate.getDate() === today.getDate() &&
