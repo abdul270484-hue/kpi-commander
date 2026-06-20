@@ -107,13 +107,26 @@ export function initContactsListener(onContactsUpdated) {
     db.collection('config').doc('contacts').onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
-            window.techContacts = data || {};
+            // Backward compatibility: if data has 'phones' key, use it. Otherwise, assume legacy format (whole object is phones)
+            if (data.phones !== undefined) {
+                window.techContacts = data.phones || {};
+                window.techNames = data.names || {};
+            } else {
+                window.techContacts = data || {};
+                window.techNames = {};
+            }
+            
             // Backup to localStorage
             localStorage.setItem('bujm_tech_contacts', JSON.stringify(window.techContacts));
+            localStorage.setItem('bujm_tech_names', JSON.stringify(window.techNames));
+            
             if (onContactsUpdated) onContactsUpdated();
         } else {
             // Seed to cloud if not exists using existing localStorage
-            db.collection('config').doc('contacts').set(window.techContacts).catch(err => {
+            db.collection('config').doc('contacts').set({
+                phones: window.techContacts,
+                names: window.techNames || {}
+            }).catch(err => {
                 console.error("Firestore contacts seed error:", err);
             });
             if (onContactsUpdated) onContactsUpdated();
@@ -123,11 +136,16 @@ export function initContactsListener(onContactsUpdated) {
     });
 }
 
-export function saveTechContacts(contactsObj, onComplete) {
-    window.techContacts = contactsObj;
-    localStorage.setItem('bujm_tech_contacts', JSON.stringify(contactsObj));
+export function saveTechContacts(phonesObj, namesObj, onComplete) {
+    window.techContacts = phonesObj;
+    window.techNames = namesObj;
+    localStorage.setItem('bujm_tech_contacts', JSON.stringify(phonesObj));
+    localStorage.setItem('bujm_tech_names', JSON.stringify(namesObj));
     
-    db.collection('config').doc('contacts').set(contactsObj).then(() => {
+    db.collection('config').doc('contacts').set({
+        phones: phonesObj,
+        names: namesObj
+    }).then(() => {
         if (onComplete) onComplete();
     }).catch(e => {
         if (window.showToastNotification) window.showToastNotification("Gagal menyimpan kontak ke Cloud: " + e.message);
