@@ -28,13 +28,37 @@ function analyzeProductivity(data) {
     let prodStats = {};
     let uniqueWorkingDays = new Set();
     
-    // Step 0: Detect Date Format for strings
+    // Step 0: Find dynamic column indices
+    let col = {
+        date: 4, branch: 5, eng: 7, labIW: 10, labOOW: 16
+    };
+    
+    // Check first 3 rows for headers
+    for (let i = 0; i < 3 && i < data.length; i++) {
+        const r = data[i];
+        if (!r) continue;
+        let foundAny = false;
+        for (let j = 0; j < r.length; j++) {
+            const h = String(r[j]).trim().toLowerCase();
+            if (!h) continue;
+            if (h.includes('complete date') || h === 'date') { col.date = j; foundAny = true; }
+            if (h.includes('asc name') || h === 'asc') { col.branch = j; foundAny = true; }
+            if (h.includes('engineer')) { col.eng = j; foundAny = true; }
+            // Labor columns can be tricky, if we find 'labor' we can guess. But usually IW is first labor col.
+            if (h === 'labor' || h.includes('labor iw') || h.includes('iw labor')) { 
+                if (!foundAny || col.labIW === 10) { col.labIW = j; foundAny = true; }
+            }
+        }
+        if (foundAny) break;
+    }
+
+    // Step 0.5: Detect Date Format for strings
     let formatHint = 'MM/DD/YYYY'; // Default to MM/DD/YYYY
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
-        if (!row || !row[4]) continue;
-        if (typeof row[4] === 'string') {
-            const parts = row[4].split(/[-/ :.]/);
+        if (!row || !row[col.date]) continue;
+        if (typeof row[col.date] === 'string') {
+            const parts = row[col.date].split(/[-/ :.]/);
             if (parts.length >= 3) {
                 const p0 = parseInt(parts[0], 10);
                 const p1 = parseInt(parts[1], 10);
@@ -54,7 +78,7 @@ function analyzeProductivity(data) {
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
         if (!row || row.length === 0 || !row[0]) continue;
-        const gdDate = row[4];
+        const gdDate = row[col.date];
         if (!gdDate) continue;
         const parsedGdDate = parseExcelDate(gdDate, formatHint);
         if (parsedGdDate && !isNaN(parsedGdDate.getTime())) {
@@ -80,15 +104,15 @@ function analyzeProductivity(data) {
         const row = data[i];
         if (!row || row.length === 0 || !row[0]) continue;
         
-        const gdDate = row[4];
+        const gdDate = row[col.date];
         if (!gdDate) continue;
         
-        const branch = shortenASC(row[5]);
-        let engName = row[7] ? String(row[7]).trim().toUpperCase() : null;
+        const branch = shortenASC(row[col.branch]);
+        let engName = row[col.eng] ? String(row[col.eng]).trim().toUpperCase() : null;
         if (!engName) continue;
         
-        const laborIWStr = row[10] || "0";
-        const laborOOWStr = row[16] || "0";
+        const laborIWStr = row[col.labIW] || "0";
+        const laborOOWStr = row[col.labOOW] || "0";
         const laborIW = parseFloat(String(laborIWStr).replace(/,/g, '')) || 0;
         const laborOOW = parseFloat(String(laborOOWStr).replace(/,/g, '')) || 0;
         
