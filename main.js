@@ -890,29 +890,81 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     const ctxResp = document.getElementById('responsibilityChart').getContext('2d');
     if (respChartInstance) respChartInstance.destroy();
 
+    const h = ctxResp.canvas.height || 300;
+    
+    // Create 3D Cylindrical Gradients
+    const gradRed = ctxResp.createLinearGradient(0, 0, 0, h);
+    gradRed.addColorStop(0, '#fca5a5'); // Highlight
+    gradRed.addColorStop(0.4, '#ef4444'); // Base
+    gradRed.addColorStop(1, '#7f1d1d'); // Shadow
+    
+    const gradGreen = ctxResp.createLinearGradient(0, 0, 0, h);
+    gradGreen.addColorStop(0, '#6ee7b7');
+    gradGreen.addColorStop(0.4, '#10b981');
+    gradGreen.addColorStop(1, '#064e3b');
+    
+    const gradBlue = ctxResp.createLinearGradient(0, 0, 0, h);
+    gradBlue.addColorStop(0, '#93c5fd');
+    gradBlue.addColorStop(0.4, '#3b82f6');
+    gradBlue.addColorStop(1, '#1e3a8a');
+
+    // Pseudo-3D Plugin for Drop Shadow & Bevel Highlight
+    const pseudo3DPlugin = {
+        id: 'pseudo3d',
+        beforeDatasetDraw(chart, args) {
+            const ctx = chart.ctx;
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 5;
+            ctx.shadowOffsetY = 15;
+        },
+        afterDatasetDraw(chart, args) {
+            chart.ctx.restore();
+            // Bevel effect (Glass/Plastic reflection on edges)
+            const ctx = chart.ctx;
+            const meta = chart.getDatasetMeta(args.index);
+            meta.data.forEach(arc => {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(arc.x, arc.y, arc.outerRadius, arc.startAngle, arc.endAngle);
+                ctx.arc(arc.x, arc.y, arc.innerRadius, arc.endAngle, arc.startAngle, true);
+                ctx.closePath();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.stroke();
+                
+                // Add inner dark shadow bevel
+                ctx.beginPath();
+                ctx.arc(arc.x, arc.y, arc.innerRadius + 1, arc.startAngle, arc.endAngle);
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.stroke();
+                ctx.restore();
+            });
+        }
+    };
+
     respChartInstance = new Chart(ctxResp, {
         type: 'doughnut',
         data: {
             labels: ['AGING (Branch Fault)', 'SEIN (Samsung Fault)', 'OTHER'],
             datasets: [{
                 data: [stats.responsibility.AGING, stats.responsibility.SEIN, stats.responsibility.OTHER],
-                backgroundColor: [
-                    '#ef4444', // Red for Branch Fault
-                    '#10b981', // Green for Samsung Fault (safe for branch)
-                    '#3b82f6'
-                ],
-                borderWidth: 0,
-                hoverOffset: 10
+                backgroundColor: [gradRed, gradGreen, gradBlue],
+                borderColor: '#0f172a',
+                borderWidth: 2,
+                hoverOffset: 15
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '70%',
+            cutout: '65%',
             plugins: {
-                legend: { position: 'bottom' }
+                legend: { position: 'bottom', labels: { color: '#e2e8f0' } }
             }
-        }
+        },
+        plugins: [pseudo3DPlugin]
     });
 
     // Render MPU Table
