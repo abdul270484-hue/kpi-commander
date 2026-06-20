@@ -34,3 +34,13 @@ export function removeApprovedUser(uid, email) {
         alert('Gagal menghapus: ' + err.message);
     });
 }
+
+export function approveUser(uid, email) {
+    if (!confirm(`Yakin ingin menyetujui akses (Role: User) untuk ${email}?`)) return;
+    
+    db.collection('users').doc(uid).update({ role: 'user' }).then(() => {
+        if (window.showToastNotification) window.showToastNotification(`✅ Akses untuk ${email} berhasil disetujui.`);
+    }).catch(err => {
+        alert('Gagal menyetujui: ' + err.message);
+    });
+}

@@ -2,7 +2,7 @@ import { CONFIG } from './src/config.js';
 import { scanRedoImage, initTesseract } from './src/services/ocr.js';
 import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo } from './src/services/whatsapp.js';
 import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as configDeleteRule, initContactsListener, saveTechContacts } from './src/firebase/config.js';
-import { initUserListener, resetDeviceLock, removeApprovedUser } from './src/firebase/users.js';
+import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser } from './src/firebase/users.js';
 import { initAuth, isAdmin, normalizePhone } from './src/auth.js';
 import { handleFiles, handleProductivityFiles } from './src/parser.js';
 
@@ -13,6 +13,7 @@ window.sendWADosaSingleBranch = sendWADosaSingleBranch;
 window.sendWARedo = sendWARedo;
 window.resetDeviceLock = resetDeviceLock;
 window.removeApprovedUser = removeApprovedUser;
+window.approveUser = approveUser;
 
 // Firebase Initialization
 const firebaseConfig = {
@@ -1403,23 +1404,48 @@ function renderApprovedUsers() {
     
     approvedUsersCache.forEach(user => {
         const tr = document.createElement('tr');
-        const roleColor = user.role === 'admin' ? 'var(--accent-purple)' : 'var(--text-main)';
+        
+        // Warna dan Label Role
+        let roleColor = 'var(--text-main)';
+        let roleDisplay = (user.role || 'USER').toUpperCase();
+        if (user.role === 'admin') roleColor = 'var(--accent-purple)';
+        if (user.role === 'pending') {
+            roleColor = 'var(--accent-orange)';
+            roleDisplay = '<i class="fa-solid fa-hourglass-half"></i> PENDING';
+        }
+        
         const deviceStatus = user.deviceId ? '<span style="color:var(--accent-green);"><i class="fa-solid fa-lock"></i> Terkunci</span>' : '<span style="color:var(--text-muted);">Bebas</span>';
         
-        tr.innerHTML = `
-            <td>
-                <strong>${user.email || '-'}</strong><br>
-                <span style="font-size:0.7rem; color:var(--text-muted);">${user.displayName || '-'}</span>
-            </td>
-            <td style="color:${roleColor}; font-weight:600; text-transform:uppercase; font-size:0.8rem;">${user.role || 'USER'}</td>
-            <td>${deviceStatus}</td>
-            <td style="text-align:center; min-width: 90px;">
+        let actionsHTML = '';
+        if (user.role === 'pending') {
+            actionsHTML = `
+                <button onclick="approveUser('${user.id}', '${user.email}')" style="background: rgba(37, 211, 102, 0.2); border: 1px solid var(--accent-green); color: var(--accent-green); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Setujui Akses">
+                    <i class="fa-solid fa-check"></i> Setujui
+                </button>
+                <button onclick="removeApprovedUser('${user.id}', '${user.email}')" style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--accent-red); color: var(--accent-red); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem;" title="Tolak / Hapus User">
+                    <i class="fa-solid fa-xmark"></i> Tolak
+                </button>
+            `;
+        } else {
+            actionsHTML = `
                 <button onclick="resetDeviceLock('${user.id}')" style="background: rgba(37, 211, 102, 0.2); border: 1px solid var(--accent-green); color: var(--accent-green); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Reset Device (Buka Kunci)">
                     <i class="fa-solid fa-unlock-keyhole"></i>
                 </button>
                 <button onclick="removeApprovedUser('${user.id}', '${user.email}')" style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--accent-red); color: var(--accent-red); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem;" title="Hapus User">
                     <i class="fa-solid fa-user-xmark"></i>
                 </button>
+            `;
+        }
+
+        tr.innerHTML = `
+            <td>
+                <strong>${user.email || '-'}</strong><br>
+                <span style="font-size:0.7rem; color:var(--text-muted);">${user.displayName || '-'}</span>
+            </td>
+            <td style="color:${roleColor}; font-weight:600; font-size:0.8rem;">${roleDisplay}</td>
+            <td>${deviceStatus}</td>
+            <td style="text-align:center; min-width: 90px;">
+                ${actionsHTML}
             </td>
         `;
         approvedUsersList.appendChild(tr);

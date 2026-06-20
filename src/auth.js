@@ -30,12 +30,30 @@ export function initAuth(db) {
                 // Sementara, kita asumsikan semua yang login Google berhasil masuk (bisa dibatasi nanti)
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 
-                let role = 'user';
+                let role = 'pending';
                 let dbDeviceId = null;
                 
                 if (userDoc.exists) {
-                    role = userDoc.data().role || 'user';
+                    role = userDoc.data().role || 'pending';
                     dbDeviceId = userDoc.data().deviceId;
+                }
+                
+                // Jika role masih pending, catat percobaan login dan tolak akses
+                if (role === 'pending') {
+                    await db.collection('users').doc(user.uid).set({
+                        email: user.email,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL,
+                        role: 'pending',
+                        lastAttempt: new Date().toISOString()
+                    }, { merge: true });
+                    
+                    await firebase.auth().signOut();
+                    if (loginErrorMsg) {
+                        loginErrorMsg.style.display = 'block';
+                        loginErrorMsg.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Akun Anda berstatus PENDING. Silakan hubungi Admin untuk persetujuan.';
+                    }
+                    return; // Batalkan proses login!
                 }
 
                 // --- DEVICE BINDING LOGIC ---
@@ -57,8 +75,6 @@ export function initAuth(db) {
                     return; // Batalkan proses login!
                 }
                 
-                // FORCE ADMIN PRIVILEGE UNTUK SEMUA YANG MASUK SEMENTARA (SETUP)
-                role = 'admin';
                 
                 // Simpan atau Perbarui Data & Bind Device
                 await db.collection('users').doc(user.uid).set({
