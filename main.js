@@ -173,7 +173,7 @@ if (btnBlastShame) {
         }
 
         // Filter teknisi yang punya nomor HP
-        const blastQueue = window.shameData.filter(item => !!techContacts[item.engineer]);
+        const blastQueue = window.shameData.filter(item => !!(window.techContacts || {})[item.engineer]);
         
         if (blastQueue.length === 0) {
             showToastNotification('Tidak ada teknisi di Wall of Shame yang memiliki nomor WA di database kontak!');
@@ -211,7 +211,7 @@ if (btnBlastRC) {
 
         // Filter branches that actually have PIC/Kacab phone numbers
         const blastQueue = Object.keys(window.rcData)
-            .filter(asc => !!techContacts[`PIC ${asc}`] || !!techContacts[`Kacab ${asc}`])
+            .filter(asc => !!(window.techContacts || {})[`PIC ${asc}`] || !!(window.techContacts || {})[`Kacab ${asc}`])
             .map(asc => ({ asc, count: window.rcData[asc].count }))
             .sort((a, b) => b.count - a.count);
         
@@ -993,7 +993,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             
             sortedDosaBranches.forEach(asc => {
                 const dc = statsMap[asc];
-                const hasPhone = !!techContacts[`PIC ${asc}`] || !!techContacts[`Kacab ${asc}`];
+                const hasPhone = !!(window.techContacts || {})[`PIC ${asc}`] || !!(window.techContacts || {})[`Kacab ${asc}`];
                 const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
                 
                 const tr = document.createElement('tr');
@@ -1017,7 +1017,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         tbodyShame.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">No bad engineers found! Great job!</td></tr>`;
     } else {
         shameList.forEach(item => {
-            const hasPhone = !!techContacts[item.engineer];
+            const hasPhone = !!(window.techContacts || {})[item.engineer];
         const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
         const warningTag = isRC ? '<br><span style=\"background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;\">⚠️ TELANJUR RC</span>' : '';
             const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
@@ -1051,7 +1051,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             const sortedRCBranches = Object.keys(rcStats).sort((a, b) => rcStats[b].count - rcStats[a].count);
             sortedRCBranches.forEach(asc => {
                 const rc = rcStats[asc];
-                const hasPhone = !!techContacts[`PIC ${asc}`] || !!techContacts[`Kacab ${asc}`];
+                const hasPhone = !!(window.techContacts || {})[`PIC ${asc}`] || !!(window.techContacts || {})[`Kacab ${asc}`];
                 const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
                 
                 const tr = document.createElement('tr');
@@ -1618,8 +1618,8 @@ function renderContactsTable() {
     uniqueEngs.forEach(item => {
         const eng = item.eng;
         const asc = item.asc;
-        const phone = techContacts[eng] || '';
-        let realName = techNames[eng] || '';
+        const phone = (window.techContacts || {})[eng] || '';
+        let realName = (window.techNames || {})[eng] || '';
         
         let nameHtml = `
             <div style="font-size:0.75rem; color:var(--text-muted); font-weight:bold; margin-bottom:2px;">[${asc}]</div>
@@ -2050,7 +2050,7 @@ function renderRedoTable() {
     });
 
     window.redoList.forEach(item => {
-        const hasPhone = !!techContacts[item.engineer];
+        const hasPhone = !!(window.techContacts || {})[item.engineer];
         const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
         const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">⚠️ TELANJUR RC</span>' : '';
         const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
@@ -2073,7 +2073,7 @@ function renderRedoTable() {
 }
 
 window.sendWARedo = function(engName, jobNo, model) {
-    const phone = techContacts[engName];
+    const phone = (window.techContacts || {})[engName];
     if (!phone) {
         showToastNotification('Nomor WA belum disetting! Buka menu "Kontak Teknisi" di atas dulu.');
         return;
@@ -2084,12 +2084,7 @@ window.sendWARedo = function(engName, jobNo, model) {
         waNumber = '62' + waNumber.substring(1);
     }
     
-    let displayName = engName;
-    if (window.techNames && window.techNames[engName]) {
-        displayName = window.techNames[engName];
-    } else if (techNames[engName]) {
-        displayName = techNames[engName];
-    }
+    let displayName = (window.techNames || {})[engName] || engName;
     
     let text = `🚨 *PERINGATAN REDO (BOUNCING)!*\n\nHalo ${displayName},\nKami mendeteksi adanya servis berulang (REDO) untuk Job No: *${jobNo}* (${model}).\n\nTolong segera tindak lanjuti unit ini dengan perbaikan maksimal agar tidak bounce untuk yang ketiga kalinya!\n\nTerima kasih.`;
     
