@@ -47,7 +47,8 @@ export function initAuth(db) {
                 }
 
                 // Jika akun sudah punya deviceId di DB, tapi tidak cocok dengan device ini
-                if (dbDeviceId && dbDeviceId !== localDeviceId) {
+                // Pengecualian untuk Admin agar tidak terkunci dari sistemnya sendiri
+                if (dbDeviceId && dbDeviceId !== localDeviceId && role !== 'admin') {
                     await firebase.auth().signOut();
                     if (loginErrorMsg) {
                         loginErrorMsg.style.display = 'block';
