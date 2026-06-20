@@ -45,23 +45,10 @@ export function getCategory(model, customModels = []) {
 export function parseExcelDate(dateVal) {
     if (!dateVal) return null;
     let dateObj = null;
+    
     if (typeof dateVal === 'number') {
-        let dateRaw = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
-        let dateSwapped = new Date(dateRaw.getFullYear(), dateRaw.getDate() - 1, dateRaw.getMonth() + 1);
-        
-        let diffRaw = Date.now() - dateRaw.getTime();
-        let diffSwapped = Date.now() - dateSwapped.getTime();
-        
-        let validRaw = !isNaN(dateRaw.getTime()) && diffRaw >= -86400000;
-        let validSwapped = !isNaN(dateSwapped.getTime()) && diffSwapped >= -86400000;
-        
-        if (validRaw && validSwapped) {
-            dateObj = (diffRaw < diffSwapped) ? dateRaw : dateSwapped;
-        } else if (validRaw) {
-            dateObj = dateRaw;
-        } else {
-            dateObj = dateSwapped;
-        }
+        // Excel serial number is exact, no ambiguity.
+        dateObj = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
     } else if (typeof dateVal === 'string') {
         const parts = dateVal.split(/[-/ :.]/);
         if (parts.length >= 3) {
@@ -69,26 +56,17 @@ export function parseExcelDate(dateVal) {
             let p1 = parts[1].padStart(2, '0');
             let year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
             
-            let dateA = new Date(`${year}-${p1}-${p0}T00:00:00`);
-            let dateB = new Date(`${year}-${p0}-${p1}T00:00:00`);
-            
-            let diffA = Date.now() - dateA.getTime();
-            let diffB = Date.now() - dateB.getTime();
-            
-            let validA = !isNaN(dateA.getTime()) && diffA >= -86400000;
-            let validB = !isNaN(dateB.getTime()) && diffB >= -86400000;
-            
-            if (validA && validB) {
-                dateObj = (diffA < diffB) ? dateA : dateB;
-            } else if (validA) {
-                dateObj = dateA;
+            // Assume DD/MM/YYYY by default for Indonesia, unless p1 > 12 (then it must be MM/DD/YYYY)
+            if (parseInt(p1) > 12) {
+                dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
             } else {
-                dateObj = dateB;
+                dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
             }
         } else {
             dateObj = new Date(dateVal);
         }
     }
+    
     return dateObj;
 }
 

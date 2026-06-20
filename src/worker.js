@@ -91,19 +91,8 @@ function analyzeProductivity(data) {
             }
         }
 
-        let isDuplicateJob = false;
-        if (prodJobNo) {
-            if (prodStats[engName].visitedGdJobs.has(prodJobNo)) {
-                isDuplicateJob = true;
-            } else {
-                prodStats[engName].visitedGdJobs.add(prodJobNo);
-            }
-        }
-
         if (gdMonth === prevMonth && gdYear === prevYear) {
-            if (!isDuplicateJob) {
-                prodStats[engName].gdPrevMonth++;
-            }
+            prodStats[engName].gdPrevMonth++;
             continue; // Stop processing this row for current month stats
         }
 
@@ -114,27 +103,18 @@ function analyzeProductivity(data) {
         // --- HANYA UNTUK BULAN INI ---
         uniqueWorkingDays.add(gdDate);
         
-        if (!isDuplicateJob) {
-            prodStats[engName].gdCount++;
-        }
+        prodStats[engName].gdCount++;
         
-        // Labor can be accumulated even if duplicate (sometimes different parts have different labor)
-        // Wait, GSPN usually repeats the same labor amount on each row!
-        // To be safe and accurate to GSPN, we shouldn't accumulate labor from duplicate rows either unless we know they differ.
-        // But let's only count labor on the FIRST unique row to prevent massive inflation!
-        if (!isDuplicateJob) {
-            prodStats[engName].laborIW += laborIW;
-            prodStats[engName].laborOOW += laborOOW;
-            
-            if (laborIW > 0) prodStats[engName].gdRepair++;
-            else if (laborOOW > 0 && laborOOW < 100000) prodStats[engName].gdCancel++;
-            else prodStats[engName].gdRepair++;
-        }
+        prodStats[engName].laborIW += laborIW;
+        prodStats[engName].laborOOW += laborOOW;
+        
+        if (laborIW > 0) prodStats[engName].gdRepair++;
+        else if (laborOOW > 0 && laborOOW < 100000) prodStats[engName].gdCancel++;
+        else prodStats[engName].gdRepair++;
         
         if (isDateToday(gdDate)) {
-            if (!isDuplicateJob) {
-                prodStats[engName].dtsGd++;
-            }
+            prodStats[engName].dtsGd++;
+            
             if (!prodJobNo || !prodStats[engName].visitedJobs.has(prodJobNo)) {
                 prodStats[engName].dtsIhGdVisits++;
                 prodStats[engName].dtsIhTotalVisits++;
