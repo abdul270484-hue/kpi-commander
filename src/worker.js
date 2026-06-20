@@ -35,8 +35,6 @@ function analyzeProductivity(data) {
         const gdDate = row[4];
         if (!gdDate) continue;
         
-        uniqueWorkingDays.add(gdDate);
-        
         const branch = shortenASC(row[5]);
         let engName = row[7] ? String(row[7]).trim().toUpperCase() : null;
         if (!engName) continue;
@@ -48,23 +46,38 @@ function analyzeProductivity(data) {
         
         if (!prodStats[engName]) prodStats[engName] = { asc: branch, gdCount: 0, gdPrevMonth: 0, gdRepair: 0, gdCancel: 0, laborIW: 0, laborOOW: 0, dtsGd: 0, dtsIhGdVisits: 0, dtsIhTotalVisits: 0, visitedJobs: new Set() };
         
+        const parsedGdDate = parseExcelDate(gdDate);
+        if (!parsedGdDate || isNaN(parsedGdDate.getTime())) continue;
+
+        const today = new Date();
+        const currMonth = today.getMonth();
+        const currYear = today.getFullYear();
+        
+        let prevMonth = currMonth - 1;
+        let prevYear = currYear;
+        if (prevMonth < 0) {
+            prevMonth = 11;
+            prevYear--;
+        }
+
+        const gdMonth = parsedGdDate.getMonth();
+        const gdYear = parsedGdDate.getFullYear();
+
+        if (gdMonth === prevMonth && gdYear === prevYear) {
+            prodStats[engName].gdPrevMonth++;
+            continue; // Stop processing this row (do not add to current month's gdCount, repair, etc.)
+        }
+
+        if (gdMonth !== currMonth || gdYear !== currYear) {
+            continue; // Ignore data from other months
+        }
+
+        // --- HANYA UNTUK BULAN INI ---
+        uniqueWorkingDays.add(gdDate);
+        
         prodStats[engName].gdCount++;
         prodStats[engName].laborIW += laborIW;
         prodStats[engName].laborOOW += laborOOW;
-        
-        const parsedGdDate = parseExcelDate(gdDate);
-        if (parsedGdDate && !isNaN(parsedGdDate.getTime())) {
-            const today = new Date();
-            let prevMonth = today.getMonth() - 1;
-            let prevYear = today.getFullYear();
-            if (prevMonth < 0) {
-                prevMonth = 11;
-                prevYear--;
-            }
-            if (parsedGdDate.getMonth() === prevMonth && parsedGdDate.getFullYear() === prevYear) {
-                prodStats[engName].gdPrevMonth++;
-            }
-        }
         
         if (isDateToday(gdDate)) {
             prodStats[engName].dtsGd++;
