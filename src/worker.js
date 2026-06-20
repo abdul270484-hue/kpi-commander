@@ -28,6 +28,33 @@ function analyzeProductivity(data) {
     let prodStats = {};
     let uniqueWorkingDays = new Set();
     
+    // Step 1: Find the most recent date in the dataset to act as the "Current Month" reference
+    let maxDate = 0;
+    for (let i = 2; i < data.length; i++) {
+        const row = data[i];
+        if (!row || row.length === 0 || !row[0]) continue;
+        const gdDate = row[4];
+        if (!gdDate) continue;
+        const parsedGdDate = parseExcelDate(gdDate);
+        if (parsedGdDate && !isNaN(parsedGdDate.getTime())) {
+            if (parsedGdDate.getTime() > maxDate) {
+                maxDate = parsedGdDate.getTime();
+            }
+        }
+    }
+    
+    const reportDate = maxDate > 0 ? new Date(maxDate) : new Date();
+    const currMonth = reportDate.getMonth();
+    const currYear = reportDate.getFullYear();
+    
+    let prevMonth = currMonth - 1;
+    let prevYear = currYear;
+    if (prevMonth < 0) {
+        prevMonth = 11;
+        prevYear--;
+    }
+
+    // Step 2: Calculate stats
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
         if (!row || row.length === 0 || !row[0]) continue;
@@ -44,50 +71,69 @@ function analyzeProductivity(data) {
         const laborIW = parseFloat(String(laborIWStr).replace(/,/g, '')) || 0;
         const laborOOW = parseFloat(String(laborOOWStr).replace(/,/g, '')) || 0;
         
-        if (!prodStats[engName]) prodStats[engName] = { asc: branch, gdCount: 0, gdPrevMonth: 0, gdRepair: 0, gdCancel: 0, laborIW: 0, laborOOW: 0, dtsGd: 0, dtsIhGdVisits: 0, dtsIhTotalVisits: 0, visitedJobs: new Set() };
+        if (!prodStats[engName]) prodStats[engName] = { 
+            asc: branch, gdCount: 0, gdPrevMonth: 0, gdRepair: 0, gdCancel: 0, 
+            laborIW: 0, laborOOW: 0, dtsGd: 0, dtsIhGdVisits: 0, dtsIhTotalVisits: 0, 
+            visitedJobs: new Set(), visitedGdJobs: new Set() 
+        };
         
         const parsedGdDate = parseExcelDate(gdDate);
         if (!parsedGdDate || isNaN(parsedGdDate.getTime())) continue;
 
-        const today = new Date();
-        const currMonth = today.getMonth();
-        const currYear = today.getFullYear();
-        
-        let prevMonth = currMonth - 1;
-        let prevYear = currYear;
-        if (prevMonth < 0) {
-            prevMonth = 11;
-            prevYear--;
-        }
-
         const gdMonth = parsedGdDate.getMonth();
         const gdYear = parsedGdDate.getFullYear();
 
+        let prodJobNo = null;
+        for (let j = 0; j < 5; j++) {
+            if (row[j] && String(row[j]).startsWith('4') && String(row[j]).length === 10) {
+                prodJobNo = String(row[j]);
+                break;
+            }
+        }
+
+        let isDuplicateJob = false;
+        if (prodJobNo) {
+            if (prodStats[engName].visitedGdJobs.has(prodJobNo)) {
+                isDuplicateJob = true;
+            } else {
+                prodStats[engName].visitedGdJobs.add(prodJobNo);
+            }
+        }
+
         if (gdMonth === prevMonth && gdYear === prevYear) {
-            prodStats[engName].gdPrevMonth++;
-            continue; // Stop processing this row (do not add to current month's gdCount, repair, etc.)
+            if (!isDuplicateJob) {
+                prodStats[engName].gdPrevMonth++;
+            }
+            continue; // Stop processing this row for current month stats
         }
 
         if (gdMonth !== currMonth || gdYear !== currYear) {
-            continue; // Ignore data from other months
+            continue; // Ignore data from other months entirely
         }
 
         // --- HANYA UNTUK BULAN INI ---
         uniqueWorkingDays.add(gdDate);
         
-        prodStats[engName].gdCount++;
-        prodStats[engName].laborIW += laborIW;
-        prodStats[engName].laborOOW += laborOOW;
+        if (!isDuplicateJob) {
+            prodStats[engName].gdCount++;
+        }
+        
+        // Labor can be accumulated even if duplicate (sometimes different parts have different labor)
+        // Wait, GSPN usually repeats the same labor amount on each row!
+        // To be safe and accurate to GSPN, we shouldn't accumulate labor from duplicate rows either unless we know they differ.
+        // But let's only count labor on the FIRST unique row to prevent massive inflation!
+        if (!isDuplicateJob) {
+            prodStats[engName].laborIW += laborIW;
+            prodStats[engName].laborOOW += laborOOW;
+            
+            if (laborIW > 0) prodStats[engName].gdRepair++;
+            else if (laborOOW > 0 && laborOOW < 100000) prodStats[engName].gdCancel++;
+            else prodStats[engName].gdRepair++;
+        }
         
         if (isDateToday(gdDate)) {
-            prodStats[engName].dtsGd++;
-            
-            let prodJobNo = null;
-            for (let j = 0; j < 5; j++) {
-                if (row[j] && String(row[j]).startsWith('4') && String(row[j]).length === 10) {
-                    prodJobNo = String(row[j]);
-                    break;
-                }
+            if (!isDuplicateJob) {
+                prodStats[engName].dtsGd++;
             }
             if (!prodJobNo || !prodStats[engName].visitedJobs.has(prodJobNo)) {
                 prodStats[engName].dtsIhGdVisits++;
@@ -95,10 +141,6 @@ function analyzeProductivity(data) {
                 if (prodJobNo) prodStats[engName].visitedJobs.add(prodJobNo);
             }
         }
-        
-        if (laborIW > 0) prodStats[engName].gdRepair++;
-        else if (laborOOW > 0 && laborOOW < 100000) prodStats[engName].gdCancel++;
-        else prodStats[engName].gdRepair++;
     }
     
     let workingDaysCount = Math.max(1, uniqueWorkingDays.size);
