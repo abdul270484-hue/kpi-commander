@@ -34,6 +34,7 @@ function analyzeProductivity(data) {
     };
     
     // Check first 3 rows for headers to fix column mappings
+    let engineerNameColFound = false;
     for (let i = 0; i < 3 && i < data.length; i++) {
         const r = data[i];
         if (!r) continue;
@@ -50,14 +51,50 @@ function analyzeProductivity(data) {
             if ((h.includes('asc name') || h === 'asc' || h === 'branch name') && col.branch === 5) { col.branch = j; foundAny = true; }
             
             // Prioritize 'engineer name' over bare 'engineer' (which contains IDs)
-            if (h === 'engineer name') { col.eng = j; foundAny = true; }
+            if (h === 'engineer name') { col.eng = j; engineerNameColFound = true; foundAny = true; }
             else if (h === 'engineer' && bareEngineerCol === -1) { bareEngineerCol = j; foundAny = true; }
             
             if ((h === 'labor' || h.includes('labor iw') || h.includes('iw labor') || h.includes('in warranty')) && col.labIW === 10) { col.labIW = j; foundAny = true; }
         }
         // Only use bare 'engineer' column if 'engineer name' was not found
-        if (col.eng === 7 && bareEngineerCol !== -1) col.eng = bareEngineerCol;
+        if (!engineerNameColFound && bareEngineerCol !== -1) col.eng = bareEngineerCol;
         if (foundAny) break;
+    }
+    
+    // Step 0.1: If the detected engineer column contains numeric IDs, scan nearby columns for actual names
+    if (!engineerNameColFound) {
+        let engCol = col.eng;
+        // Check if current eng column has numbers (IDs) in data rows
+        let isNumeric = true;
+        for (let i = 2; i < Math.min(10, data.length); i++) {
+            const val = data[i] && data[i][engCol];
+            if (val && isNaN(Number(val))) { isNumeric = false; break; }
+        }
+        
+        if (isNumeric) {
+            // Scan columns around the engineer ID column for one containing text names
+            let candidates = [engCol + 1, engCol - 1, engCol + 2];
+            for (let c of candidates) {
+                if (c < 0) continue;
+                let hasText = false;
+                let allEmpty = true;
+                for (let i = 2; i < Math.min(10, data.length); i++) {
+                    const val = data[i] && data[i][c];
+                    if (!val) continue;
+                    allEmpty = false;
+                    const s = String(val).trim();
+                    // Name-like: contains letters, not just numbers
+                    if (s.length > 2 && /[a-zA-Z]/.test(s) && isNaN(Number(s))) {
+                        hasText = true;
+                        break;
+                    }
+                }
+                if (hasText && !allEmpty) {
+                    col.eng = c;
+                    break;
+                }
+            }
+        }
     }
 
     // Step 0.5: Detect Date Format and Excel Corruption Signature
