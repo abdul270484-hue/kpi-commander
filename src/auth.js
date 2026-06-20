@@ -14,8 +14,8 @@ export function normalizePhone(phone) {
 export function initAuth(db) {
     const loginScreen = document.getElementById('login-screen');
     const mainApp = document.getElementById('main-app');
-    const btnGoogle = document.getElementById('btn-login-google');
-    const loginErrorMsg = document.getElementById('login-error');
+    const btnGoogle = document.getElementById('btn-google-signin');
+    const loginErrorMsg = document.getElementById('login-google-error');
     const btnManage = document.getElementById('btn-manage-users');
     const btnLogs = document.getElementById('btn-access-logs');
     
