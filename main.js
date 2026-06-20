@@ -81,18 +81,19 @@ analyzerWorker.onmessage = function(e) {
         window.prodData = fameList; 
         
         if (fameList.length > 0 && fameList[0].debugHeaders) {
-            let debugHtml = `<div style="padding:10px; background:#333; color:#ffcc00; font-size:11px; margin-bottom:10px; border-radius:5px; word-wrap:break-word;">
+            let arifDebug = fameList.find(x => x.engineer.includes('ARIF') || x.engineer === '8386031535');
+            let dateSamples = arifDebug && arifDebug.debugDates ? arifDebug.debugDates.join(" | ") : "N/A";
+            
+            let debugHtml = `<div id="debugHeadersDiv" style="padding:10px; background:#333; color:#ffcc00; font-size:11px; margin-top:10px; border-radius:5px; word-wrap:break-word;">
                 <b>DEBUG HEADERS:</b> ${fameList[0].debugHeaders.join(" | ")} <br>
-                <b>DETECTED COLS:</b> Date=${fameList[0].detectedCols.date}, Branch=${fameList[0].detectedCols.branch}, Eng=${fameList[0].detectedCols.eng}, LabIW=${fameList[0].detectedCols.labIW}
+                <b>DETECTED COLS:</b> Date=${fameList[0].detectedCols.date}, Branch=${fameList[0].detectedCols.branch}, Eng=${fameList[0].detectedCols.eng}, LabIW=${fameList[0].detectedCols.labIW} <br>
+                <b>DATE SAMPLES (ARIF):</b> ${dateSamples}
             </div>`;
-            const wrapper = document.querySelector('.table-wrapper');
-            if (wrapper) {
+            const headerElement = document.querySelector('#fame-table').closest('.card').querySelector('.card-header');
+            if (headerElement) {
                 let existing = document.getElementById('debugHeadersDiv');
                 if (existing) existing.remove();
-                let div = document.createElement('div');
-                div.id = 'debugHeadersDiv';
-                div.innerHTML = debugHtml;
-                wrapper.parentNode.insertBefore(div, wrapper);
+                headerElement.insertAdjacentHTML('beforeend', debugHtml);
             }
         }
         

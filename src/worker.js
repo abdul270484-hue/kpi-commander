@@ -124,13 +124,23 @@ function analyzeProductivity(data) {
         if (!prodStats[engName]) prodStats[engName] = { 
             asc: branch, gdCount: 0, gdPrevMonth: 0, gdRepair: 0, gdCancel: 0, 
             laborIW: 0, laborOOW: 0, dtsGd: 0, dtsIhGdVisits: 0, dtsIhTotalVisits: 0, 
-            visitedJobs: new Set(), visitedGdJobs: new Set(), totalRawRows: 0
+            visitedJobs: new Set(), visitedGdJobs: new Set(), totalRawRows: 0,
+            debugDates: []
         };
         
         // Count EVERY row for this engineer that has a date!
         prodStats[engName].totalRawRows++;
         
         const parsedGdDate = parseExcelDate(gdDate, formatHint);
+        
+        // Simpan 10 sampel tanggal pertama untuk Arif
+        if (engName.includes('ARIF') || engName === '8386031535') {
+            if (prodStats[engName].debugDates.length < 10) {
+                let pStr = parsedGdDate ? parsedGdDate.toISOString().slice(0,10) : 'INVALID';
+                prodStats[engName].debugDates.push(`${gdDate} -> ${pStr}`);
+            }
+        }
+        
         if (!parsedGdDate || isNaN(parsedGdDate.getTime())) continue;
 
         const gdMonth = parsedGdDate.getMonth();
