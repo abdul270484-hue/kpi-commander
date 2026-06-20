@@ -33,7 +33,7 @@ function analyzeProductivity(data) {
         date: 4, branch: 5, eng: 7, labIW: 10, labOOW: 16
     };
     
-    // Check first 3 rows for headers
+    // Check first 3 rows for headers to fix column mappings, but specifically avoid 'engineer id'
     for (let i = 0; i < 3 && i < data.length; i++) {
         const r = data[i];
         if (!r) continue;
@@ -43,8 +43,7 @@ function analyzeProductivity(data) {
             if (!h) continue;
             if (h.includes('complete date') || h === 'date') { col.date = j; foundAny = true; }
             if (h.includes('asc name') || h === 'asc') { col.branch = j; foundAny = true; }
-            if (h.includes('engineer')) { col.eng = j; foundAny = true; }
-            // Labor columns can be tricky, if we find 'labor' we can guess. But usually IW is first labor col.
+            if (h.includes('engineer name') || (h === 'engineer' && !h.includes('id'))) { col.eng = j; foundAny = true; }
             if (h === 'labor' || h.includes('labor iw') || h.includes('iw labor')) { 
                 if (!foundAny || col.labIW === 10) { col.labIW = j; foundAny = true; }
             }
@@ -77,7 +76,8 @@ function analyzeProductivity(data) {
     let maxDate = 0;
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
-        if (!row || row.length === 0 || !row[0]) continue;
+        // DO NOT DROP IF !row[0] just in case! 
+        if (!row || row.length === 0) continue; 
         const gdDate = row[col.date];
         if (!gdDate) continue;
         const parsedGdDate = parseExcelDate(gdDate, formatHint);
@@ -102,7 +102,7 @@ function analyzeProductivity(data) {
     // Step 2: Calculate stats
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
-        if (!row || row.length === 0 || !row[0]) continue;
+        if (!row || row.length === 0) continue; // Removed !row[0] check
         
         const gdDate = row[col.date];
         if (!gdDate) continue;
@@ -119,8 +119,11 @@ function analyzeProductivity(data) {
         if (!prodStats[engName]) prodStats[engName] = { 
             asc: branch, gdCount: 0, gdPrevMonth: 0, gdRepair: 0, gdCancel: 0, 
             laborIW: 0, laborOOW: 0, dtsGd: 0, dtsIhGdVisits: 0, dtsIhTotalVisits: 0, 
-            visitedJobs: new Set(), visitedGdJobs: new Set() 
+            visitedJobs: new Set(), visitedGdJobs: new Set(), totalRawRows: 0
         };
+        
+        // Count EVERY row for this engineer that has a date!
+        prodStats[engName].totalRawRows++;
         
         const parsedGdDate = parseExcelDate(gdDate, formatHint);
         if (!parsedGdDate || isNaN(parsedGdDate.getTime())) continue;

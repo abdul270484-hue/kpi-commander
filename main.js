@@ -752,7 +752,7 @@ function renderFameTable(fameList) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="font-size: 0.85rem; font-weight: 500;">${item.resolvedBranch}</td>
-                <td style="font-size: 0.85rem; font-weight: 500;">${item.engineer}</td>
+                <td style="font-size: 0.85rem; font-weight: 500;">${item.engineer} <span style="font-size:0.75rem; color:#888;">(All Rows: ${item.totalRawRows})</span></td>
                 <td style="text-align:center; color:var(--text-muted); font-size: 0.9rem;">${gdPrevText}</td>
                 <td style="text-align:center;"><span style="color:var(--accent-blue); font-size:1rem; font-weight: 700;">${gdCountText}</span></td>
                 <td style="text-align:center; font-weight:700; font-size:1rem;">${avgGdText}</td>
