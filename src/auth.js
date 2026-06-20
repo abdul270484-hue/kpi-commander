@@ -2,7 +2,7 @@ import { CONFIG } from './config.js';
 
 export let isAdmin = false;
 
-function normalizePhone(phone) {
+export function normalizePhone(phone) {
     let digits = phone.replace(/\D/g, '');
     if (digits.startsWith('0')) digits = '62' + digits.substring(1);
     if (!digits.startsWith('62')) digits = '62' + digits;

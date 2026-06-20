@@ -1,5 +1,5 @@
 import { CONFIG } from './src/config.js';
-import { initAuth, isAdmin } from './src/auth.js';
+import { initAuth, isAdmin, normalizePhone } from './src/auth.js';
 import { handleFiles, handleProductivityFiles } from './src/parser.js';
 
 // Firebase Initialization
@@ -65,8 +65,10 @@ analyzerWorker.onmessage = function(e) {
         if (overlay) overlay.classList.add('hidden');
     } else if (type === 'PRODUCTIVITY_DONE') {
         const fameList = payload;
-        window.prodData = {}; 
+        window.prodData = fameList; 
         renderFameTable(fameList);
+        if (typeof renderDtsIhTable === 'function') renderDtsIhTable();
+        if (typeof renderDtsMxTable === 'function') renderDtsMxTable();
     } else if (type === 'ANALYZE_ERROR') {
         alert("Terjadi kesalahan saat memproses data: " + error);
         const overlay = document.getElementById('loading-overlay');
@@ -1128,6 +1130,19 @@ function renderDtsIhTable() {
         if (!window.dtsIhData || Object.keys(window.dtsIhData).length === 0) {
             tbodyDtsIh.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada data CE hari ini</td></tr>`;
         } else {
+            
+            if (window.prodData && Array.isArray(window.prodData)) {
+                window.prodData.forEach(prod => {
+                    const normEng = prod.engineer ? prod.engineer.trim().toUpperCase() : '';
+                    if (!normEng) return;
+                    for (let key in window.dtsIhData) {
+                        const normKey = key.trim().toUpperCase();
+                        if (normKey === normEng || normKey.includes(normEng) || normEng.includes(normKey)) {
+                            window.dtsIhData[key].gdVisits = prod.dtsIhGdVisits || 0;
+                        }
+                    }
+                });
+            }
             let list = Object.values(window.dtsIhData);
             // Sort by Total Visits DESC, then Pending Visits DESC
             list.sort((a, b) => {
@@ -1180,6 +1195,19 @@ function renderDtsMxTable() {
         if (!window.dtsMxData || Object.keys(window.dtsMxData).length === 0) {
             tbodyDtsMx.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada data MX hari ini</td></tr>`;
         } else {
+            
+            if (window.prodData && Array.isArray(window.prodData)) {
+                window.prodData.forEach(prod => {
+                    const normEng = prod.engineer ? prod.engineer.trim().toUpperCase() : '';
+                    if (!normEng) return;
+                    for (let key in window.dtsMxData) {
+                        const normKey = key.trim().toUpperCase();
+                        if (normKey === normEng || normKey.includes(normEng) || normEng.includes(normKey)) {
+                            window.dtsMxData[key].gd = prod.dtsGd || 0;
+                        }
+                    }
+                });
+            }
             const sortedDts = Object.values(window.dtsMxData).sort((a, b) => a.asc.localeCompare(b.asc));
             sortedDts.forEach(item => {
                 const tr = document.createElement('tr');
@@ -2076,18 +2104,36 @@ if (redoDropZone && redoFileInput) {
         redoDropZone.style.borderColor = 'rgba(239, 68, 68, 0.4)';
     });
 
+    async function processMultipleRedoFiles(files) {
+        if (!files.length) return;
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) loadingOverlay.classList.remove('hidden');
+        showToastNotification(`Memulai pemindaian AI pada ${files.length} gambar... Mohon tunggu.`);
+        
+        for (let i = 0; i < files.length; i++) {
+            if (files.length > 1) {
+                showToastNotification(`Memindai gambar ${i+1} dari ${files.length}...`);
+            }
+            await handleRedoImage(files[i]);
+        }
+        
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
+        showToastNotification('Scan OCR Selesai! Tabel Redo telah diperbarui.');
+        renderRedoTable();
+    }
+
     redoDropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         redoDropZone.style.backgroundColor = 'transparent';
         redoDropZone.style.borderColor = 'rgba(239, 68, 68, 0.4)';
         if (e.dataTransfer.files.length) {
-            handleRedoImage(e.dataTransfer.files[0]);
+            processMultipleRedoFiles(Array.from(e.dataTransfer.files));
         }
     });
 
     redoFileInput.addEventListener('change', (e) => {
         if (e.target.files.length) {
-            handleRedoImage(e.target.files[0]);
+            processMultipleRedoFiles(Array.from(e.target.files));
         }
     });
 }
@@ -2095,18 +2141,15 @@ if (redoDropZone && redoFileInput) {
 function handleRedoImage(file) {
     if (!file.type.startsWith('image/')) {
         showToastNotification('File harus berupa gambar (Screenshot)!');
-        return;
+        return Promise.resolve();
     }
     
     if (!window.branchData) {
         showToastNotification('Tolong upload file Excel harian (Service Order List) terlebih dahulu sebagai database pencocokan!');
-        return;
+        return Promise.resolve();
     }
 
-    loadingOverlay.classList.remove('hidden');
-    showToastNotification('Memulai pemindaian AI pada gambar... Mohon tunggu.');
-
-    Tesseract.recognize(
+    return Tesseract.recognize(
         file,
         'eng',
         { logger: m => console.log(m) }
@@ -2118,8 +2161,7 @@ function handleRedoImage(file) {
         const matches = text.match(regex);
         
         if (!matches || matches.length === 0) {
-            loadingOverlay.classList.add('hidden');
-            showToastNotification('Tidak ditemukan Service Order No di gambar tersebut!');
+            console.log('Tidak ditemukan Service Order No di gambar tersebut!');
             return;
         }
 
@@ -2129,7 +2171,6 @@ function handleRedoImage(file) {
         
         // Cross Reference
         window.redoList = window.redoList || [];
-        let foundCount = 0;
         
         uniqueJobs.forEach(jobNo => {
             // Check if already in redo list
@@ -2159,18 +2200,11 @@ function handleRedoImage(file) {
                     category: matchedBill.category,
                     status: matchedBill.status
                 });
-                foundCount++;
             }
         });
         
-        loadingOverlay.classList.add('hidden');
-        showToastNotification(`Scan selesai! ${foundCount} Dosa Redo ditemukan dan dicocokkan dengan Excel.`);
-        renderRedoTable();
-        
     }).catch(err => {
         console.error(err);
-        loadingOverlay.classList.add('hidden');
-        showToastNotification('Gagal memindai gambar. Pastikan kualitas gambar cukup jelas.');
     });
 }
 
@@ -2270,7 +2304,7 @@ if (btnShareRedo) {
             return;
         }
         
-        let text = `*REPORT PELANGGARAN REDO*\nLarangan Keras! Ditemukan perbaikan recall, cek agar tidak merusak KPI\n\n`;
+        let text = `*REPORT PELANGGARAN REDO*\nLarangan Keras! Ditemukan perbaikan recall, cek agar tidak merusak KPI\nkoordinasikan dengan TS jika bill *IW*\n\n`;
         
         window.redoList.forEach((item, idx) => {
             const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
