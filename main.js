@@ -753,8 +753,8 @@ function renderFameTable(fameList) {
             tr.innerHTML = `
                 <td style="font-size: 0.85rem; font-weight: 500;">${item.resolvedBranch}</td>
                 <td style="font-size: 0.85rem; font-weight: 500;">${item.engineer}</td>
-                <td style="text-align:center;"><span style="color:var(--accent-blue); font-size:1rem; font-weight: 700;">${gdCountText}</span></td>
                 <td style="text-align:center; color:var(--text-muted); font-size: 0.9rem;">${gdPrevText}</td>
+                <td style="text-align:center;"><span style="color:var(--accent-blue); font-size:1rem; font-weight: 700;">${gdCountText}</span></td>
                 <td style="text-align:center; font-weight:700; font-size:1rem;">${avgGdText}</td>
                 <td style="color:var(--accent-green); font-weight:700; font-size: 1rem; text-align:center;">${repairText}</td>
                 <td style="color:var(--accent-red); font-weight:700; font-size: 1rem; text-align:center;">${cancelText}</td>
