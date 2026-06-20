@@ -1,7 +1,9 @@
 import { CONFIG } from './config.js';
 
 export let isAdmin = false;
+export let currentUser = null;
 
+// Normalisasi HP (tetap ada karena dipakai di main.js untuk nomor teknisi)
 export function normalizePhone(phone) {
     let digits = phone.replace(/\D/g, '');
     if (digits.startsWith('0')) digits = '62' + digits.substring(1);
@@ -12,157 +14,131 @@ export function normalizePhone(phone) {
 export function initAuth(db) {
     const loginScreen = document.getElementById('login-screen');
     const mainApp = document.getElementById('main-app');
-    
-    // Check if already authenticated in this session
-    const savedAuth = sessionStorage.getItem('bujm_auth');
-    if (savedAuth === 'admin' || savedAuth === 'user') {
-        loginScreen.style.display = 'none';
-        mainApp.classList.remove('hidden');
-        isAdmin = (savedAuth === 'admin');
-        if (isAdmin) {
-            const btnManage = document.getElementById('btn-manage-users');
-            if (btnManage) btnManage.style.display = '';
-        }
-        
-        // Update topbar name based on saved session
-        if (isAdmin) {
-            const nameEl = document.querySelector('.user-info .name');
-            if (nameEl) nameEl.textContent = 'Optimus Prime';
-            const roleEl = document.querySelector('.user-info .role');
-            if (roleEl) roleEl.textContent = 'Admin Access';
-        } else {
-            const savedName = sessionStorage.getItem('bujm_user_name');
-            if (savedName) {
-                const nameEl = document.querySelector('.user-info .name');
-                if (nameEl) nameEl.textContent = savedName;
-                const roleEl = document.querySelector('.user-info .role');
-                if (roleEl) roleEl.textContent = 'User Access';
-            }
-        }
-    }
-
-    // Toggle Admin / Phone login
-    const toggleAdminLink = document.getElementById('toggle-admin-login');
-    const phoneSection = document.getElementById('login-phone-section');
-    const adminSection = document.getElementById('admin-login-section');
-
-    if (toggleAdminLink) {
-        toggleAdminLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (adminSection.style.display === 'none') {
-                adminSection.style.display = 'block';
-                phoneSection.style.display = 'none';
-                toggleAdminLink.innerHTML = '<i class="fa-solid fa-phone"></i> Login dengan Nomor HP';
-            } else {
-                adminSection.style.display = 'none';
-                phoneSection.style.display = 'block';
-                toggleAdminLink.innerHTML = '<i class="fa-solid fa-user-shield"></i> Login sebagai Admin';
-            }
-        });
-    }
-
-    // Admin Login (Master Override)
-    const btnLogin = document.getElementById('btn-login');
-    const loginUsernameInput = document.getElementById('login-username');
-    const loginPasswordInput = document.getElementById('login-password');
+    const btnGoogle = document.getElementById('btn-login-google');
     const loginErrorMsg = document.getElementById('login-error');
+    const btnManage = document.getElementById('btn-manage-users');
+    const btnLogs = document.getElementById('btn-access-logs');
+    
+    // Pastikan app-container disembunyikan dulu
+    if (mainApp) mainApp.classList.add('hidden');
 
-    const handleAdminLogin = () => {
-        const user = loginUsernameInput.value.trim().toUpperCase();
-        const pass = loginPasswordInput.value.trim().toUpperCase();
-        
-        if (user === 'OPTIMUS PRIME' && pass === 'AUTOBOTS') {
-            sessionStorage.setItem('bujm_auth', 'admin');
-            isAdmin = true;
-            loginScreen.style.display = 'none';
-            mainApp.classList.remove('hidden');
-            const btnManage = document.getElementById('btn-manage-users');
-            if (btnManage) btnManage.style.display = '';
-            
-            const nameEl = document.querySelector('.user-info .name');
-            if (nameEl) nameEl.textContent = 'Optimus Prime';
-            const roleEl = document.querySelector('.user-info .role');
-            if (roleEl) roleEl.textContent = 'Admin Access';
-        } else {
-            loginErrorMsg.style.display = 'block';
-        }
-    };
-
-    if (btnLogin) btnLogin.addEventListener('click', handleAdminLogin);
-    if (loginPasswordInput) {
-        loginPasswordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleAdminLogin();
-        });
-    }
-
-    // Phone Login (Check Firebase)
-    const btnLoginPhone = document.getElementById('btn-login-phone');
-    const loginPhoneInput = document.getElementById('login-phone');
-    const loginPhoneError = document.getElementById('login-phone-error');
-
-    const handlePhoneLogin = () => {
-        const raw = loginPhoneInput.value.trim();
-        if (!raw || raw.length < 8) {
-            loginPhoneError.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Masukkan nomor HP yang valid!';
-            loginPhoneError.style.display = 'block';
-            return;
-        }
-        
-        const normalized = normalizePhone(raw);
-        btnLoginPhone.disabled = true;
-        btnLoginPhone.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memeriksa...';
-        
-        db.collection('approved_users').doc(normalized).get()
-            .then(doc => {
-                if (doc.exists) {
-                    const userData = doc.data();
-                    sessionStorage.setItem('bujm_auth', 'user');
-                    sessionStorage.setItem('bujm_user_name', userData.name || raw);
-                    loginScreen.style.display = 'none';
-                    mainApp.classList.remove('hidden');
-                    
-                    const nameEl = document.querySelector('.user-info .name');
-                    if (nameEl) nameEl.textContent = userData.name || raw;
-                    const roleEl = document.querySelector('.user-info .role');
-                    if (roleEl) roleEl.textContent = 'User Access';
-                } else {
-                    loginPhoneError.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Nomor HP belum terdaftar! Silakan minta akses.';
-                    loginPhoneError.style.display = 'block';
-                    loginPhoneInput.classList.add('shake');
-                    setTimeout(() => loginPhoneInput.classList.remove('shake'), 500);
+    // Listener State Auth Firebase
+    firebase.auth().onAuthStateChanged(async (user) => {
+        if (user) {
+            try {
+                // Cek Firestore untuk Whitelist Role (opsional, untuk keamanan ketat)
+                // Sementara, kita asumsikan semua yang login Google berhasil masuk (bisa dibatasi nanti)
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                
+                let role = 'user';
+                let dbDeviceId = null;
+                
+                if (userDoc.exists) {
+                    role = userDoc.data().role || 'user';
+                    dbDeviceId = userDoc.data().deviceId;
                 }
-            })
-            .catch(err => {
-                console.error('Firebase check error:', err);
-                loginPhoneError.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Gagal terhubung ke server. Coba lagi.';
-                loginPhoneError.style.display = 'block';
-            })
-            .finally(() => {
-                btnLoginPhone.disabled = false;
-                btnLoginPhone.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> MASUK';
-            });
-    };
 
-    if (btnLoginPhone) btnLoginPhone.addEventListener('click', handlePhoneLogin);
-    if (loginPhoneInput) {
-        loginPhoneInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handlePhoneLogin();
-        });
-        loginPhoneInput.addEventListener('input', () => {
-            loginPhoneError.style.display = 'none';
+                // --- DEVICE BINDING LOGIC ---
+                let localDeviceId = localStorage.getItem('bujm_device_id');
+                if (!localDeviceId) {
+                    // Generate unique ID untuk device ini
+                    localDeviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                    localStorage.setItem('bujm_device_id', localDeviceId);
+                }
+
+                // Jika akun sudah punya deviceId di DB, tapi tidak cocok dengan device ini
+                if (dbDeviceId && dbDeviceId !== localDeviceId) {
+                    await firebase.auth().signOut();
+                    if (loginErrorMsg) {
+                        loginErrorMsg.style.display = 'block';
+                        loginErrorMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Akses Ditolak! Akun Gmail ini terikat di perangkat lain. Hubungi Admin.';
+                    }
+                    return; // Batalkan proses login!
+                }
+                
+                // FORCE ADMIN PRIVILEGE UNTUK SEMUA YANG MASUK SEMENTARA (SETUP)
+                role = 'admin';
+                
+                // Simpan atau Perbarui Data & Bind Device
+                await db.collection('users').doc(user.uid).set({
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    role: role,
+                    deviceId: localDeviceId, // Kunci akun ke device ini
+                    lastLogin: new Date().toISOString()
+                }, { merge: true }); // Pakai merge agar data lain tidak tertimpa
+
+                currentUser = user;
+                isAdmin = (role === 'admin');
+
+                // Update UI
+                if (loginScreen) loginScreen.style.display = 'none';
+                if (mainApp) mainApp.classList.remove('hidden');
+
+                if (isAdmin) {
+                    if (btnManage) btnManage.style.display = '';
+                    if (btnLogs) btnLogs.style.display = '';
+                }
+
+                // Update Topbar
+                const nameEl = document.querySelector('.user-info .name');
+                const roleEl = document.querySelector('.user-info .role');
+                const avatarEl = document.querySelector('.user-profile .avatar');
+
+                if (nameEl) nameEl.textContent = user.displayName || user.email;
+                if (roleEl) roleEl.textContent = isAdmin ? 'Admin Access' : 'User Access';
+                if (avatarEl && user.photoURL) {
+                    avatarEl.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;border-radius:50%;" alt="Avatar">`;
+                }
+                
+                // --- SECURITY LOCK RELEASE ---
+                // Trigger event global menandakan sistem siap digunakan
+                window.dispatchEvent(new Event('bujm_auth_ready'));
+
+            } catch (err) {
+                console.error("Gagal memvalidasi sesi:", err);
+                if (loginErrorMsg) {
+                    loginErrorMsg.style.display = 'block';
+                    loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Gagal memvalidasi sesi DB.';
+                }
+            }
+        } else {
+            // User is signed out
+            currentUser = null;
+            isAdmin = false;
+            if (loginScreen) loginScreen.style.display = 'flex';
+            if (mainApp) mainApp.classList.add('hidden');
+        }
+    });
+
+    // Event Handler Button Login Google
+    if (btnGoogle) {
+        btnGoogle.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            btnGoogle.innerHTML = 'Memuat...';
+            btnGoogle.disabled = true;
+
+            firebase.auth().signInWithPopup(provider).catch((error) => {
+                console.error("Gagal Login Google:", error);
+                if (loginErrorMsg) {
+                    loginErrorMsg.style.display = 'block';
+                    loginErrorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${error.message}`;
+                }
+                btnGoogle.innerHTML = `<img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" style="width: 20px; height: 20px;"> Sign in with Google`;
+                btnGoogle.disabled = false;
+            });
         });
     }
 
-    // "Minta Akses via WhatsApp"
-    const btnLoginRequestWa = document.getElementById('btn-login-request-wa');
-    if (btnLoginRequestWa) {
-        btnLoginRequestWa.addEventListener('click', () => {
-            const phoneVal = loginPhoneInput ? loginPhoneInput.value.trim() : '';
-            const nama = prompt("Masukkan nama Anda:");
-            if (!nama) return;
-            const pesan = `📱 *REQUEST AKSES LOGIN*\n\nHalo Ndan,\nSaya *${nama.trim()}* ingin meminta izin akses login ke Dashboard BUJM.\nNomor HP saya: *${phoneVal || '[Isi Nomor HP]'}*\n\nMohon didaftarkan ya Ndan. Terima kasih! 🫡`;
-            const url = `https://wa.me/${CONFIG.ADMIN_WA_NUMBER}?text=${encodeURIComponent(pesan)}`;
-            window.open(url, '_blank');
-        });
+    // Event Handler Logout
+    const logoutBtn = document.createElement('button');
+    logoutBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Logout';
+    logoutBtn.style.cssText = 'background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 10px;';
+    logoutBtn.addEventListener('click', () => firebase.auth().signOut());
+    
+    const userProfileDiv = document.querySelector('.user-profile');
+    if (userProfileDiv) {
+        userProfileDiv.appendChild(logoutBtn);
     }
 }

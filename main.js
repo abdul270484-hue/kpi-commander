@@ -1,6 +1,18 @@
 import { CONFIG } from './src/config.js';
+import { scanRedoImage, initTesseract } from './src/services/ocr.js';
+import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo } from './src/services/whatsapp.js';
+import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as configDeleteRule, initContactsListener, saveTechContacts } from './src/firebase/config.js';
+import { initUserListener, resetDeviceLock, removeApprovedUser } from './src/firebase/users.js';
 import { initAuth, isAdmin, normalizePhone } from './src/auth.js';
 import { handleFiles, handleProductivityFiles } from './src/parser.js';
+
+// Expose services to global scope for HTML inline onclick handlers
+window.sendWA = sendWA;
+window.sendWARC = sendWARC;
+window.sendWADosaSingleBranch = sendWADosaSingleBranch;
+window.sendWARedo = sendWARedo;
+window.resetDeviceLock = resetDeviceLock;
+window.removeApprovedUser = removeApprovedUser;
 
 // Firebase Initialization
 const firebaseConfig = {
@@ -92,7 +104,9 @@ const emptyState = document.getElementById('empty-state');
 
 // Check if a part string matches any expensive part keywords
 
-// Event Listeners for File Upload
+// Event Listeners for File Upload (Locked by Auth)
+window.addEventListener('bujm_auth_ready', () => {
+initTesseract(); // Pre-warm OCR worker in the background
 dropZone.addEventListener('click', () => fileInput.click());
 
 dropZone.addEventListener('dragover', (e) => {
@@ -728,7 +742,7 @@ function renderFameTable(fameList) {
         tbodyFame.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">No Good Delivered data found!</td></tr>`;
     } else {
         fameList.forEach(item => {
-            let gdCountText = item.gdCount > 0 ? `${item.gdCount} units` : '';
+            let gdCountText = item.gdCount > 0 ? `${item.gdCount} Units` : '';
             let avgGdText = parseFloat(item.avgGd) > 0 ? item.avgGd : '';
             let repairText = item.gdRepair > 0 ? item.gdRepair : '';
             let cancelText = item.gdCancel > 0 ? item.gdCancel : '';
@@ -987,7 +1001,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                         <strong>${asc}</strong>
                         <button onclick="sendWADosaSingleBranch('${asc}')" style="background: none; border: none; color: ${waColor}; font-size: 1rem; cursor: pointer; margin-left: 10px;" title="Kirim Peringatan WA ke PIC Dosa Cabang"><i class="fa-brands fa-whatsapp"></i></button>
                     </td>
-                    <td><span class="clickable-number" style="color:var(--accent-red); font-weight: 700;" onclick="openDosaModal('${asc}')">${dc.count} units</span></td>
+                    <td><span class="clickable-number" style="color:var(--accent-red); font-size: 1rem; font-weight: 700;" onclick="openDosaModal('${asc}')">${dc.count} Units</span></td>
                 `;
                 tbodyDosa.appendChild(tr);
             });
@@ -1019,7 +1033,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                         <button onclick="sendWA('${item.engineer.replace(/'/g, "\\'")}', '${item.asc}', ${item.count}, '${item.detail}')" style="background: none; border: none; color: ${waColor}; font-size: 1.5rem; cursor: pointer;" title="Kirim Teguran WA"><i class="fa-brands fa-whatsapp"></i></button>
                     </div>
                 </td>
-                <td style="text-align:center;"><span class="clickable-number" style="color:var(--accent-red); font-size:1rem; font-weight: 700;" onclick="openEngModal('${item.engineer.replace(/'/g, "\\'")}')">${item.count} units</span></td>
+                <td style="text-align:center;"><span class="clickable-number" style="color:var(--accent-red); font-size:1rem; font-weight: 700;" onclick="openEngModal('${item.engineer.replace(/'/g, "\\'")}')">${item.count} Units</span></td>
             `;
             tbodyShame.appendChild(tr);
         });
@@ -1045,7 +1059,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                         <strong>${asc}</strong>
                         <button onclick="sendWARC('${asc}', ${rc.count})" style="background: none; border: none; color: ${waColor}; font-size: 1rem; cursor: pointer; margin-left: 10px;" title="Kirim Peringatan WA ke PIC"><i class="fa-brands fa-whatsapp"></i></button>
                     </td>
-                    <td><span class="clickable-number" style="color:var(--accent-orange); font-weight: 700;" onclick="openRCModal('${asc}')">${rc.count} units</span></td>
+                    <td><span class="clickable-number" style="color:var(--accent-orange); font-size: 1rem; font-weight: 700;" onclick="openRCModal('${asc}')">${rc.count} Units</span></td>
                 `;
                 tbodyRC.appendChild(tr);
             });
@@ -1082,7 +1096,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             ${getCell(bs.mpu, 'mpu', 'color:var(--accent-orange); font-weight:bold;')}
             ${getCell(bs.ub, 'ub', 'color:darkred; font-weight:bold;')}
             ${getCell(bs.x09, 'x09', 'color:#eab308; font-weight:bold;')}
-            <td style="text-align:center;"><span class="val-redo" data-asc="${branch}" style="font-size: 1.1rem; font-weight: bold; color: var(--text-muted);"></span></td>
+            <td style="text-align:center;"><span class="val-redo" data-asc="${branch}" style="font-size: 1rem; font-weight: 700; color: var(--text-muted);"></span></td>
         `;
 
         tbodyBranch.appendChild(tr);
@@ -1171,11 +1185,11 @@ function renderDtsIhTable() {
                 tr.innerHTML = `
                     <td><strong>${d.asc}</strong></td>
                     <td>${d.name}</td>
-                    <td style="text-align:center; font-weight:600; ${visitsStyling}">${vTotal}</td>
-                    <td style="text-align:center; font-weight:600; ${rcStyling}">${vRC}</td>
-                    <td style="text-align:center; font-weight:600; ${gdStyling}">${vGD}</td>
-                    <td style="text-align:center; font-weight:600; ${pendingStyling}">${vPending}</td>
-                    <td style="text-align:center; font-weight:600; ${agingStyling}">${agingCell}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700; ${visitsStyling}">${vTotal}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700; ${rcStyling}">${vRC}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700; ${gdStyling}">${vGD}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700; ${pendingStyling}">${vPending}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700; ${agingStyling}">${agingCell}</td>
                 `;
                 tbodyDtsIh.appendChild(tr);
             });
@@ -1227,12 +1241,12 @@ function renderDtsMxTable() {
                 tr.innerHTML = `
                     <td><strong>${item.asc}</strong></td>
                     <td>${item.name}</td>
-                    <td style="text-align:center; font-weight:600;">${vVolIn}</td>
-                    <td style="text-align:center; font-weight:600;">${vRC}</td>
-                    <td style="text-align:center; font-weight:600; ${gdColor}">${vGD}</td>
-                    <td style="text-align:center; font-weight:600; ${agingColor}">${agingCell}</td>
-                    <td style="text-align:center; font-weight:600; ${custColor}">${vCust}</td>
-                    <td style="text-align:center; font-weight:600; ${seinColor}">${vSein}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700;">${vVolIn}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700;">${vRC}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700; ${gdColor}">${vGD}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700; ${agingColor}">${agingCell}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700; ${custColor}">${vCust}</td>
+                    <td style="text-align:center; font-size:1rem; font-weight:700; ${seinColor}">${vSein}</td>
                 `;
                 tbodyDtsMx.appendChild(tr);
             });
@@ -1243,62 +1257,27 @@ function renderDtsMxTable() {
 // ============================================
 // Rules Configuration Logic
 // ============================================
-const defaultCustomModels = [
-    {keyword: 'SM-', category: 'MX'},
-    {keyword: 'QA', category: 'VD'},
-    {keyword: 'UA', category: 'VD'},
-    {keyword: 'VG', category: 'VD'},
-    {keyword: 'SP', category: 'VD'}
-];
-
-const defaultCustomReasons = [
-    {keyword: 'MONITORING/AGING OR NOT REPRODUCED', category: 'AGING'},
-    {keyword: 'RE-SCHEDULING BY ENG\'R OR ASC', category: 'AGING'},
-    {keyword: 'RE-SCHEDULING BY CUSTOMER', category: 'AGING'},
-    {keyword: 'WAITING FOR CONFIRMATION FROM CUSTOMER', category: 'AGING'},
-    {keyword: 'REPAIR IN PROGRESS AFTER PARTS RECEIVE', category: 'AGING'},
-    {keyword: 'WAITING FOR CONFIRMATION FROM SAMSUNG', category: 'AGING'},
-    {keyword: 'PARTS ARRIVED BUT NO G/R YET(ASC)', category: 'AGING'},
-    {keyword: 'REQUEST TECH SUPPORT (TECHNICAL PROBLEM)', category: 'AGING'},
-    {keyword: 'PARTS BACK ORDERED (SAMSUNG)', category: 'SEIN'},
-    {keyword: 'PARTS IN TRANSIT (SAMSUNG)', category: 'SEIN'},
-    {keyword: 'PARTS NOT AVAILABLE (ASC)', category: 'SEIN'},
-    {keyword: 'PARTS DNA/SNA (ASC)', category: 'SEIN'},
-    {keyword: 'PARTS P/O CANCELLATION', category: 'SEIN'},
-    {keyword: 'PARTS ALLOCATED(SAMSUNG)', category: 'SEIN'},
-    {keyword: 'PROCESSING EXCHANGE', category: 'SEIN'}
-];
-
-// Firebase Initialization
-
 window.customModels = [];
 window.customReasons = [];
 
-// Sync Rules with Cloud
-db.collection('config').doc('rules').onSnapshot((doc) => {
-    if (doc.exists) {
-        const data = doc.data();
-        window.customModels = data.models || [];
-        window.customReasons = data.reasons || [];
-        if (typeof renderCustomRules === 'function') renderCustomRules();
-    } else {
-        // Seed default if not exists
-        db.collection('config').doc('rules').set({
-            models: defaultCustomModels,
-            reasons: defaultCustomReasons
-        }).catch(err => {
-            console.error("Firestore seed error:", err);
-            // Display friendly warning if database is not created yet
-            showToastNotification(`<strong>Peringatan Cloud Sync:</strong><br>Database Firestore belum siap! Data rules saat ini hanya disimpan sementara. Hubungi Admin (Optimus Prime) untuk Create Database.`);
+// Inisialisasi Firebase Listeners (menunggu db dimuat)
+function tryInitFirebaseListeners() {
+    if (typeof db !== 'undefined') {
+        // Init Rules Listener
+        initRulesListener(() => {
+            if (typeof renderCustomRules === 'function') renderCustomRules();
         });
-        customModels = defaultCustomModels;
-        customReasons = defaultCustomReasons;
-        if (typeof renderCustomRules === 'function') renderCustomRules();
+        
+        // Init Contacts Listener (MIGRASI WA KE CLOUD)
+        initContactsListener(() => {
+            if (typeof renderContactsTable === 'function') renderContactsTable();
+        });
+        
+    } else {
+        setTimeout(tryInitFirebaseListeners, 500);
     }
-}, (error) => {
-    console.error("Firestore Listen Error:", error);
-    showToastNotification(`<strong>Koneksi Cloud Terputus:</strong><br>Gagal mengambil rules tersinkronisasi. Pastikan Database Firestore sudah di-Create di Console.`);
-});
+}
+tryInitFirebaseListeners();
 
 const rulesModal = document.getElementById('rules-modal');
 const btnRules = document.getElementById('btn-rules');
@@ -1398,53 +1377,47 @@ if (closeUsersModal) {
     });
 }
 
-// Real-time listener for approved_users (delayed until db ready)
-function initUserListener() {
-    if (typeof db === 'undefined') return;
-    db.collection('approved_users').onSnapshot((snapshot) => {
-        approvedUsersCache = [];
-        snapshot.forEach(doc => {
-            approvedUsersCache.push({ id: doc.id, ...doc.data() });
+// Coba inisialisasi dari modul users.js (jika db sudah siap)
+function tryInitUserListener() {
+    if (typeof db !== 'undefined') {
+        initUserListener((users) => {
+            approvedUsersCache = users;
+            renderApprovedUsers();
         });
-        renderApprovedUsers();
-    }, (err) => {
-        console.error('Error listening approved_users:', err);
-    });
+    } else {
+        setTimeout(tryInitUserListener, 500);
+    }
 }
-// Try init immediately, retry if db not ready
-if (typeof db !== 'undefined') {
-    initUserListener();
-} else {
-    const waitDbUsers = setInterval(() => {
-        if (typeof db !== 'undefined') {
-            clearInterval(waitDbUsers);
-            initUserListener();
-        }
-    }, 500);
-    setTimeout(() => clearInterval(waitDbUsers), 10000);
-}
+tryInitUserListener();
 
 function renderApprovedUsers() {
     if (!approvedUsersList) return;
     approvedUsersList.innerHTML = '';
     
     if (approvedUsersCache.length === 0) {
-        approvedUsersList.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada user terdaftar</td></tr>`;
+        approvedUsersList.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada user yang masuk</td></tr>`;
         return;
     }
     
-    approvedUsersCache.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    approvedUsersCache.sort((a, b) => (a.email || '').localeCompare(b.email || ''));
     
     approvedUsersCache.forEach(user => {
         const tr = document.createElement('tr');
-        let displayPhone = user.id;
-        if (displayPhone.startsWith('62')) displayPhone = '0' + displayPhone.substring(2);
+        const roleColor = user.role === 'admin' ? 'var(--accent-purple)' : 'var(--text-main)';
+        const deviceStatus = user.deviceId ? '<span style="color:var(--accent-green);"><i class="fa-solid fa-lock"></i> Terkunci</span>' : '<span style="color:var(--text-muted);">Bebas</span>';
         
         tr.innerHTML = `
-            <td><strong>${user.name || '-'}</strong></td>
-            <td style="font-family: monospace; letter-spacing: 1px;">${displayPhone}</td>
-            <td style="text-align:center;">
-                <button onclick="removeApprovedUser('${user.id}')" style="background: none; border: none; color: var(--accent-red); cursor: pointer; font-size: 1rem;" title="Hapus akses">
+            <td>
+                <strong>${user.email || '-'}</strong><br>
+                <span style="font-size:0.7rem; color:var(--text-muted);">${user.displayName || '-'}</span>
+            </td>
+            <td style="color:${roleColor}; font-weight:600; text-transform:uppercase; font-size:0.8rem;">${user.role || 'USER'}</td>
+            <td>${deviceStatus}</td>
+            <td style="text-align:center; min-width: 90px;">
+                <button onclick="resetDeviceLock('${user.id}')" style="background: rgba(37, 211, 102, 0.2); border: 1px solid var(--accent-green); color: var(--accent-green); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Reset Device (Buka Kunci)">
+                    <i class="fa-solid fa-unlock-keyhole"></i>
+                </button>
+                <button onclick="removeApprovedUser('${user.id}', '${user.email}')" style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--accent-red); color: var(--accent-red); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem;" title="Hapus User">
                     <i class="fa-solid fa-user-xmark"></i>
                 </button>
             </td>
@@ -1453,44 +1426,7 @@ function renderApprovedUsers() {
     });
 }
 
-if (btnAddUser) {
-    btnAddUser.addEventListener('click', () => {
-        const nameInput = document.getElementById('new-user-name');
-        const phoneInput = document.getElementById('new-user-phone');
-        const name = nameInput.value.trim();
-        const phone = phoneInput.value.trim();
-        
-        if (!name) { alert('Nama user harus diisi!'); return; }
-        if (!phone || phone.length < 8) { alert('Nomor HP tidak valid!'); return; }
-        
-        const normalized = normalizePhone(phone);
-        
-        db.collection('approved_users').doc(normalized).set({
-            name: name,
-            phone: normalized,
-            approved_at: new Date().toISOString()
-        }).then(() => {
-            nameInput.value = '';
-            phoneInput.value = '';
-            showToastNotification(`✅ User <strong>${name}</strong> berhasil ditambahkan!`);
-        }).catch(err => {
-            alert('Gagal menambah user: ' + err.message);
-        });
-    });
-}
-
-window.removeApprovedUser = function(docId) {
-    let displayPhone = docId;
-    if (displayPhone.startsWith('62')) displayPhone = '0' + displayPhone.substring(2);
-    
-    if (!confirm(`Yakin ingin menghapus akses untuk nomor ${displayPhone}?`)) return;
-    
-    db.collection('approved_users').doc(docId).delete().then(() => {
-        showToastNotification(`🗑️ Akses untuk ${displayPhone} telah dihapus.`);
-    }).catch(err => {
-        alert('Gagal menghapus: ' + err.message);
-    });
-};
+// Reset Device and Remove User logic moved to src/firebase/users.js
 
 window.addEventListener('click', (e) => {
     if (e.target === usersModal) usersModal.classList.add('hidden');
@@ -1539,38 +1475,16 @@ window.addCustomRule = function(type, kwInputId, catInputId) {
     const cat = document.getElementById(catInputId).value;
     const kwInput = document.getElementById(kwInputId);
     
-    if (kw) {
-        if (type === 'model') {
-            customModels.push({keyword: kw, category: cat});
-        } else {
-            customReasons.push({keyword: kw, category: cat});
-        }
-        
-        // Save to Cloud
-        db.collection('config').doc('rules').set({
-            models: customModels,
-            reasons: customReasons
-        }, {merge: true}).catch(e => showToastNotification("Gagal menyimpan ke Cloud: " + e.message));
-        
-        kwInput.value = '';
+    configAddRule(type, kw, cat, () => {
         renderCustomRules();
-    }
+    });
+    kwInput.value = '';
 };
 
 window.deleteCustomRule = function(type, index) {
-    if (type === 'model') {
-        customModels.splice(index, 1);
-    } else {
-        customReasons.splice(index, 1);
-    }
-    
-    // Save to Cloud
-    db.collection('config').doc('rules').set({
-        models: customModels,
-        reasons: customReasons
-    }, {merge: true}).catch(e => showToastNotification("Gagal menghapus dari Cloud: " + e.message));
-    
-    renderCustomRules();
+    configDeleteRule(type, index, () => {
+        renderCustomRules();
+    });
 };
 
 if(document.getElementById('btn-add-model-rule')) {
@@ -1588,8 +1502,6 @@ if(document.getElementById('btn-add-reason-rule')) {
 // ============================================
 // WhatsApp Contacts Database Logic
 // ============================================
-let techContacts = JSON.parse(localStorage.getItem('bujm_tech_contacts')) || {};
-let techNames = JSON.parse(localStorage.getItem('bujm_tech_names')) || {};
 
 const contactsModal = document.getElementById('contacts-modal');
 const btnContacts = document.getElementById('btn-contacts');
@@ -1607,15 +1519,16 @@ closeContactsModal.addEventListener('click', () => {
 });
 
 btnSaveContacts.addEventListener('click', () => {
+    // Get working copy from global state to avoid overwriting un-rendered contacts
+    let currentPhones = { ...(window.techContacts || {}) };
+    let currentNames = { ...(window.techNames || {}) };
+
     const inputs = contactsTableBody.querySelectorAll('.tech-phone');
     inputs.forEach(input => {
         const name = input.dataset.name;
         const phone = input.value.trim();
-        if (phone) {
-            techContacts[name] = phone;
-        } else {
-            delete techContacts[name];
-        }
+        if (phone) currentPhones[name] = phone;
+        else delete currentPhones[name];
     });
     
     // Save Custom Names for Kacab
@@ -1623,22 +1536,18 @@ btnSaveContacts.addEventListener('click', () => {
     nameInputs.forEach(input => {
         const engKey = input.dataset.name;
         const val = input.value.trim();
-        if (val) techNames[engKey] = val;
-        else delete techNames[engKey];
+        if (val) currentNames[engKey] = val;
+        else delete currentNames[engKey];
     });
     
-    localStorage.setItem('bujm_tech_contacts', JSON.stringify(techContacts));
-    localStorage.setItem('bujm_tech_names', JSON.stringify(techNames));
-    
-    showToastNotification('Database Nomor WA berhasil disimpan secara lokal!');
-    contactsModal.classList.add('hidden');
-    
-    // Rerender Shame List to update WA button colors
-    if (window.engineerData) {
-        // Just trigger a fake file input process? No, we don't have the raw shame list.
-        // Easiest is to ask user to re-upload, or just let them know.
-        showToastNotification('Simpan sukses! Refresh / Tarik ulang Excel untuk melihat warna tombol WA yang baru.');
-    }
+    saveTechContacts(currentPhones, currentNames, () => {
+        showToastNotification('Database Nomor WA berhasil disimpan ke Cloud!');
+        contactsModal.classList.add('hidden');
+        
+        if (window.engineerData) {
+            showToastNotification('Simpan sukses! Refresh halaman untuk melihat warna tombol WA yang baru.');
+        }
+    });
 });
 
 function renderContactsTable() {
@@ -1711,125 +1620,9 @@ function renderContactsTable() {
 }
 
 // Send WA Function
-window.sendWA = function(engName, asc, count, detail) {
-    const phone = techContacts[engName];
-    if (!phone) {
-        showToastNotification('Nomor WA belum disetting! Buka menu "Kontak Teknisi" di atas dulu.');
-        return;
-    }
-    
-    // Format to 62...
-    let waNumber = phone.replace(/\D/g, '');
-    if (waNumber.startsWith('0')) {
-        waNumber = '62' + waNumber.substring(1);
-    }
-    
-    // Resolve Display Name (Use custom name for Kacab if available)
-    let displayName = engName;
-    if (window.techNames && window.techNames[engName]) {
-        displayName = window.techNames[engName];
-    } else if (techNames[engName]) { // Fallback if window is not attached properly
-        displayName = techNames[engName];
-    }
-    
-    let text = `🚨 *Peringatan AGING!*\n\nHalo ${displayName},\nAwas, *${count} unit pendingmu* sudah melebihi batas 7 hari. Segera eksekusi sebelum aging makin rusak:\n`;
-    
-    if (window.engineerData && window.engineerData[engName]) {
-        const bills = window.engineerData[engName].bills;
-        // Urutkan dari yang paling lama ngendap (Pending Days tertinggi)
-        bills.sort((a, b) => b.pendingDays - a.pendingDays);
-        
-        bills.forEach((b, index) => {
-            text += `\n${index+1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n   👤 ${b.customer}\n   📱 ${b.model}\n   ⚠️ ${b.reason}\n`;
-        });
-    }
-    
-    
-    
-    const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-}
+// WA Function moved to src/services/whatsapp.js
 
-// Send WA Function for Repair Completed (RC)
-window.sendWARC = function(asc, count) {
-    let engName = `PIC ${asc}`;
-    let phone = techContacts[engName];
-    
-    if (!phone) {
-        showToastNotification(`Nomor WA belum disetting untuk PIC ${asc}! Buka menu "Kontak Teknisi" di atas dulu.`);
-        return;
-    }
-    
-    // Format to 62...
-    let waNumber = phone.replace(/\D/g, '');
-    if (waNumber.startsWith('0')) {
-        waNumber = '62' + waNumber.substring(1);
-    }
-    
-    // Resolve Display Name
-    let displayName = engName;
-    if (window.techNames && window.techNames[engName]) {
-        displayName = window.techNames[engName];
-    } else if (techNames[engName]) { 
-        displayName = techNames[engName];
-    }
-    let text = `Halo ${displayName},\nBerikut ada *${count} bill Repair Completed*:\n_Segera hubungi cust / tawarkan D2D._\n`;
-    
-    if (window.rcData && window.rcData[asc]) {
-        const bills = window.rcData[asc].bills;
-        // Urutkan dari yang paling lama ngendap (Pending Days tertinggi)
-        bills.sort((a, b) => b.pendingDays - a.pendingDays);
-        
-        bills.forEach((b, index) => {
-            text += `\n${index+1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n   👤 ${b.customer}\n   📱 ${b.model}\n   ⚠️ ${b.reason}\n`;
-        });
-    }
-    
-    const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-}
-
-// Send WA Function for Dosa Cabang (> 7 Hari) for a single branch
-window.sendWADosaSingleBranch = function(asc) {
-    let engName = `PIC ${asc}`;
-    let phone = techContacts[engName];
-    
-    if (!phone) {
-        showToastNotification(`Nomor WA belum disetting untuk PIC ${asc}! Buka menu "Kontak Teknisi" di atas dulu.`);
-        return;
-    }
-    
-    // Format to 62...
-    let waNumber = phone.replace(/\D/g, '');
-    if (waNumber.startsWith('0')) {
-        waNumber = '62' + waNumber.substring(1);
-    }
-    
-    // Resolve Display Name
-    let displayName = engName;
-    if (window.techNames && window.techNames[engName]) {
-        displayName = window.techNames[engName];
-    } else if (techNames[engName]) { 
-        displayName = techNames[engName];
-    }
-    
-    if (!window.dosaCabangStatsGlobal || !window.dosaCabangStatsGlobal[asc]) return;
-    const bills = window.dosaCabangStatsGlobal[asc].bills;
-    
-    let text = `🚨 *Peringatan AGING DOSA CABANG (> 7 Hari)*\n\nHalo ${displayName},\nBerikut daftar bill pending murni kesalahan cabang Anda dengan aging di atas 7 hari (tidak termasuk kendala SEIN/Part):\n`;
-    
-    // Urutkan dari yang paling lama ngendap (Pending Days tertinggi)
-    bills.sort((a, b) => b.pendingDays - a.pendingDays);
-    
-    bills.forEach((b, index) => {
-        text += `\n${index+1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n   👤 ${b.customer}\n   📱 ${b.model}\n   ⚠️ ${b.reason || '-'}\n`;
-    });
-    
-    text += `\nSegera tindak lanjuti pendingan di atas hari ini juga agar tidak merusak aging cabang. Terima kasih. 🙏`;
-    
-    const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-};
+// WA Functions for RC and Dosa have been moved to src/services/whatsapp.js
 
 // Open Modal for Dosa Cabang
 window.openDosaModal = function(asc) {
@@ -2061,7 +1854,7 @@ window.openAllProdModal = function() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td style="font-weight:bold;">${d.engineer}</td>
-            <td style="color:var(--accent-blue); font-weight:bold;">${d.gdCount} Units</td>
+            <td style="text-align:center; color:var(--accent-blue); font-size: 1rem; font-weight:700;">${d.gdCount} Units</td>
             <td style="color:var(--accent-green); font-weight:bold;">${d.gdRepair}</td>
             <td style="color:var(--accent-red); font-weight:bold;">${d.gdCancel}</td>
             <td style="color:var(--text-main); font-weight:bold;">Rp ${gross.toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -2138,73 +1931,56 @@ if (redoDropZone && redoFileInput) {
     });
 }
 
-function handleRedoImage(file) {
-    if (!file.type.startsWith('image/')) {
-        showToastNotification('File harus berupa gambar (Screenshot)!');
-        return Promise.resolve();
+async function handleRedoImage(file) {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) loadingOverlay.querySelector('p').innerText = 'Memindai teks menggunakan AI (Fast Mode)...';
+    
+    const result = await scanRedoImage(file);
+    
+    if (result.error) {
+        showToastNotification(result.error);
+        return;
     }
     
-    if (!window.branchData) {
-        showToastNotification('Tolong upload file Excel harian (Service Order List) terlebih dahulu sebagai database pencocokan!');
-        return Promise.resolve();
+    if (!result.uniqueJobs || result.uniqueJobs.length === 0) {
+        console.log('Tidak ditemukan Service Order No di gambar tersebut!');
+        return;
     }
 
-    return Tesseract.recognize(
-        file,
-        'eng',
-        { logger: m => console.log(m) }
-    ).then(({ data: { text } }) => {
-        console.log('OCR Result:', text);
+    console.log('Detected Job Numbers:', result.uniqueJobs);
+    
+    // Cross Reference
+    window.redoList = window.redoList || [];
+    
+    result.uniqueJobs.forEach(jobNo => {
+        // Check if already in redo list
+        if (window.redoList.find(r => r.jobNo === jobNo)) return;
         
-        // Find 10-digit numbers starting with 4
-        const regex = /\b4\d{9}\b/g;
-        const matches = text.match(regex);
+        // Search in branchData
+        let matchedBill = null;
+        let matchedAsc = null;
         
-        if (!matches || matches.length === 0) {
-            console.log('Tidak ditemukan Service Order No di gambar tersebut!');
-            return;
+        for (const asc in window.branchData) {
+            const bills = window.branchData[asc].bills.total;
+            const found = bills.find(b => b.jobNo === jobNo);
+            if (found) {
+                matchedBill = found;
+                matchedAsc = asc;
+                break;
+            }
         }
-
-        // Deduplicate
-        const uniqueJobs = [...new Set(matches)];
-        console.log('Detected Job Numbers:', uniqueJobs);
         
-        // Cross Reference
-        window.redoList = window.redoList || [];
-        
-        uniqueJobs.forEach(jobNo => {
-            // Check if already in redo list
-            if (window.redoList.find(r => r.jobNo === jobNo)) return;
-            
-            // Search in branchData
-            let matchedBill = null;
-            let matchedAsc = null;
-            
-            for (const asc in window.branchData) {
-                const bills = window.branchData[asc].bills.total;
-                const found = bills.find(b => b.jobNo === jobNo);
-                if (found) {
-                    matchedBill = found;
-                    matchedAsc = asc;
-                    break;
-                }
-            }
-            
-            if (matchedBill) {
-                window.redoList.push({
-                    asc: matchedAsc,
-                    jobNo: matchedBill.jobNo,
-                    engineer: matchedBill.engineer,
-                    model: matchedBill.model,
-                    customer: matchedBill.customer,
-                    category: matchedBill.category,
-                    status: matchedBill.status
-                });
-            }
-        });
-        
-    }).catch(err => {
-        console.error(err);
+        if (matchedBill) {
+            window.redoList.push({
+                asc: matchedAsc,
+                jobNo: matchedBill.jobNo,
+                engineer: matchedBill.engineer,
+                model: matchedBill.model,
+                customer: matchedBill.customer,
+                category: matchedBill.category,
+                status: matchedBill.status
+            });
+        }
     });
 }
 
@@ -2317,3 +2093,13 @@ if (btnShareRedo) {
         showToastNotification('Teks REDO berhasil disalin! Silakan paste di Grup WA Kepala Cabang.');
     });
 }
+
+// Expose functions to global scope for Web Worker and Inline HTML onclick handlers
+window.updateUI = updateUI;
+window.renderFameTable = renderFameTable;
+window.renderDtsIhTable = renderDtsIhTable;
+window.renderDtsMxTable = renderDtsMxTable;
+window.showToastNotification = showToastNotification;
+window.openAllProdModal = openAllProdModal;
+
+}); // End of bujm_auth_ready block

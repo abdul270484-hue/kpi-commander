@@ -5,7 +5,9 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
-      "yes/**"
+      "yes/**",
+      "**/*.bat",
+      "**/*.exe"
     ],
     "headers": [
       {

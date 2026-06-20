@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Export Kontak WA Dashboard Lama</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; background: #1a1a2e; color: white; }
+        textarea { width: 100%; height: 200px; padding: 10px; border-radius: 8px; font-family: monospace; }
+        button { padding: 10px 20px; background: #00e5ff; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 10px;}
+    </style>
+</head>
+<body>
+    <h2>🚀 Alat Penyelamat Kontak WA Teknisi</h2>
+    <p>Karena kita pindah dari mode <b>Buka File Biasa</b> ke <b>Server Lokal (Firebase)</b>, kontak WA Anda tertinggal di browser versi lama.</p>
+    
+    <p><b>Langkah 1:</b> Salin (Copy) semua teks berantakan di dalam kotak di bawah ini:</p>
+    <textarea id="data-box"></textarea>
+    
+    <script>
+        const data = localStorage.getItem('bujm_tech_contacts');
+        if (data) {
+            document.getElementById('data-box').value = data;
+        } else {
+            document.getElementById('data-box').value = "KOSONG! Anda membukanya di browser yang salah, atau datanya memang tidak ada.";
+        }
+    </script>
+</body>
+</html>
