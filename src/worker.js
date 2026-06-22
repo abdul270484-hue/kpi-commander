@@ -259,6 +259,31 @@ function performAnalysis(data, customModels, customReasons) {
     const customSeinKws = customReasons.filter(r => r.category === 'SEIN').map(r => r.keyword);
     const customAgingKws = customReasons.filter(r => r.category === 'AGING').map(r => r.keyword);
 
+    // Detect formatHint and applyCorruptionFix for performAnalysis
+    let formatHint = 'MM/DD/YYYY'; 
+    let hasStringDates = false;
+    let hasNumberDates = false;
+    
+    for (let i = 0; i < Math.min(100, data.length); i++) {
+        const row = data[i];
+        if (!row || row['Request Date'] == null) continue;
+        const dVal = row['Request Date'];
+        
+        if (typeof dVal === 'number') {
+            hasNumberDates = true;
+        } else if (typeof dVal === 'string') {
+            hasStringDates = true;
+            const parts = dVal.split(/[-/ :.]/);
+            if (parts.length >= 3) {
+                const p0 = parseInt(parts[0], 10);
+                const p1 = parseInt(parts[1], 10);
+                if (p0 > 12) formatHint = 'DD/MM/YYYY';
+                else if (p1 > 12) formatHint = 'MM/DD/YYYY';
+            }
+        }
+    }
+    let applyCorruptionFix = (hasStringDates && hasNumberDates && formatHint === 'DD/MM/YYYY');
+
     data.forEach(row => {
         const model = row['Model'];
         let category = getCategory(model, customModels);
