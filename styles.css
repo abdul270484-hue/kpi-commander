@@ -441,7 +441,7 @@ td {
     font-size: 0.95rem;
 }
 
-#branch-table td, #mpu-table td, #ub-table td, #shame-table td, #rc-table td, #modal-table td, #dts-mx-table td, #dts-ih-table td, #dosa-cabang-table td, #queue-table td, #fame-table td, #custom-models-table td, #custom-reasons-table td {
+#branch-table td, #mpu-table td, #ub-table td, #shame-table td, #rc-table td, #modal-table td, #dts-mx-table td, #dts-ih-table td, #dosa-cabang-table td, #queue-table td, #fame-table td, #custom-models-table td, #custom-reasons-table td, #custom-models-table th, #custom-reasons-table th {
     padding: 8px 12px;
     font-size: 0.85rem;
     vertical-align: middle;

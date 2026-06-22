@@ -59,6 +59,8 @@ analyzerWorker.onmessage = function(e) {
         window.shameData = shameList; 
         window.mpuData = mpuList; 
         window.ubData = ubList; 
+        window.lastUnknownModels = unknownModels || [];
+        window.lastUnknownReasons = unknownReasons || [];
 
         if (typeof updateUI === 'function') {
              updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats);
@@ -1548,6 +1550,43 @@ function renderCustomRules() {
                 tbodyReasons.appendChild(tr);
             });
         }
+        }
+    }
+
+    // Render Misterious Models
+    let modelsAlertContainer = document.getElementById('unknown-models-alert');
+    if (!modelsAlertContainer) {
+        modelsAlertContainer = document.createElement('div');
+        modelsAlertContainer.id = 'unknown-models-alert';
+        document.getElementById('rule-model-keyword').parentElement.insertAdjacentElement('beforebegin', modelsAlertContainer);
+    }
+    if (window.lastUnknownModels && window.lastUnknownModels.length > 0) {
+        modelsAlertContainer.innerHTML = `<div style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--accent-red); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+            <strong style="color: var(--accent-red); font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Model Asing Ditemukan:</strong>
+            <ul style="margin: 5px 0 0 20px; font-size: 0.8rem; color: var(--text-main); max-height: 80px; overflow-y: auto;">
+                ${window.lastUnknownModels.map(m => `<li>${m}</li>`).join('')}
+            </ul>
+        </div>`;
+    } else {
+        modelsAlertContainer.innerHTML = '';
+    }
+
+    // Render Misterious Reasons
+    let reasonsAlertContainer = document.getElementById('unknown-reasons-alert');
+    if (!reasonsAlertContainer) {
+        reasonsAlertContainer = document.createElement('div');
+        reasonsAlertContainer.id = 'unknown-reasons-alert';
+        document.getElementById('rule-reason-keyword').parentElement.insertAdjacentElement('beforebegin', reasonsAlertContainer);
+    }
+    if (window.lastUnknownReasons && window.lastUnknownReasons.length > 0) {
+        reasonsAlertContainer.innerHTML = `<div style="background: rgba(249, 115, 22, 0.2); border: 1px solid var(--accent-orange); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+            <strong style="color: var(--accent-orange); font-size: 0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> Reason Asing Ditemukan:</strong>
+            <ul style="margin: 5px 0 0 20px; font-size: 0.8rem; color: var(--text-main); max-height: 80px; overflow-y: auto;">
+                ${window.lastUnknownReasons.map(r => `<li style="margin-bottom:3px;">${r}</li>`).join('')}
+            </ul>
+        </div>`;
+    } else {
+        reasonsAlertContainer.innerHTML = '';
     }
 }
 
