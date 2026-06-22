@@ -1550,7 +1550,6 @@ function renderCustomRules() {
                 tbodyReasons.appendChild(tr);
             });
         }
-        }
     }
 
     // Render Misterious Models
