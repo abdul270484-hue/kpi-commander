@@ -283,8 +283,8 @@ function performAnalysis(data, customModels, customReasons) {
             const reqDateVal = row['Request Date'];
             const rcDateVal = row['Repair Completed']; 
             if (reqDateVal && rcDateVal) {
-                let reqDateObj = parseExcelDate(reqDateVal);
-                let rcDateObj = parseExcelDate(rcDateVal);
+                let reqDateObj = parseExcelDate(reqDateVal, formatHint, applyCorruptionFix);
+                let rcDateObj = parseExcelDate(rcDateVal, formatHint, applyCorruptionFix);
                 if (reqDateObj && rcDateObj && !isNaN(reqDateObj.getTime()) && !isNaN(rcDateObj.getTime())) {
                     const reqMidnight = new Date(reqDateObj.getFullYear(), reqDateObj.getMonth(), reqDateObj.getDate());
                     const rcMidnight = new Date(rcDateObj.getFullYear(), rcDateObj.getMonth(), rcDateObj.getDate());
