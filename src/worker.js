@@ -305,6 +305,19 @@ function performAnalysis(data, customModels, customReasons) {
         let agingDays = agingDaysStr ? parseInt(agingDaysStr) : 0;
         
         
+        if (status === 'Repair Completed' || status.includes('Completed')) {
+            const reqDateVal = row['Request Date'];
+            if (reqDateVal) {
+                let reqDateObj = parseExcelDate(reqDateVal, formatHint, applyCorruptionFix);
+                if (reqDateObj && !isNaN(reqDateObj.getTime())) {
+                    const reqMidnight = new Date(reqDateObj.getFullYear(), reqDateObj.getMonth(), reqDateObj.getDate());
+                    const todayMidnight = new Date();
+                    todayMidnight.setHours(0,0,0,0);
+                    const diffTime = todayMidnight.getTime() - reqMidnight.getTime();
+                    agingDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+                }
+            }
+        }
         
         let ascName = shortenASC(row['ASC Name']);
         const jobNo = row['ASC Job No'] || row['Service Order No.'] || 'N/A';
