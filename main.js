@@ -87,6 +87,9 @@ analyzerWorker.onmessage = function(e) {
         if (typeof renderDtsIhTable === 'function') renderDtsIhTable();
         if (typeof renderDtsMxTable === 'function') renderDtsMxTable();
         if (typeof window.renderGdTrendChart === 'function') window.renderGdTrendChart(gdTrendData);
+        
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.classList.add('hidden');
     } else if (type === 'ANALYZE_ERROR') {
         alert("Terjadi kesalahan saat memproses data: " + error);
         const overlay = document.getElementById('loading-overlay');
@@ -1173,6 +1176,10 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         if(loadingOverlay) loadingOverlay.classList.add('hidden');
         if(emptyState) emptyState.classList.add('hidden');
         if(dashboardContent) dashboardContent.classList.remove('hidden');
+        
+        if (typeof gdChartInstance !== 'undefined' && gdChartInstance) {
+            gdChartInstance.resize();
+        }
     }, 500);
 } // End of updateUI
 
