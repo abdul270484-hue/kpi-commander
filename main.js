@@ -79,12 +79,14 @@ analyzerWorker.onmessage = function(e) {
         const overlay = document.getElementById('loading-overlay');
         if (overlay) overlay.classList.add('hidden');
     } else if (type === 'PRODUCTIVITY_DONE') {
-        const fameList = payload;
+        const fameList = payload.fameList;
+        const gdTrendData = payload.gdTrendData;
         window.prodData = fameList; 
         
         renderFameTable(fameList);
         if (typeof renderDtsIhTable === 'function') renderDtsIhTable();
         if (typeof renderDtsMxTable === 'function') renderDtsMxTable();
+        if (typeof renderGdTrendChart === 'function') renderGdTrendChart(gdTrendData);
     } else if (type === 'ANALYZE_ERROR') {
         alert("Terjadi kesalahan saat memproses data: " + error);
         const overlay = document.getElementById('loading-overlay');
@@ -2213,6 +2215,76 @@ window.updateUI = updateUI;
 window.renderFameTable = renderFameTable;
 window.renderDtsIhTable = renderDtsIhTable;
 window.renderDtsMxTable = renderDtsMxTable;
+
+let gdChartInstance = null;
+window.renderGdTrendChart = function(gdTrendData) {
+    const ctx = document.getElementById('gdTrendChart');
+    if (!ctx) return;
+    
+    if (gdChartInstance) {
+        gdChartInstance.destroy();
+    }
+    
+    if (!gdTrendData || Object.keys(gdTrendData).length === 0) {
+        return;
+    }
+
+    // Ambil daftar bulan (X-axis) dan urutkan secara kronologis
+    const months = Object.keys(gdTrendData).sort();
+    
+    // Kumpulkan semua cabang unik yang ada di seluruh bulan
+    const branchesSet = new Set();
+    months.forEach(m => {
+        Object.keys(gdTrendData[m]).forEach(b => branchesSet.add(b));
+    });
+    const branches = Array.from(branchesSet).sort();
+    
+    // Siapkan dataset (satu garis per cabang)
+    const datasets = branches.map((branch, index) => {
+        // Tentukan warna yang berbeda-beda
+        const hue = (index * 137.5) % 360;
+        const color = `hsl(${hue}, 70%, 50%)`;
+        
+        return {
+            label: branch,
+            data: months.map(m => gdTrendData[m][branch] || 0),
+            borderColor: color,
+            backgroundColor: color,
+            borderWidth: 2,
+            tension: 0.3,
+            fill: false
+        };
+    });
+
+    gdChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#ccc' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#ccc' }
+                },
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { color: '#ccc' }
+                }
+            }
+        }
+    });
+};
 window.showToastNotification = showToastNotification;
 window.openAllProdModal = openAllProdModal;
 

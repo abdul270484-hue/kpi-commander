@@ -27,6 +27,7 @@ self.onmessage = function(e) {
 function analyzeProductivity(data) {
     let prodStats = {};
     let uniqueWorkingDays = new Set();
+    let gdTrendData = {};
     
     // Step 0: Find dynamic column indices
     let col = {
@@ -184,6 +185,12 @@ function analyzeProductivity(data) {
 
         const gdMonth = parsedGdDate.getMonth();
         const gdYear = parsedGdDate.getFullYear();
+        
+        // --- Kumpulkan Data Trend GD (Semua Bulan yang ada di file) ---
+        const monthYearStr = `${gdYear}-${String(gdMonth + 1).padStart(2, '0')}`;
+        if (!gdTrendData[monthYearStr]) gdTrendData[monthYearStr] = {};
+        if (!gdTrendData[monthYearStr][branch]) gdTrendData[monthYearStr][branch] = 0;
+        gdTrendData[monthYearStr][branch]++;
 
         let prodJobNo = null;
         for (let j = 0; j < 5; j++) {
@@ -239,7 +246,7 @@ function analyzeProductivity(data) {
     
 
     
-    return fameList;
+    return { fameList: fameList, gdTrendData: gdTrendData };
 }
 
 function performAnalysis(data, customModels, customReasons) {
