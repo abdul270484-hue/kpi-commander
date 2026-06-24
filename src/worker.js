@@ -164,9 +164,19 @@ function analyzeProductivity(data) {
         const gdDate = row[col.date];
         if (!gdDate) continue;
         
-        const branch = shortenASC(row[col.branch]);
+        let branch = shortenASC(row[col.branch]);
         let engName = row[col.eng] ? String(row[col.eng]).trim().toUpperCase() : null;
         if (!engName) continue;
+        
+        // Override cabang untuk teknisi yang secara administratif di DPS tapi sebenarnya milik cabang lain
+        const techBranchOverride = {
+            'MOHHAMAT BAGAS DWI PRAYOGO': 'DPG',
+            'SATRIA EKA ADITA': 'DCW',
+            'SANI LASARO': 'DCW'
+        };
+        if (techBranchOverride[engName]) {
+            branch = techBranchOverride[engName];
+        }
         
         const laborIWStr = row[col.labIW] || "0";
         const laborOOWStr = row[col.labOOW] || "0";
