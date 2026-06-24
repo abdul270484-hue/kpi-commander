@@ -173,12 +173,6 @@ function analyzeProductivity(data) {
         const laborIW = parseFloat(String(laborIWStr).replace(/,/g, '')) || 0;
         const laborOOW = parseFloat(String(laborOOWStr).replace(/,/g, '')) || 0;
         
-        if (!prodStats[engName]) prodStats[engName] = { 
-            asc: branch, gdCount: 0, gdPrevMonth: 0, gdRepair: 0, gdCancel: 0, 
-            laborIW: 0, laborOOW: 0, dtsGd: 0, dtsIhGdVisits: 0, dtsIhTotalVisits: 0, 
-            visitedJobs: new Set(), visitedGdJobs: new Set()
-        };
-        
         const parsedGdDate = parseExcelDate(gdDate, formatHint, applyCorruptionFix);
         
         if (!parsedGdDate || isNaN(parsedGdDate.getTime())) continue;
@@ -201,6 +195,11 @@ function analyzeProductivity(data) {
         }
 
         if (gdMonth === prevMonth && gdYear === prevYear) {
+            if (!prodStats[engName]) prodStats[engName] = { 
+                asc: branch, gdCount: 0, gdPrevMonth: 0, gdRepair: 0, gdCancel: 0, 
+                laborIW: 0, laborOOW: 0, dtsGd: 0, dtsIhGdVisits: 0, dtsIhTotalVisits: 0, 
+                visitedJobs: new Set(), visitedGdJobs: new Set()
+            };
             prodStats[engName].gdPrevMonth++;
             continue; // Stop processing this row for current month stats
         }
@@ -210,6 +209,11 @@ function analyzeProductivity(data) {
         }
 
         // --- HANYA UNTUK BULAN INI ---
+        if (!prodStats[engName]) prodStats[engName] = { 
+            asc: branch, gdCount: 0, gdPrevMonth: 0, gdRepair: 0, gdCancel: 0, 
+            laborIW: 0, laborOOW: 0, dtsGd: 0, dtsIhGdVisits: 0, dtsIhTotalVisits: 0, 
+            visitedJobs: new Set(), visitedGdJobs: new Set()
+        };
         uniqueWorkingDays.add(gdDate);
         
         prodStats[engName].gdCount++;
