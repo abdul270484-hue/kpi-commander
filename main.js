@@ -86,7 +86,7 @@ analyzerWorker.onmessage = function(e) {
         renderFameTable(fameList);
         if (typeof renderDtsIhTable === 'function') renderDtsIhTable();
         if (typeof renderDtsMxTable === 'function') renderDtsMxTable();
-        if (typeof renderGdTrendChart === 'function') renderGdTrendChart(gdTrendData);
+        if (typeof window.renderGdTrendChart === 'function') window.renderGdTrendChart(gdTrendData);
     } else if (type === 'ANALYZE_ERROR') {
         alert("Terjadi kesalahan saat memproses data: " + error);
         const overlay = document.getElementById('loading-overlay');
