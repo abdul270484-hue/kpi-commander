@@ -304,20 +304,7 @@ function performAnalysis(data, customModels, customReasons) {
         const agingDaysStr = row['Pending aging Days'];
         let agingDays = agingDaysStr ? parseInt(agingDaysStr) : 0;
         
-        if (status === 'Repair Completed' || status.includes('Completed')) {
-            const reqDateVal = row['Request Date'];
-            const rcDateVal = row['Repair Completed']; 
-            if (reqDateVal && rcDateVal) {
-                let reqDateObj = parseExcelDate(reqDateVal, formatHint, applyCorruptionFix);
-                let rcDateObj = parseExcelDate(rcDateVal, formatHint, applyCorruptionFix);
-                if (reqDateObj && rcDateObj && !isNaN(reqDateObj.getTime()) && !isNaN(rcDateObj.getTime())) {
-                    const reqMidnight = new Date(reqDateObj.getFullYear(), reqDateObj.getMonth(), reqDateObj.getDate());
-                    const rcMidnight = new Date(rcDateObj.getFullYear(), rcDateObj.getMonth(), rcDateObj.getDate());
-                    const diffTime = rcMidnight.getTime() - reqMidnight.getTime();
-                    agingDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
-                }
-            }
-        }
+        
         
         let ascName = shortenASC(row['ASC Name']);
         const jobNo = row['ASC Job No'] || row['Service Order No.'] || 'N/A';
