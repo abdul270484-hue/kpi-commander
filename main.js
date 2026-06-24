@@ -83,10 +83,33 @@ analyzerWorker.onmessage = function(e) {
         const gdTrendData = payload.gdTrendData;
         window.prodData = fameList; 
         
+        console.log('[GD TREND DEBUG] payload received. fameList count:', fameList ? fameList.length : 'null');
+        console.log('[GD TREND DEBUG] gdTrendData:', JSON.stringify(gdTrendData));
+        console.log('[GD TREND DEBUG] typeof renderGdTrendChart:', typeof window.renderGdTrendChart);
+        
         renderFameTable(fameList);
         if (typeof renderDtsIhTable === 'function') renderDtsIhTable();
         if (typeof renderDtsMxTable === 'function') renderDtsMxTable();
-        if (typeof window.renderGdTrendChart === 'function') window.renderGdTrendChart(gdTrendData);
+        
+        // Debug: show info in GD Trend container
+        const gdDebugEl = document.getElementById('gdTrendChart');
+        if (gdDebugEl) {
+            const debugDiv = gdDebugEl.parentElement;
+            if (debugDiv) {
+                const months = gdTrendData ? Object.keys(gdTrendData) : [];
+                debugDiv.insertAdjacentHTML('beforeend', 
+                    `<p style="color:lime;font-size:12px;margin-top:5px;">[DEBUG] Data months: ${months.length} | Chart.js loaded: ${typeof Chart !== 'undefined'} | Canvas found: true</p>`
+                );
+            }
+        } else {
+            console.log('[GD TREND DEBUG] Canvas #gdTrendChart NOT FOUND in DOM!');
+        }
+        
+        if (typeof window.renderGdTrendChart === 'function') {
+            window.renderGdTrendChart(gdTrendData);
+        } else {
+            console.log('[GD TREND DEBUG] renderGdTrendChart is NOT defined on window!');
+        }
         
         const overlay = document.getElementById('loading-overlay');
         if (overlay) overlay.classList.add('hidden');
