@@ -2259,12 +2259,9 @@ window.renderGdTrendChart = function(gdTrendData) {
         const hue = (index * 137.5) % 360;
         const color = `hsl(${hue}, 70%, 50%)`;
         
-        const dataPoints = months.map(m => gdTrendData[m][branch] || 0);
-        const totalGd = dataPoints.reduce((sum, v) => sum + v, 0);
-        
         return {
-            label: branch + ' (' + totalGd + ')',
-            data: dataPoints,
+            label: branch,
+            data: months.map(m => gdTrendData[m][branch] || 0),
             borderColor: color,
             backgroundColor: color,
             borderWidth: 2,
