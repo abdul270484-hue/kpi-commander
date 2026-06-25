@@ -14,12 +14,9 @@ function getTechName(engName) {
     return engName;
 }
 
-export function sendWA(engName, asc, count, detail) {
+export function getWAPayloadShame(engName, asc, count, detail) {
     const phone = getTechPhone(engName);
-    if (!phone) {
-        if (window.showToastNotification) window.showToastNotification('Nomor WA belum disetting! Buka menu "Kontak Teknisi" di atas dulu.');
-        return;
-    }
+    if (!phone) return null;
     
     // Format to 62...
     let waNumber = phone.replace(/\D/g, '');
@@ -33,7 +30,6 @@ export function sendWA(engName, asc, count, detail) {
     
     if (window.engineerData && window.engineerData[engName]) {
         const bills = window.engineerData[engName].bills;
-        // Urutkan dari yang paling lama ngendap (Pending Days tertinggi)
         bills.sort((a, b) => b.pendingDays - a.pendingDays);
         
         bills.forEach((b, index) => {
@@ -41,18 +37,31 @@ export function sendWA(engName, asc, count, detail) {
         });
     }
     
-    const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
+    return { phone: waNumber, name: displayName, text: text };
+}
+
+export function sendWA(engName, asc, count, detail) {
+    const payload = getWAPayloadShame(engName, asc, count, detail);
+    if (!payload) {
+        if (window.showToastNotification) window.showToastNotification('Nomor WA belum disetting! Buka menu "Kontak Teknisi" di atas dulu.');
+        return;
+    }
+    
+    const url = `https://wa.me/${payload.phone}?text=${encodeURIComponent(payload.text)}`;
     window.open(url, '_blank');
 }
 
-export function sendWARC(asc, count) {
+export function getWAPayloadRC(asc, count) {
     let engName = `PIC ${asc}`;
     let phone = getTechPhone(engName);
     
     if (!phone) {
-        if (window.showToastNotification) window.showToastNotification(`Nomor WA belum disetting untuk PIC ${asc}! Buka menu "Kontak Teknisi" di atas dulu.`);
-        return;
+        // Fallback ke Kacab jika PIC kosong
+        engName = `Kacab ${asc}`;
+        phone = getTechPhone(engName);
     }
+    
+    if (!phone) return null;
     
     let waNumber = phone.replace(/\D/g, '');
     if (waNumber.startsWith('0')) {
@@ -60,18 +69,30 @@ export function sendWARC(asc, count) {
     }
     
     const displayName = getTechName(engName);
-    let text = `Halo ${displayName},\nBerikut ada *${count} bill Repair Completed*:\n_Segera hubungi cust / tawarkan D2D._\n`;
+    
+    let text = `🚨 *WARNING PENDING DELIVERY (RC) - CABANG ${asc}*\n\nHalo ${displayName},\nMohon dibantu *${count} unit* Pending Delivery yang sudah melebihi 7 hari agar segera di follow up ke kurir / customer:\n`;
     
     if (window.rcData && window.rcData[asc]) {
-        const bills = window.rcData[asc].bills;
-        bills.sort((a, b) => b.pendingDays - a.pendingDays);
+        const jobs = window.rcData[asc].jobs;
+        jobs.sort((a, b) => b.pendingDays - a.pendingDays);
         
-        bills.forEach((b, index) => {
-            text += `\n${index+1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n   👤 ${b.customer}\n   📱 ${b.model}\n   ⚠️ ${b.reason}\n`;
+        jobs.forEach((j, index) => {
+            text += `\n${index+1}. *${j.jobNo}* (*${j.pendingDays} Hari*)\n   👤 ${j.customer}\n   📱 ${j.model}\n`;
         });
     }
     
-    const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
+    text += `\nMohon segera diproses agar tidak merusak performa aging cabang. Terima kasih.`;
+    return { phone: waNumber, name: displayName, text: text };
+}
+
+export function sendWARC(asc, count) {
+    const payload = getWAPayloadRC(asc, count);
+    if (!payload) {
+        if (window.showToastNotification) window.showToastNotification(`Nomor WA belum disetting untuk PIC/Kacab ${asc}!`);
+        return;
+    }
+    
+    const url = `https://wa.me/${payload.phone}?text=${encodeURIComponent(payload.text)}`;
     window.open(url, '_blank');
 }
 

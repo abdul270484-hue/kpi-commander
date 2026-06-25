@@ -1,0 +1,23 @@
+==================================================
+PANDUAN INSTALASI JARVIS WA BLASTER UNTUK CABANG
+==================================================
+
+SYARAT UTAMA:
+1. Komputer harus sudah terinstal Google Chrome.
+2. Komputer harus terinstal NodeJS (Download di: https://nodejs.org/)
+
+LANGKAH INSTALASI (Hanya perlu dilakukan SEKALI):
+1. Pastikan komputer terhubung ke internet.
+2. Double-click file "1_Install_Mesin.bat".
+3. Tunggu proses instalasi komponen (sekitar 1-3 menit) sampai muncul tulisan "INSTALASI SELESAI".
+
+LANGKAH PENGGUNAAN SEHARI-HARI:
+1. Double-click file "2_Jalankan_JARVIS.bat".
+2. Browser akan otomatis terbuka menampilkan aplikasi JARVIS WA Blaster.
+3. Tunggu sekitar 5 detik sampai QR Code muncul.
+4. Scan QR Code menggunakan aplikasi WhatsApp di HP admin/cabang.
+5. Selesai! Copy data pelanggan dari Excel ke dalam aplikasi dan mulai Blasting.
+
+Catatan:
+- Pastikan di Excel ada kolom dengan header yang mengandung kata "HP" atau "Nomor".
+- Anda bisa menambahkan dan memberi nama Template baru sesuka hati di menu Konfigurasi Dasar.

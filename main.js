@@ -1,6 +1,6 @@
 import { CONFIG } from './src/config.js';
 import { scanRedoImage, initTesseract } from './src/services/ocr.js';
-import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo } from './src/services/whatsapp.js';
+import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo, getWAPayloadShame, getWAPayloadRC } from './src/services/whatsapp.js';
 import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as configDeleteRule, initContactsListener, saveTechContacts } from './src/firebase/config.js';
 import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser } from './src/firebase/users.js';
 import { initAuth, isAdmin, normalizePhone } from './src/auth.js';
@@ -9,6 +9,8 @@ import { handleFiles, handleProductivityFiles } from './src/parser.js';
 // Expose services to global scope for HTML inline onclick handlers
 window.sendWA = sendWA;
 window.sendWARC = sendWARC;
+window.getWAPayloadShame = getWAPayloadShame;
+window.getWAPayloadRC = getWAPayloadRC;
 window.sendWADosaSingleBranch = sendWADosaSingleBranch;
 window.sendWARedo = sendWARedo;
 window.resetDeviceLock = resetDeviceLock;
@@ -178,79 +180,184 @@ if (dropZoneQueue && fileInputQueue) {
         if (e.target.files.length) handleQueueFiles(e.target.files);
     });
 }
+
+// ==========================================
+// JARVIS WA BLASTER INTEGRATION
+// ==========================================
+let isJarvisOnline = false;
+
+function checkJarvisStatus() {
+    fetch('http://localhost:3001/api/status')
+        .then(res => res.json())
+        .then(data => {
+            isJarvisOnline = true;
+            const statusEl = document.getElementById('jarvis-status');
+            const textEl = document.getElementById('jarvis-status-text');
+            if (statusEl && textEl) {
+                statusEl.style.background = 'rgba(37, 211, 102, 0.2)';
+                statusEl.style.color = '#25D366';
+                statusEl.style.borderColor = '#25D366';
+                textEl.innerText = 'JARVIS: Online';
+            }
+        })
+        .catch(err => {
+            isJarvisOnline = false;
+            const statusEl = document.getElementById('jarvis-status');
+            const textEl = document.getElementById('jarvis-status-text');
+            if (statusEl && textEl) {
+                statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusEl.style.color = 'var(--accent-red)';
+                statusEl.style.borderColor = 'var(--accent-red)';
+                textEl.innerText = 'JARVIS: Offline';
+            }
+        });
+}
+
+// Cek status saat pertama kali load dan setiap 10 detik
+checkJarvisStatus();
+setInterval(checkJarvisStatus, 10000);
+
+export async function blastViaJarvis(blastQueueArray) {
+    if (!isJarvisOnline) {
+        showToastNotification('JARVIS sedang Offline! Pastikan file start_jarvis_background.vbs sudah dijalankan.');
+        return false;
+    }
+    
+    showToastNotification(`Mengirim ${blastQueueArray.length} data ke JARVIS...`);
+    
+    try {
+        const response = await fetch('http://localhost:3001/api/blast', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                template: '[PesanUtama]',
+                data: blastQueueArray
+            })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showToastNotification('BERHASIL! JARVIS sekarang sedang mengirim WA di background secara otomatis.');
+            return true;
+        } else {
+            showToastNotification('Gagal mengirim ke JARVIS: ' + result.error);
+            return false;
+        }
+    } catch (err) {
+        showToastNotification('Error komunikasi dengan JARVIS: ' + err.message);
+        return false;
+    }
+}
+
 // Event Listener for Blast Wall of Shame (Auto send WA to all)
 const btnBlastShame = document.getElementById('btnBlastShame');
 if (btnBlastShame) {
-    btnBlastShame.addEventListener('click', () => {
+    btnBlastShame.addEventListener('click', async () => {
         if (!window.shameData || window.shameData.length === 0) {
             showToastNotification('Belum ada data Wall of Shame atau daftar kosong!');
             return;
         }
 
-        // Filter teknisi yang punya nomor HP
-        const blastQueue = window.shameData.filter(item => !!(window.techContacts || {})[item.engineer]);
+        // Kumpulkan payload JARVIS
+        const blastQueueArray = [];
+        const blastQueueManual = [];
         
-        if (blastQueue.length === 0) {
+        window.shameData.forEach(item => {
+            if (window.getWAPayloadShame) {
+                const payload = window.getWAPayloadShame(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
+                if (payload) {
+                    blastQueueArray.push({
+                        phone: payload.phone,
+                        name: payload.name,
+                        PesanUtama: payload.text
+                    });
+                    blastQueueManual.push(item);
+                }
+            }
+        });
+        
+        if (blastQueueArray.length === 0) {
             showToastNotification('Tidak ada teknisi di Wall of Shame yang memiliki nomor WA di database kontak!');
             return;
         }
 
-        showToastNotification(`Memulai WA Blast ke ${blastQueue.length} teknisi... Pastikan POPUP BLOCKER diizinkan (Allow Popups) untuk situs ini!`);
-        
-        let index = 0;
-        const blastInterval = setInterval(() => {
-            if (index >= blastQueue.length) {
-                clearInterval(blastInterval);
-                showToastNotification('WA Blast Selesai! Semua pesan peringatan sudah diantrekan.');
-                return;
-            }
-            
-            const item = blastQueue[index];
-            // Call existing sendWA function
-            if (typeof sendWA === 'function') {
-                sendWA(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
-            }
-            index++;
-        }, 17000); // 17 seconds delay
+        if (isJarvisOnline) {
+            // JARVIS Mode
+            await blastViaJarvis(blastQueueArray);
+        } else {
+            // Manual Fallback Mode
+            showToastNotification(`JARVIS Offline. Memulai WA Blast MANUAL ke ${blastQueueManual.length} teknisi... Pastikan POPUP BLOCKER diizinkan!`);
+            let index = 0;
+            const blastInterval = setInterval(() => {
+                if (index >= blastQueueManual.length) {
+                    clearInterval(blastInterval);
+                    showToastNotification('WA Blast Selesai! Semua pesan peringatan sudah diantrekan.');
+                    return;
+                }
+                const item = blastQueueManual[index];
+                if (typeof window.sendWA === 'function') {
+                    window.sendWA(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
+                }
+                index++;
+            }, 17000); // 17 seconds delay
+        }
     });
 }
 
 // Event Listener for Blast Pending Delivery (Auto send WA to all PICs)
 const btnBlastRC = document.getElementById('btnBlastRC');
 if (btnBlastRC) {
-    btnBlastRC.addEventListener('click', () => {
+    btnBlastRC.addEventListener('click', async () => {
         if (!window.rcData || Object.keys(window.rcData).length === 0) {
             showToastNotification('Belum ada data Pending Delivery atau daftar kosong!');
             return;
         }
 
-        // Filter branches that actually have PIC/Kacab phone numbers
-        const blastQueue = Object.keys(window.rcData)
-            .filter(asc => !!(window.techContacts || {})[`PIC ${asc}`] || !!(window.techContacts || {})[`Kacab ${asc}`])
-            .map(asc => ({ asc, count: window.rcData[asc].count }))
-            .sort((a, b) => b.count - a.count);
+        const blastQueueArray = [];
+        const blastQueueManual = [];
+
+        Object.keys(window.rcData).forEach(asc => {
+            if (window.getWAPayloadRC) {
+                const count = window.rcData[asc].count;
+                const payload = window.getWAPayloadRC(asc, count);
+                if (payload) {
+                    blastQueueArray.push({
+                        phone: payload.phone,
+                        name: payload.name,
+                        PesanUtama: payload.text
+                    });
+                    blastQueueManual.push({ asc, count });
+                }
+            }
+        });
         
-        if (blastQueue.length === 0) {
+        if (blastQueueArray.length === 0) {
             showToastNotification('Tidak ada PIC cabang di daftar Pending Delivery yang memiliki nomor WA di database kontak!');
             return;
         }
 
-        showToastNotification(`Memulai WA Blast ke ${blastQueue.length} cabang... Pastikan POPUP BLOCKER diizinkan (Allow Popups)!`);
-        
-        let index = 0;
-        const blastInterval = setInterval(() => {
-            if (index >= blastQueue.length) {
-                clearInterval(blastInterval);
-                showToastNotification('WA Blast RC Selesai! Semua pesan peringatan sudah diantrekan.');
-                return;
-            }
-            
-            const item = blastQueue[index];
-            if (typeof window.sendWARC === 'function') {
-                window.sendWARC(item.asc, item.count);
-            }
-            index++;
-        }, 17000); // 17 seconds delay
+        if (isJarvisOnline) {
+            // JARVIS Mode
+            await blastViaJarvis(blastQueueArray);
+        } else {
+            // Manual Fallback Mode
+            showToastNotification(`JARVIS Offline. Memulai WA Blast MANUAL ke ${blastQueueManual.length} cabang... Pastikan POPUP BLOCKER diizinkan!`);
+            let index = 0;
+            const blastInterval = setInterval(() => {
+                if (index >= blastQueueManual.length) {
+                    clearInterval(blastInterval);
+                    showToastNotification('WA Blast RC Selesai! Semua pesan peringatan sudah diantrekan.');
+                    return;
+                }
+                const item = blastQueueManual[index];
+                if (typeof window.sendWARC === 'function') {
+                    window.sendWARC(item.asc, item.count);
+                }
+                index++;
+            }, 17000); // 17 seconds delay
+        }
     });
 }
 

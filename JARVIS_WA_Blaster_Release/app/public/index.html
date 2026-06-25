@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>JARVIS WA Blaster</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-dark: #0f111a;
+      --card-bg: rgba(26, 29, 39, 0.7);
+      --primary: #0ea5e9;
+      --primary-hover: #0284c7;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(135deg, #0f111a 0%, #1e1b4b 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 30px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      animation: fadeInDown 0.8s ease;
+    }
+    
+    .header h1 {
+      font-size: 36px;
+      font-weight: 800;
+      background: linear-gradient(to right, #0ea5e9, #22c55e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    
+    .header p { color: var(--text-muted); font-size: 16px; }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      animation: fadeIn 1s ease;
+      margin-bottom: 25px;
+    }
+    
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--primary);
+    }
+    
+    .input-group { margin-bottom: 20px; }
+    .input-group label { display: block; font-size: 14px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+    .input-group input, .input-group textarea, .input-group select {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(15, 17, 26, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    .input-group input:focus, .input-group textarea:focus, .input-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+    }
+    
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
+    .btn-success { background: var(--success); color: white; width: 100%; justify-content: center; font-size: 16px; padding: 15px; margin-top: 10px; }
+    .btn-success:hover { background: #16a34a; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(34, 197, 94, 0.2); }
+    .btn-danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+    
+    .qr-container {
+      text-align: center;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      display: inline-block;
+      margin: 0 auto;
+    }
+    .qr-container img { width: 200px; height: 200px; }
+    
+    .status-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .status-connected { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .status-disconnected { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    
+    .table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      max-height: 300px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    th { background: rgba(255,255,255,0.05); color: var(--primary); position: sticky; top: 0; }
+    
+    .progress-box { margin-top: 20px; display: none; }
+    .progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+    .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.5s ease; }
+    .logs { height: 150px; overflow-y: auto; background: #000; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #a3e635; }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1><i class="fa-brands fa-whatsapp"></i> JARVIS WA Blaster</h1>
+    <p>Mesin Pengirim Pesan Otomatis Anti-Banned</p>
+  </div>
+
+  <div class="grid">
+    <!-- KOLOM KIRI: STATUS & CONFIG -->
+    <div>
+      <div class="card" style="text-align: center;">
+        <div class="card-title" style="justify-content: center;"><i class="fa-solid fa-mobile-screen"></i> Status Koneksi WA</div>
+        <div id="wa-status" class="status-badge status-disconnected" style="margin-bottom: 15px;">
+          <i class="fa-solid fa-circle-xmark"></i> Terputus
+        </div>
+        <div id="qr-box" style="display: none;">
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">Scan QR Code ini menggunakan WA Anda (Linked Devices)</p>
+          <div class="qr-container"><img id="qr-img" src="" alt="QR Code"></div>
+        </div>
+        <div id="connected-box" style="display: none;">
+          <i class="fa-solid fa-circle-check" style="font-size: 48px; color: #4ade80; margin: 20px 0;"></i>
+          <p>WhatsApp Web Anda berhasil terhubung!</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-sliders"></i> Konfigurasi Dasar</div>
+        <div class="input-group">
+          <label>Nama Cabang <small style="font-weight:400">(Akan menggantikan teks [Cabang])</small></label>
+          <input type="text" id="branch-name" placeholder="Misal: UNICOM BALI">
+        </div>
+        <div class="input-group">
+          <label>Pilih Template Pesan</label>
+          <select id="template-select">
+            <option value="">-- Pilih Template --</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Isi Template <small style="font-weight:400">(Gunakan format [NamaKolom] untuk variabel)</small></label>
+          <input type="text" id="template-name" placeholder="Nama Template (Misal: Template Baru)" style="margin-bottom: 10px;">
+          <textarea id="template-text" rows="5" placeholder="Halo [Nama], unit [Tipe] Anda sudah selesai di [Cabang]..."></textarea>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-primary" style="flex:1" onclick="saveTemplate()"><i class="fa-solid fa-floppy-disk"></i> Simpan Template</button>
+          <button class="btn btn-danger" onclick="deleteTemplate()"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KOLOM KANAN: DATA & BLAST -->
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-users"></i> Data Customer</div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">
+          <i class="fa-solid fa-circle-info"></i> Copy tabel dari Excel (kolom Nomor HP, Nama, dll) lalu Paste di kotak bawah ini.
+        </p>
+        <div class="input-group">
+          <textarea id="paste-area" rows="4" placeholder="Paste data Excel di sini..."></textarea>
+        </div>
+        
+        <div class="table-container" id="preview-table-container" style="display: none;">
+          <table id="preview-table">
+            <thead><tr id="preview-thead"></tr></thead>
+            <tbody id="preview-tbody"></tbody>
+          </table>
+        </div>
+        
+        <button class="btn btn-success" id="btn-blast" onclick="startBlast()" style="display: none;">
+          <i class="fa-solid fa-paper-plane"></i> Mulai Blasting Pesan
+        </button>
+        
+        <div class="progress-box" id="progress-box">
+          <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px;">
+            <span id="progress-text">Memulai...</span>
+            <span id="progress-count">0/0</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+          <button class="btn btn-primary" id="btn-download" onclick="window.location.href='/api/download-result'" style="display: none; margin-bottom: 10px; width: 100%; justify-content: center; font-size: 14px; padding: 10px; background: #0ea5e9;">
+            <i class="fa-solid fa-file-excel"></i> Download File XLS (Result)
+          </button>
+          <div class="logs" id="logs-area"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let appConfig = { branchName: '', templates: [] };
+    let parsedData = [];
+    
+    // Polling Status WA
+    setInterval(checkStatus, 3000);
+    setInterval(checkProgress, 2000);
+    checkStatus();
+    loadConfig();
+
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        const badge = document.getElementById('wa-status');
+        
+        if (data.ready) {
+          badge.className = 'status-badge status-connected';
+          badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Terhubung';
+          document.getElementById('qr-box').style.display = 'none';
+          document.getElementById('connected-box').style.display = 'block';
+        } else {
+          badge.className = 'status-badge status-disconnected';
+          badge.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Terputus';
+          document.getElementById('connected-box').style.display = 'none';
+          if (data.qr) {
+            document.getElementById('qr-box').style.display = 'block';
+            document.getElementById('qr-img').src = data.qr;
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        appConfig = await res.json();
+        document.getElementById('branch-name').value = appConfig.branchName || '';
+        renderTemplateOptions();
+      } catch (e) {}
+    }
+
+    function renderTemplateOptions() {
+      const sel = document.getElementById('template-select');
+      sel.innerHTML = '<option value="">-- Buat Template Baru --</option>';
+      appConfig.templates.forEach((t, i) => {
+        sel.innerHTML += `<option value="${i}">${t.name || ('Template ' + (i+1))}</option>`;
+      });
+    }
+
+    document.getElementById('template-select').addEventListener('change', (e) => {
+      const idx = e.target.value;
+      if (idx !== '') {
+        const t = appConfig.templates[idx];
+        document.getElementById('template-name').value = t.name || '';
+        document.getElementById('template-text').value = t.content || t; // fallback if it was still a string
+      } else {
+        document.getElementById('template-name').value = '';
+        document.getElementById('template-text').value = '';
+      }
+    });
+
+    async function saveTemplate() {
+      const name = document.getElementById('template-name').value.trim() || 'Template Baru';
+      const text = document.getElementById('template-text').value.trim();
+      const branchName = document.getElementById('branch-name').value.trim();
+      if (!text) return alert('Template tidak boleh kosong');
+      
+      appConfig.branchName = branchName;
+      const idx = document.getElementById('template-select').value;
+      if (idx !== '') {
+        appConfig.templates[idx] = { name, content: text };
+      } else {
+        appConfig.templates.push({ name, content: text });
+      }
+      
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appConfig)
+      });
+      alert('Tersimpan!');
+      renderTemplateOptions();
+      // Auto-select the newly saved template if it was a new one
+      if (idx === '') {
+        document.getElementById('template-select').value = appConfig.templates.length - 1;
+      }
+    }
+    
+    function deleteTemplate() {
+      const idx = document.getElementById('template-select').value;
+      if (idx !== '') {
+        appConfig.templates.splice(idx, 1);
+        fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(appConfig)
+        }).then(() => {
+          document.getElementById('template-text').value = '';
+          renderTemplateOptions();
+        });
+      }
+    }
+
+    // Parse Paste Data (TSV from Excel)
+    document.getElementById('paste-area').addEventListener('input', (e) => {
+      const raw = e.target.value.trim();
+      if (!raw) {
+        document.getElementById('preview-table-container').style.display = 'none';
+        document.getElementById('btn-blast').style.display = 'none';
+        parsedData = [];
+        return;
+      }
+      
+      const rows = raw.split('\n');
+      if (rows.length < 2) return; // Need at least header and 1 row
+      
+      // Deteksi separator (tab untuk copy-paste Excel)
+      const separator = rows[0].includes('\t') ? '\t' : ',';
+      
+      const headers = rows[0].split(separator).map(h => h.trim());
+      parsedData = [];
+      
+      for (let i = 1; i < rows.length; i++) {
+        if (!rows[i].trim()) continue;
+        const cols = rows[i].split(separator);
+        let obj = {};
+        headers.forEach((h, idx) => {
+          obj[h] = (cols[idx] || '').trim();
+        });
+        parsedData.push(obj);
+      }
+      
+      // Render Preview
+      const thead = document.getElementById('preview-thead');
+      const tbody = document.getElementById('preview-tbody');
+      thead.innerHTML = '';
+      tbody.innerHTML = '';
+      
+      headers.forEach(h => thead.innerHTML += `<th>${h}</th>`);
+      
+      parsedData.slice(0, 5).forEach(row => {
+        let tr = '<tr>';
+        headers.forEach(h => tr += `<td>${row[h]}</td>`);
+        tr += '</tr>';
+        tbody.innerHTML += tr;
+      });
+      
+      if (parsedData.length > 5) {
+        tbody.innerHTML += `<tr><td colspan="${headers.length}" style="text-align:center; color:var(--text-muted)">... dan ${parsedData.length - 5} data lainnya</td></tr>`;
+      }
+      
+      document.getElementById('preview-table-container').style.display = 'block';
+      document.getElementById('btn-blast').style.display = 'flex';
+    });
+
+    async function startBlast() {
+      const template = document.getElementById('template-text').value.trim();
+      const branchName = document.getElementById('branch-name').value.trim();
+      
+      if (!template) return alert('Silakan pilih/isi template pesan terlebih dahulu.');
+      if (parsedData.length === 0) return alert('Data customer kosong.');
+      
+      // Auto save branch name before blasting
+      appConfig.branchName = branchName;
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appConfig)
+      });
+      
+      document.getElementById('progress-box').style.display = 'block';
+      document.getElementById('btn-blast').style.display = 'none';
+      document.getElementById('btn-download').style.display = 'none';
+      document.getElementById('logs-area').innerHTML = 'Memulai proses blasting...\n';
+      
+      try {
+        const res = await fetch('/api/blast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: parsedData, template })
+        });
+        const out = await res.json();
+        if (out.error) alert(out.error);
+      } catch (e) { alert('Gagal memulai: ' + e); }
+    }
+
+    async function checkProgress() {
+      if (document.getElementById('progress-box').style.display === 'none') return;
+      try {
+        const res = await fetch('/api/progress');
+        const data = await res.json();
+        if (data.progress) {
+          const p = data.progress;
+          document.getElementById('progress-text').innerText = p.current;
+          const processed = p.sent + p.failed;
+          document.getElementById('progress-count').innerText = `${processed} / ${p.total}`;
+          
+          let pct = p.total > 0 ? (processed / p.total) * 100 : 0;
+          document.getElementById('progress-fill').style.width = pct + '%';
+          
+          const logHtml = p.logs.map(log => {
+            if (typeof log === 'string') return log;
+            const isError = log.status === 'Gagal';
+            const color = isError ? '#ef4444' : '#a3e635';
+            const text = `[${log.status}] ${log.phone} - ${log.name}` + (isError ? `: ${log.reason}` : '');
+            return `<span style="color:${color}">${text}</span>`;
+          }).join('<br>');
+          document.getElementById('logs-area').innerHTML = logHtml;
+          
+          if (!data.isBlasting && processed > 0) {
+            document.getElementById('progress-text').innerText = 'Blasting Selesai!';
+            document.getElementById('btn-blast').style.display = 'flex';
+            document.getElementById('btn-blast').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Blast Ulang / Lanjut';
+            document.getElementById('btn-download').style.display = 'flex';
+          }
+        }
+      } catch (e) {}
+    }
+  </script>
+</body>
+</html>
