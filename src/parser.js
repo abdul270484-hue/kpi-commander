@@ -31,13 +31,35 @@ export function handleProductivityFiles(fileList, worker) {
         let promise = new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                // Assume XLSX is globally available via CDN
-                const workbook = window.XLSX.read(data, {type: 'array'});
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const rawData = window.XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                resolve(rawData);
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = window.XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    let rawData = window.XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+                    
+                    if (!rawData || rawData.length === 0) throw new Error("Empty Array");
+                    resolve(rawData);
+                } catch(err) {
+                    // Fallback HTML Parse
+                    const textReader = new FileReader();
+                    textReader.onload = function(e2) {
+                        try {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(e2.target.result, 'text/html');
+                            const table = doc.querySelector('table');
+                            if (table) {
+                                const wb = window.XLSX.utils.table_to_book(table);
+                                const ws = wb.Sheets[wb.SheetNames[0]];
+                                const rawData = window.XLSX.utils.sheet_to_json(ws, {header: 1, defval: ""});
+                                resolve(rawData);
+                            } else {
+                                resolve([]);
+                            }
+                        } catch(e3) { resolve([]); }
+                    };
+                    textReader.readAsText(file);
+                }
             };
             reader.readAsArrayBuffer(file);
         });
@@ -52,12 +74,10 @@ export function handleProductivityFiles(fileList, worker) {
         
         if (mergedData.length === 0) {
             hideLoading();
-            showToast('Data kosong! Harap pastikan file .xls di-Save As menjadi .xlsx terlebih dahulu.');
+            showToast('Gagal membaca data! Pastikan file benar-benar berisi tabel.');
             return;
         }
         
-        // Pass to worker (We can add a separate event type for Productivity if needed, but the current worker handles everything in one go or we can split it. Wait, app.js analyzes productivity separately!)
-        // In app.js, analyzeProductivity was called separately.
         worker.postMessage({
             type: 'ANALYZE_PRODUCTIVITY',
             data: mergedData
@@ -76,12 +96,34 @@ export function handleFiles(fileList, worker, customModels, customReasons) {
         let promise = new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = window.XLSX.read(data, {type: 'array'});
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const json = window.XLSX.utils.sheet_to_json(worksheet);
-                resolve({ fileName: fileName, data: json });
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = window.XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = window.XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+                    if (!json || json.length === 0) throw new Error("Empty");
+                    resolve({ fileName: fileName, data: json });
+                } catch(err) {
+                    // Fallback HTML Parse
+                    const textReader = new FileReader();
+                    textReader.onload = function(e2) {
+                        try {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(e2.target.result, 'text/html');
+                            const table = doc.querySelector('table');
+                            if (table) {
+                                const wb = window.XLSX.utils.table_to_book(table);
+                                const ws = wb.Sheets[wb.SheetNames[0]];
+                                const json = window.XLSX.utils.sheet_to_json(ws, {defval: ""});
+                                resolve({ fileName: fileName, data: json });
+                            } else {
+                                resolve({ fileName: fileName, data: [] });
+                            }
+                        } catch(e3) { resolve({ fileName: fileName, data: [] }); }
+                    };
+                    textReader.readAsText(file);
+                }
             };
             reader.readAsArrayBuffer(file);
         });
@@ -134,6 +176,8 @@ export function handleFiles(fileList, worker, customModels, customReasons) {
                 return;
             }
         }
+        
+        window.globalRawSOList = baseData; // Save for DP Tracker reuse
         
         worker.postMessage({
             type: 'ANALYZE_DATA',

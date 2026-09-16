@@ -5,6 +5,7 @@ import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as 
 import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser } from './src/firebase/users.js';
 import { initAuth, isAdmin, normalizePhone } from './src/auth.js';
 import { handleFiles, handleProductivityFiles } from './src/parser.js';
+import { initFirebaseAutoSync } from './src/firebase_sync.js?v=46';
 
 // Expose services to global scope for HTML inline onclick handlers
 window.sendWA = sendWA;
@@ -38,6 +39,9 @@ window.customReasons = [];
 
 // Initialize Auth
 initAuth(db);
+
+// Initialize Firebase Realtime Cloud Sync (Zero-Drop Auto-Load)
+initFirebaseAutoSync(db);
 
 // Initialize Web Worker
 const analyzerWorker = new Worker(`./src/worker.js?v=${Date.now()}`, { type: 'module' });
@@ -78,13 +82,17 @@ analyzerWorker.onmessage = function(e) {
             }, 4000); 
         }
         
+        if (typeof window.reMapRedoList === 'function') window.reMapRedoList();
+        
         const overlay = document.getElementById('loading-overlay');
         if (overlay) overlay.classList.add('hidden');
     } else if (type === 'PRODUCTIVITY_DONE') {
         try {
             const fameList = payload.fameList;
             const gdTrendData = payload.gdTrendData;
+            const gdDailyData = payload.gdDailyData;
             window.prodData = fameList;
+            window.prodJobs = payload.prodJobs || [];
             
             renderFameTable(fameList);
             if (typeof renderDtsIhTable === 'function') renderDtsIhTable();
@@ -93,6 +101,10 @@ analyzerWorker.onmessage = function(e) {
             if (typeof window.renderGdTrendChart === 'function') {
                 window.renderGdTrendChart(gdTrendData);
             }
+            if (typeof window.renderGdDailyTable === 'function') {
+                window.renderGdDailyTable(gdDailyData);
+            }
+            if (typeof window.reMapRedoList === 'function') window.reMapRedoList();
         } catch (err) {
             console.error('[PRODUCTIVITY ERROR]', err);
         }
@@ -125,43 +137,47 @@ const emptyState = document.getElementById('empty-state');
 // Event Listeners for File Upload (Locked by Auth)
 window.addEventListener('bujm_auth_ready', () => {
 initTesseract(); // Pre-warm OCR worker in the background
-dropZone.addEventListener('click', () => fileInput.click());
+if (dropZone && fileInput) {
+    dropZone.addEventListener('click', () => fileInput.click());
 
-dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-});
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
 
-dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
-});
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
 
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    if (e.dataTransfer.files.length) {
-        handleFiles(e.dataTransfer.files, analyzerWorker, window.customModels || [], window.customReasons || []);
-    }
-});
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+            handleFiles(e.dataTransfer.files, analyzerWorker, window.customModels || [], window.customReasons || []);
+        }
+    });
 
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length) {
-        handleFiles(e.target.files, analyzerWorker, window.customModels || [], window.customReasons || []);
-    }
-});
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+            handleFiles(e.target.files, analyzerWorker, window.customModels || [], window.customReasons || []);
+        }
+    });
+}
 
 // Event Listeners for Productivity File Upload
-dropZoneProd.addEventListener('click', () => fileInputProd.click());
-dropZoneProd.addEventListener('dragover', (e) => { e.preventDefault(); dropZoneProd.classList.add('dragover'); });
-dropZoneProd.addEventListener('dragleave', () => dropZoneProd.classList.remove('dragover'));
-dropZoneProd.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZoneProd.classList.remove('dragover');
-    if (e.dataTransfer.files.length) handleProductivityFiles(e.dataTransfer.files, analyzerWorker);
-});
-fileInputProd.addEventListener('change', (e) => {
-    if (e.target.files.length) handleProductivityFiles(e.target.files, analyzerWorker);
-});
+if (dropZoneProd && fileInputProd) {
+    dropZoneProd.addEventListener('click', () => fileInputProd.click());
+    dropZoneProd.addEventListener('dragover', (e) => { e.preventDefault(); dropZoneProd.classList.add('dragover'); });
+    dropZoneProd.addEventListener('dragleave', () => dropZoneProd.classList.remove('dragover'));
+    dropZoneProd.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZoneProd.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleProductivityFiles(e.dataTransfer.files, analyzerWorker);
+    });
+    fileInputProd.addEventListener('change', (e) => {
+        if (e.target.files.length) handleProductivityFiles(e.target.files, analyzerWorker);
+    });
+}
 
 // Event Listeners for Queue CSV Upload (Multi File)
 const dropZoneQueue = document.getElementById('drop-zone-queue');
@@ -182,42 +198,120 @@ if (dropZoneQueue && fileInputQueue) {
 }
 
 // ==========================================
-// JARVIS WA BLASTER INTEGRATION
+// JARVIS WA BLASTER INTEGRATION (via Firestore)
 // ==========================================
 let isJarvisOnline = false;
+let lastJarvisQr = null;
+
+function updateJarvisUI(isReady, qrCode) {
+    const statusEl = document.getElementById('jarvis-status');
+    const textEl = document.getElementById('jarvis-status-text');
+    const qrModal = document.getElementById('jarvis-qr-modal');
+    const qrImg = document.getElementById('jarvis-qr-img');
+    if (!statusEl || !textEl) return;
+
+    if (isReady) {
+        isJarvisOnline = true;
+        lastJarvisQr = null;
+        statusEl.style.background = 'rgba(16, 185, 129, 0.2)';
+        statusEl.style.color = '#10b981';
+        statusEl.style.borderColor = '#10b981';
+        statusEl.style.cursor = 'default';
+        textEl.innerText = 'JARVIS: Online';
+        if (qrModal && qrModal.classList.contains('active')) qrModal.classList.remove('active');
+    } else if (qrCode) {
+        isJarvisOnline = false;
+        lastJarvisQr = qrCode;
+        statusEl.style.background = 'rgba(245, 158, 11, 0.2)';
+        statusEl.style.color = '#f59e0b';
+        statusEl.style.borderColor = '#f59e0b';
+        statusEl.style.cursor = 'pointer';
+        textEl.innerText = 'JARVIS: Scan QR';
+        if (qrImg) qrImg.src = qrCode;
+    } else {
+        isJarvisOnline = false;
+        lastJarvisQr = null;
+        statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+        statusEl.style.color = 'var(--accent-red)';
+        statusEl.style.borderColor = 'var(--accent-red)';
+        statusEl.style.cursor = 'default';
+        textEl.innerText = 'JARVIS: Offline';
+    }
+}
+
+let isLocalJarvisDetected = false;
+
+function startJarvisFirestoreListener() {
+    try {
+        if (window.db) {
+            window.db.collection('rpa_commands').doc('wa_status').onSnapshot(snap => {
+                // If the user is running their own local JARVIS, ignore the central Firestore status
+                if (isLocalJarvisDetected) return;
+                if (snap.exists) {
+                    const d = snap.data();
+                    updateJarvisUI(!!d.waReady, d.qrCode || null);
+                } else {
+                    updateJarvisUI(false, null);
+                }
+            }, () => {
+                if (!isLocalJarvisDetected) updateJarvisUI(false, null);
+            });
+        } else {
+            setTimeout(startJarvisFirestoreListener, 2000);
+        }
+    } catch(e) { 
+        if (!isLocalJarvisDetected) updateJarvisUI(false, null); 
+    }
+}
+startJarvisFirestoreListener();
 
 function checkJarvisStatus() {
     fetch('http://localhost:3001/api/status')
         .then(res => res.json())
         .then(data => {
-            isJarvisOnline = true;
-            const statusEl = document.getElementById('jarvis-status');
-            const textEl = document.getElementById('jarvis-status-text');
-            if (statusEl && textEl) {
-                statusEl.style.background = 'rgba(37, 211, 102, 0.2)';
-                statusEl.style.color = '#25D366';
-                statusEl.style.borderColor = '#25D366';
-                textEl.innerText = 'JARVIS: Online';
-            }
+            isLocalJarvisDetected = true;
+            updateJarvisUI(data.ready, data.qr || null);
         })
-        .catch(err => {
-            isJarvisOnline = false;
-            const statusEl = document.getElementById('jarvis-status');
-            const textEl = document.getElementById('jarvis-status-text');
-            if (statusEl && textEl) {
-                statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
-                statusEl.style.color = 'var(--accent-red)';
-                statusEl.style.borderColor = 'var(--accent-red)';
-                textEl.innerText = 'JARVIS: Offline';
+        .catch(() => {
+            if (isLocalJarvisDetected) {
+                isLocalJarvisDetected = false;
+                updateJarvisUI(false, null);
             }
         });
 }
 
-// Cek status saat pertama kali load dan setiap 10 detik
-checkJarvisStatus();
-setInterval(checkJarvisStatus, 10000);
+// Click on jarvis-status badge to open QR Code if not ready
+const jarvisBadge = document.getElementById('jarvis-status');
+if (jarvisBadge) {
+    jarvisBadge.addEventListener('click', () => {
+        if (!isJarvisOnline && lastJarvisQr) {
+            const qrModal = document.getElementById('jarvis-qr-modal');
+            const qrImg = document.getElementById('jarvis-qr-img');
+            if (qrImg && lastJarvisQr) qrImg.src = lastJarvisQr;
+            if (qrModal) qrModal.classList.add('active');
+        } else if (!isJarvisOnline) {
+            if (window.showToastNotification) {
+                window.showToastNotification('⚠️ JARVIS Super Engine sedang memulai di port 3001...');
+            }
+        }
+    });
+}
 
-export async function blastViaJarvis(blastQueueArray) {
+// Close QR modal on backdrop click
+const qrModalEl = document.getElementById('jarvis-qr-modal');
+if (qrModalEl) {
+    qrModalEl.addEventListener('click', (e) => {
+        if (e.target === qrModalEl) {
+            qrModalEl.classList.remove('active');
+        }
+    });
+}
+
+// Cek status saat pertama kali load dan setiap 5 detik
+checkJarvisStatus();
+setInterval(checkJarvisStatus, 5000);
+
+async function blastViaJarvis(blastQueueArray) {
     if (!isJarvisOnline) {
         showToastNotification('JARVIS sedang Offline! Pastikan file start_jarvis_background.vbs sudah dijalankan.');
         return false;
@@ -925,6 +1019,8 @@ function showToastNotification(msg) {
 
 // Update DOM and Charts
 function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
+    
+
     // Render KPI Scoreboard
     const kpiContainer = document.getElementById('kpi-cards-container');
     const kpiScoreboard = document.getElementById('kpi-scoreboard');
@@ -970,12 +1066,13 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         kpiScoreboard.style.display = 'block';
     }
 
-    if (document.getElementById('val-total-so')) document.getElementById('val-total-so').innerText = stats.total;
-    if (document.getElementById('val-total-ltp')) document.getElementById('val-total-ltp').innerText = stats.ltp;
-    if (document.getElementById('val-total-exltp')) document.getElementById('val-total-exltp').innerText = stats.exLtp;
-    if (document.getElementById('val-total-mpu')) document.getElementById('val-total-mpu').innerText = stats.mpuViolations;
-    if (document.getElementById('val-total-ub')) document.getElementById('val-total-ub').innerText = stats.ubViolations;
-    if (document.getElementById('val-total-x09')) document.getElementById('val-total-x09').innerText = stats.x09Violations;
+    if (document.getElementById('val-total-so')) document.getElementById('val-total-so').innerText = stats.total || 0;
+    if (document.getElementById('val-total-ltp')) document.getElementById('val-total-ltp').innerText = stats.ltp || 0;
+    if (document.getElementById('val-total-exltp')) document.getElementById('val-total-exltp').innerText = stats.exLtp || 0;
+    if (document.getElementById('val-total-mpu')) document.getElementById('val-total-mpu').innerText = stats.mpuViolations || 0;
+    if (document.getElementById('val-total-ub')) document.getElementById('val-total-ub').innerText = stats.ubViolations || 0;
+    if (document.getElementById('val-total-x09')) document.getElementById('val-total-x09').innerText = stats.x09Violations || 0;
+    if (document.getElementById('val-total-redo')) document.getElementById('val-total-redo').innerText = (stats.redoCount !== undefined ? stats.redoCount : (window.redoList ? window.redoList.length : 0));
 
     // Render LTP Chart
     const ctxLtp = document.getElementById('ltpChart').getContext('2d');
@@ -1074,8 +1171,8 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             labels: ['AGING (Branch Fault)', 'SEIN (Samsung Fault)', 'OTHER'],
             datasets: [{
                 data: [stats.responsibility.AGING, stats.responsibility.SEIN, stats.responsibility.OTHER],
-                backgroundColor: [gradRed, gradGreen, gradBlue],
-                borderColor: '#0f172a',
+                backgroundColor: ['#ef4444', '#10b981', '#3b82f6'],
+                borderColor: '#ffffff',
                 borderWidth: 2,
                 hoverOffset: 15
             }]
@@ -1085,10 +1182,9 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             maintainAspectRatio: false,
             cutout: '65%',
             plugins: {
-                legend: { position: 'bottom', labels: { color: '#e2e8f0' } }
+                legend: { position: 'bottom', labels: { color: '#0f172a', font: { weight: 'bold' } } }
             }
-        },
-        plugins: [pseudo3DPlugin]
+        }
     });
 
     // Render MPU Table
@@ -1098,7 +1194,14 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         if (mpuList.length === 0) {
             tbodyMpu.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px;">No MPU Violations Detected!</td></tr>`;
         } else {
-            mpuList.forEach(item => {
+            // Sort: 1. Branch A-Z, 2. Engineer Name A-Z
+            const sortedMpu = [...mpuList].sort((a, b) => {
+                const comp = (a.asc || '').localeCompare(b.asc || '');
+                if (comp !== 0) return comp;
+                return (a.engineer || '').localeCompare(b.engineer || '');
+            });
+
+            sortedMpu.forEach(item => {
                 const tr = document.createElement('tr');
                 const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed');
                 const jobColor = isRC ? 'var(--accent-red)' : 'var(--text-main)';
@@ -1127,7 +1230,14 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         if (ubList.length === 0) {
             tbodyUb.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px;">Aman! Tidak ada pelanggaran UB Repair.</td></tr>`;
         } else {
-            ubList.forEach(item => {
+            // Sort: 1. Branch A-Z, 2. Engineer Name A-Z
+            const sortedUb = [...ubList].sort((a, b) => {
+                const comp = (a.asc || '').localeCompare(b.asc || '');
+                if (comp !== 0) return comp;
+                return (a.engineer || '').localeCompare(b.engineer || '');
+            });
+
+            sortedUb.forEach(item => {
                 const tr = document.createElement('tr');
                 const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed');
                 const jobColor = isRC ? 'var(--accent-red)' : 'var(--text-main)';
@@ -1159,11 +1269,11 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         if (branches.length === 0) {
             tbodyDosa.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px;">Bersih! Tidak ada dosa cabang > 7 hari.</td></tr>`;
         } else {
-            // Sort Z-A by max pending days of the branch, then A-Z by branch name
+            // Sort: 1. Total Unit (Dosa) DESC (Z - A), 2. Branch A-Z
             const sortedDosaBranches = branches.sort((a, b) => {
-                const maxA = Math.max(...statsMap[a].bills.map(x => x.pendingDays));
-                const maxB = Math.max(...statsMap[b].bills.map(x => x.pendingDays));
-                if (maxB !== maxA) return maxB - maxA;
+                const countA = statsMap[a].count || 0;
+                const countB = statsMap[b].count || 0;
+                if (countB !== countA) return countB - countA;
                 return a.localeCompare(b);
             });
             
@@ -1185,17 +1295,110 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         }
     }
 
+    // ==========================================
+    // TOP 5 CRITICAL CASES WIDGET (EXECUTIVE CONTROL TOWER)
+    // ==========================================
+    let top5Container = document.getElementById('top5-critical-widget');
+    if (!top5Container) {
+        // Create widget if not exists
+        top5Container = document.createElement('div');
+        top5Container.id = 'top5-critical-widget';
+        top5Container.className = 'card glass-panel span-10';
+        top5Container.style.marginTop = '20px';
+        
+        // Insert before Branch Performance Breakdown
+        const branchTableCard = document.querySelector('#branch-table').closest('.card');
+        if (branchTableCard && branchTableCard.parentNode) {
+            branchTableCard.parentNode.insertBefore(top5Container, branchTableCard);
+        }
+    }
+    
+    // Gather all >7 days bills and sort by AI Risk Score
+    let allAgingBills = [];
+    if (window.dosaCabangStatsGlobal) {
+        Object.entries(window.dosaCabangStatsGlobal).forEach(([branchName, branchStats]) => {
+            if (branchStats.bills) {
+                branchStats.bills.forEach(bill => {
+                    bill.ascName = branchName; // Store branch name explicitely
+                    allAgingBills.push(bill);
+                });
+            }
+        });
+    }
+    
+    allAgingBills.sort((a, b) => {
+        const riskA = a.ai_riskScore || 0;
+        const riskB = b.ai_riskScore || 0;
+        if (riskB !== riskA) return riskB - riskA;
+        return (b.pendingDays || 0) - (a.pendingDays || 0);
+    });
+    
+    const top5 = allAgingBills.slice(0, 5);
+    
+    let top5HTML = `
+        <div class="card-header" style="background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);">
+            <h3 style="color: white; font-size: 1.1rem;"><i class="fa-solid fa-robot"></i> Executive Control Tower: Top 5 Critical Cases</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Branch</th>
+                        <th>Job No</th>
+                        <th>Customer</th>
+                        <th>Reason</th>
+                        <th>Aging</th>
+                        <th>AI Priority</th>
+                        <th>Action Required</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    if (top5.length === 0) {
+        top5HTML += `<tr><td colspan="7" style="text-align:center;">Tidak ada kasus kritis. Excellent!</td></tr>`;
+    } else {
+        top5.forEach(b => {
+            const priorityColor = b.ai_priority?.level === 'CRITICAL' ? 'var(--accent-red)' :
+                                  b.ai_priority?.level === 'HIGH' ? 'orange' : 'var(--text-muted)';
+            const priorityText = b.ai_priority ? `<span style="color: ${priorityColor}; font-weight: bold;">${b.ai_priority.level} (Score: ${Math.round(b.ai_riskScore || 0)})</span>` : '-';
+            const actionText = b.ai_action ? `<span style="font-size: 0.8rem; color: #a5b4fc;">${b.ai_action.actionText}</span>` : '-';
+            
+            top5HTML += `
+                <tr>
+                    <td><strong>${b.ascName || b.asc || '-'}</strong><br><span style="font-size: 0.7rem; color: #9ca3af;">${b.engineer || '-'}</span></td>
+                    <td>${b.jobNo}</td>
+                    <td>${b.customer}</td>
+                    <td style="font-size:0.8rem; color:var(--text-muted);">${b.reason || '-'}</td>
+                    <td style="color: var(--accent-red); font-weight: bold;">${b.pendingDays} days</td>
+                    <td>${priorityText}</td>
+                    <td>${actionText}</td>
+                </tr>
+            `;
+        });
+    }
+    
+    top5HTML += `</tbody></table></div>`;
+    if (top5Container) top5Container.innerHTML = top5HTML;
+
     // Render Wall of Shame Table
     const tbodyShame = document.querySelector('#shame-table tbody');
-    tbodyShame.innerHTML = '';
+    if (tbodyShame) tbodyShame.innerHTML = '';
     
     if (shameList.length === 0) {
         tbodyShame.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">No bad engineers found! Great job!</td></tr>`;
     } else {
-        shameList.forEach(item => {
+        // Sort: 1. Branch A-Z, 2. Aging Units DESC
+        const sortedShame = [...shameList].sort((a, b) => {
+            const comp = (a.asc || '').localeCompare(b.asc || '');
+            if (comp !== 0) return comp;
+            return b.count - a.count;
+        });
+
+        sortedShame.forEach(item => {
             const hasPhone = !!(window.techContacts || {})[item.engineer];
-        const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
-        const warningTag = isRC ? '<br><span style=\"background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;\">⚠️ TELANJUR RC</span>' : '';
+            const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
+            const warningTag = isRC ? '<br><span style=\"background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;\">⚠️ TELANJUR RC</span>' : '';
             const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
             
             const tr = document.createElement('tr');
@@ -1216,6 +1419,39 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         });
     }
 
+    window.renderShameTableFromSnapshot = function(shameList) {
+        if (!tbodyShame) return;
+        tbodyShame.innerHTML = '';
+        if (!shameList || shameList.length === 0) {
+            tbodyShame.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">No bad engineers found! Great job!</td></tr>`;
+            return;
+        }
+        const sorted = [...shameList].sort((a, b) => {
+            const comp = (a.asc || '').localeCompare(b.asc || '');
+            if (comp !== 0) return comp;
+            return b.count - a.count;
+        });
+        sorted.forEach(item => {
+            const hasPhone = !!(window.techContacts || {})[item.engineer];
+            const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${item.asc}</strong></td>
+                <td style="color:var(--text-main); font-weight: 500; font-size: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            ${item.engineer}
+                            <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">${item.detail}</div>
+                        </div>
+                        <button onclick="sendWA('${item.engineer.replace(/'/g, "\\'")}', '${item.asc}', ${item.count}, '${item.detail}')" style="background: none; border: none; color: ${waColor}; font-size: 1.5rem; cursor: pointer;" title="Kirim Teguran WA"><i class="fa-brands fa-whatsapp"></i></button>
+                    </div>
+                </td>
+                <td style="text-align:center;"><span class="clickable-number" style="color:var(--accent-red); font-size:1rem; font-weight: 700;" onclick="openEngModal('${item.engineer.replace(/'/g, "\\'")}')">${item.count} Units</span></td>
+            `;
+            tbodyShame.appendChild(tr);
+        });
+    };
+
     // Render Repair Completed (Pending Delivery) Table
     const tbodyRC = document.querySelector('#rc-table tbody');
     if (tbodyRC) {
@@ -1224,7 +1460,14 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         if (!rcStats || Object.keys(rcStats).length === 0) {
             tbodyRC.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted);">Tumben, tidak ada unit ngendap!</td></tr>`;
         } else {
-            const sortedRCBranches = Object.keys(rcStats).sort((a, b) => rcStats[b].count - rcStats[a].count);
+            // Sort: 1. Total Unit (RC) DESC (Z - A), 2. Branch A-Z
+            const sortedRCBranches = Object.keys(rcStats).sort((a, b) => {
+                const countA = rcStats[a].count || 0;
+                const countB = rcStats[b].count || 0;
+                if (countB !== countA) return countB - countA;
+                return a.localeCompare(b);
+            });
+
             sortedRCBranches.forEach(asc => {
                 const rc = rcStats[asc];
                 const hasPhone = !!(window.techContacts || {})[`PIC ${asc}`] || !!(window.techContacts || {})[`Kacab ${asc}`];
@@ -1246,41 +1489,65 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     // Modal Variables & Functions
     window.branchData = branchStats; // Expose globally for click handlers
     
-    // Render Branch Breakdown Table
+    // Render Branch Breakdown Table (Only display branches with violations/issues)
     const tbodyBranch = document.querySelector('#branch-table tbody');
     tbodyBranch.innerHTML = '';
-    
-    // Sort branches by total S/O descending
-    const sortedBranches = Object.keys(branchStats).sort((a, b) => branchStats[b].total - branchStats[a].total);
 
-    sortedBranches.forEach(branch => {
-
-        const bs = branchStats[branch];
-        const tr = document.createElement('tr');
-        
-        // Helper to generate clickable cell
-        // Helper to generate clickable cell
-        const getCell = (val, metric, colorStyle) => {
-            if (val === 0) return `<td></td>`;
-            return `<td style="text-align:center; ${colorStyle}"><span class="clickable-number" onclick="openModal('${branch}', '${metric}')">${val}</span></td>`;
-        };
-        
-        tr.innerHTML = `
-            <td><strong>${branch}</strong></td>
-            ${getCell(bs.total, 'total', '')}
-            ${getCell(bs.ltp, 'ltp', 'color:var(--accent-red); font-weight:bold;')}
-            ${getCell(bs.exLtp, 'exLtp', 'color:var(--accent-purple); font-weight:bold;')}
-            ${getCell(bs.mpu, 'mpu', 'color:var(--accent-orange); font-weight:bold;')}
-            ${getCell(bs.ub, 'ub', 'color:darkred; font-weight:bold;')}
-            ${getCell(bs.x09, 'x09', 'color:#eab308; font-weight:bold;')}
-            <td style="text-align:center;"><span class="val-redo" data-asc="${branch}" style="font-size: 1rem; font-weight: 700; color: var(--text-muted);"></span></td>
-        `;
-
-        tbodyBranch.appendChild(tr);
+    // Calculate REDO counts per branch
+    const redoBranchCounts = {};
+    (window.redoList || []).forEach(item => {
+        const b = item.asc || 'Unknown';
+        redoBranchCounts[b] = (redoBranchCounts[b] || 0) + 1;
     });
+    
+    // Sort: Z - A by Total S/O DESC
+    const violationBranches = Object.keys(branchStats).filter(branch => {
+        const bs = branchStats[branch];
+        const redoCount = redoBranchCounts[branch] || 0;
+        const totalViolations = (bs.ltp || 0) + (bs.exLtp || 0) + (bs.mpu || 0) + (bs.ub || 0) + (bs.x09 || 0) + redoCount;
+        return totalViolations > 0;
+    });
+
+    const sortedBranches = violationBranches.sort((a, b) => {
+        const bsA = branchStats[a];
+        const bsB = branchStats[b];
+        const totalA = bsA.total || 0;
+        const totalB = bsB.total || 0;
+        if (totalB !== totalA) return totalB - totalA;
+        return a.localeCompare(b);
+    });
+
+    if (sortedBranches.length === 0) {
+        tbodyBranch.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted); font-size: 0.95rem;">🎉 Luar biasa! Tidak ada cabang yang memiliki pelanggaran/penalti saat ini.</td></tr>`;
+    } else {
+        sortedBranches.forEach(branch => {
+            const bs = branchStats[branch];
+            const tr = document.createElement('tr');
+            
+            // Helper to generate clickable cell
+            const getCell = (val, metric, colorStyle) => {
+                if (val === 0) return `<td></td>`;
+                return `<td style="text-align:center; ${colorStyle}"><span class="clickable-number" onclick="openModal('${branch}', '${metric}')">${val}</span></td>`;
+            };
+            
+            tr.innerHTML = `
+                <td><strong>${branch}</strong></td>
+                ${getCell(bs.total, 'total', '')}
+                ${getCell(bs.ltp, 'ltp', 'color:var(--accent-red); font-weight:bold;')}
+                ${getCell(bs.exLtp, 'exLtp', 'color:var(--accent-purple); font-weight:bold;')}
+                ${getCell(bs.mpu, 'mpu', 'color:var(--accent-orange); font-weight:bold;')}
+                ${getCell(bs.ub, 'ub', 'color:darkred; font-weight:bold;')}
+                ${getCell(bs.x09, 'x09', 'color:#eab308; font-weight:bold;')}
+                <td style="text-align:center;"><span class="val-redo" data-asc="${branch}" style="font-size: 1rem; font-weight: 700; color: var(--text-muted);"></span></td>
+            `;
+
+            tbodyBranch.appendChild(tr);
+        });
+    }
 
     renderDtsMxTable();
     renderDtsIhTable();
+    renderRedoTable();
 
     // Switch views
     setTimeout(() => {
@@ -1296,6 +1563,73 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         }
     }, 500);
 } // End of updateUI
+
+// Render Redo Table
+function renderRedoTable() {
+    const tbodyRedo = document.querySelector('#redo-table tbody');
+    if (!tbodyRedo) return;
+    
+    let redoList = window.redoList || [];
+    if (window.currentUserBranches && window.currentUserBranches.length > 0) {
+        const allowed = window.currentUserBranches;
+        redoList = redoList.filter(s => {
+            if (!s.asc) return false;
+            let upper = String(s.asc).toUpperCase();
+            return allowed.some(a => upper.includes(a));
+        });
+    }
+    tbodyRedo.innerHTML = '';
+    
+    // Update branch table counts for REDO
+    const redoBranchCounts = {};
+    redoList.forEach(item => {
+        const b = item.asc || 'Unknown';
+        redoBranchCounts[b] = (redoBranchCounts[b] || 0) + 1;
+    });
+
+    document.querySelectorAll('.val-redo').forEach(el => {
+        const asc = el.getAttribute('data-asc');
+        const count = redoBranchCounts[asc] || 0;
+        if (count > 0) {
+            el.innerHTML = `<span class="clickable-number" style="color:var(--accent-orange); font-weight:bold;">${count}</span>`;
+        } else {
+            el.innerHTML = '';
+        }
+    });
+
+    if (redoList.length === 0) {
+        tbodyRedo.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted);">Aman! Tidak ada pelanggaran REDO yang terdeteksi.</td></tr>`;
+        return;
+    }
+
+    const sortedRedo = [...redoList].sort((a, b) => {
+        const comp = (a.asc || '').localeCompare(b.asc || '');
+        if (comp !== 0) return comp;
+        return (a.engineer || '').localeCompare(b.engineer || '');
+    });
+
+    sortedRedo.forEach(item => {
+        const tr = document.createElement('tr');
+        const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed' || item.status === 'REDO');
+        const warningTag = `<br><span style="background:var(--accent-orange); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">⚠️ REDO</span>`;
+
+        tr.innerHTML = `
+            <td><strong>${item.asc}</strong></td>
+            <td style="color:var(--text-main); font-weight: 500; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="color:var(--accent-orange); font-weight:bold;">${item.engineer || 'PIC ' + item.asc}</span>
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">${item.jobNo} | ${item.model || '-'} ${warningTag}</div>
+                    </div>
+                </div>
+            </td>
+        `;
+        tbodyRedo.appendChild(tr);
+    });
+}
+
+window.renderRedoTable = renderRedoTable;
+window.updateUI = updateUI;
 
 window.onclick = function(event) {
     if (event.target == document.getElementById('detail-modal')) {
@@ -1596,6 +1930,13 @@ function renderApprovedUsers() {
         
         const deviceStatus = user.deviceId ? '<span style="color:var(--accent-green);"><i class="fa-solid fa-lock"></i> Terkunci</span>' : '<span style="color:var(--text-muted);">Bebas</span>';
         
+        let branchesDisplay = '<span style="color:var(--text-muted); font-style:italic;">Belum Ada Cabang</span>';
+        if (user.branches && Array.isArray(user.branches) && user.branches.length > 0) {
+            branchesDisplay = '<div style="font-size:0.75rem; color:var(--accent-blue); max-width: 150px; word-wrap: break-word;">' + user.branches.join(', ') + '</div>';
+        } else if (user.role === 'admin') {
+            branchesDisplay = '<span style="color:var(--text-muted); font-style:italic;">Semua Cabang (Global)</span>';
+        }
+        
         let actionsHTML = '';
         if (user.role === 'pending') {
             actionsHTML = `
@@ -1608,6 +1949,9 @@ function renderApprovedUsers() {
             `;
         } else {
             actionsHTML = `
+                <button onclick="window.editUserBranches('${user.id}', '${(user.branches || []).join(', ')}')" style="background: rgba(59, 130, 246, 0.2); border: 1px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Edit Cabang">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </button>
                 <button onclick="resetDeviceLock('${user.id}')" style="background: rgba(37, 211, 102, 0.2); border: 1px solid var(--accent-green); color: var(--accent-green); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Reset Device (Buka Kunci)">
                     <i class="fa-solid fa-unlock-keyhole"></i>
                 </button>
@@ -1623,8 +1967,9 @@ function renderApprovedUsers() {
                 <span style="font-size:0.7rem; color:var(--text-muted);">${user.displayName || '-'}</span>
             </td>
             <td style="color:${roleColor}; font-weight:600; font-size:0.8rem;">${roleDisplay}</td>
-            <td>${deviceStatus}</td>
-            <td style="text-align:center; min-width: 90px;">
+              <td>${branchesDisplay}</td>
+              <td>${deviceStatus}</td>
+              <td style="text-align:center; min-width: 130px;">
                 ${actionsHTML}
             </td>
         `;
@@ -1882,6 +2227,8 @@ window.openDosaModal = function(asc) {
             <th>Model</th>
             <th>Reason</th>
             <th>Pending Days</th>
+            <th>AI Priority</th>
+            <th>AI Recommendation</th>
         </tr>
     `;
     
@@ -1892,17 +2239,30 @@ window.openDosaModal = function(asc) {
     const tbody = document.querySelector('#modal-table tbody');
     tbody.innerHTML = '';
     
-    // Urutkan bills Z-A berdasarkan pendingDays (Terlama di atas)
-    bills.sort((a, b) => b.pendingDays - a.pendingDays);
+    // Urutkan bills Z-A berdasarkan pendingDays (Terlama di atas), prioritas sekunder: Risk Score
+    bills.sort((a, b) => {
+        const riskA = a.ai_riskScore || 0;
+        const riskB = b.ai_riskScore || 0;
+        if (riskB !== riskA) return riskB - riskA;
+        return (b.pendingDays || 0) - (a.pendingDays || 0);
+    });
     
     bills.forEach(b => {
+        const priorityColor = b.ai_priority?.level === 'CRITICAL' ? 'var(--accent-red)' :
+                              b.ai_priority?.level === 'HIGH' ? 'orange' :
+                              b.ai_priority?.level === 'MEDIUM' ? 'yellow' : 'var(--text-muted)';
+        const priorityText = b.ai_priority ? `<span style="color: ${priorityColor}; font-weight: bold;">${b.ai_priority.level} (Score: ${Math.round(b.ai_riskScore || 0)})</span>` : '-';
+        const actionText = b.ai_action ? `<span style="font-size: 0.8rem; color: #a5b4fc;">${b.ai_action.actionText}</span>` : '-';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><strong>${b.jobNo}</strong></td>
+            <td><strong>${b.jobNo}</strong><br><span style="font-size:0.7rem; color:var(--text-muted);">${b.status || ''}</span></td>
             <td>${b.customer}</td>
             <td>${b.model}</td>
             <td style="font-size:0.8rem; color:var(--text-muted);">${b.reason || '-'}</td>
             <td style="color:var(--accent-red); font-weight:bold;">${b.pendingDays} days</td>
+            <td>${priorityText}</td>
+            <td>${actionText}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -1965,11 +2325,26 @@ window.openModal = function(branch, metric) {
 };
 
 window.openEngModal = function(engineer, categoryFilter = null) {
-    if (!window.engineerData || !window.engineerData[engineer] || window.engineerData[engineer].bills.length === 0) {
-        return;
-    }
+    let bills = [];
     
-    let bills = window.engineerData[engineer].bills;
+    // 1. Try finding in shameData (compact bills preserved for modal)
+    if (window.shameData && Array.isArray(window.shameData)) {
+        const foundShame = window.shameData.find(s => s.engineer === engineer || s.engineer.toUpperCase() === engineer.toUpperCase());
+        if (foundShame && Array.isArray(foundShame.bills) && foundShame.bills.length > 0) {
+            bills = foundShame.bills;
+        }
+    }
+
+    // 2. Try finding in engineerData if bills exist
+    if (bills.length === 0 && window.engineerData && window.engineerData[engineer] && Array.isArray(window.engineerData[engineer].bills)) {
+        bills = window.engineerData[engineer].bills;
+    }
+
+    // 3. Try finding in dosaCabangOver7 if matching engineer
+    if (bills.length === 0 && window.dosaCabangData && Array.isArray(window.dosaCabangData)) {
+        bills = window.dosaCabangData.filter(d => d.engineer === engineer || (d.engineer && d.engineer.toUpperCase() === engineer.toUpperCase()));
+    }
+
     if (categoryFilter === 'MX') {
         bills = bills.filter(b => b.category === 'MX');
     } else if (categoryFilter === 'VD/DA') {
@@ -2126,7 +2501,12 @@ const redoDropZone = document.getElementById('redo-drop-zone');
 const redoFileInput = document.getElementById('redo-file-input');
 
 if (redoDropZone && redoFileInput) {
-    redoDropZone.addEventListener('click', () => redoFileInput.click());
+    // Only file input change & drag-and-drop trigger OCR, not random card clicks
+    redoFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            processMultipleRedoFiles(e.target.files);
+        }
+    });
 
     redoDropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -2186,6 +2566,7 @@ async function handleRedoImage(file) {
     
     if (!result.uniqueJobs || result.uniqueJobs.length === 0) {
         console.log('Tidak ditemukan Service Order No di gambar tersebut!');
+        showToastNotification('⚠️ Tidak terdeteksi No. Service Order (Job No 10-digit) pada gambar ini.');
         return;
     }
 
@@ -2195,40 +2576,309 @@ async function handleRedoImage(file) {
     window.redoList = window.redoList || [];
     
     result.uniqueJobs.forEach(jobNo => {
+        let cleanJobNo = String(jobNo).trim();
         // Check if already in redo list
-        if (window.redoList.find(r => r.jobNo === jobNo)) return;
+        if (window.redoList.find(r => String(r.jobNo).trim() === cleanJobNo)) return;
         
-        // Search in branchData
         let matchedBill = null;
         let matchedAsc = null;
         
-        for (const asc in window.branchData) {
-            const bills = window.branchData[asc].bills.total;
-            const found = bills.find(b => b.jobNo === jobNo);
-            if (found) {
-                matchedBill = found;
-                matchedAsc = asc;
-                break;
+        // Search directly in globalRawSOList to get the raw un-overridden Engineer Name
+        if (window.globalRawSOList && Array.isArray(window.globalRawSOList)) {
+            function getLevenshtein(a, b) {
+                if (a.length === 0) return b.length;
+                if (b.length === 0) return a.length;
+                let matrix = [];
+                for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+                for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+                for (let i = 1; i <= b.length; i++) {
+                    for (let j = 1; j <= a.length; j++) {
+                        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                            matrix[i][j] = matrix[i - 1][j - 1];
+                        } else {
+                            matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                        }
+                    }
+                }
+                return matrix[b.length][a.length];
+            }
+
+            let bestMatch = null;
+            let bestDistance = 999;
+            let bestRealJobNo = '';
+
+            window.globalRawSOList.forEach(b => {
+                for (let key in b) {
+                    if (b[key]) {
+                        let cellVal = String(b[key]).trim();
+                        let numericClean = cleanJobNo.replace(/\D/g, '');
+                        let cellNumeric = cellVal.replace(/\D/g, '');
+                        
+                        if (cellVal === cleanJobNo || (numericClean.length > 5 && cellNumeric === numericClean)) {
+                            bestDistance = 0;
+                            bestMatch = b;
+                            bestRealJobNo = numericClean.length === 10 ? numericClean : cellVal;
+                            return; 
+                        }
+                        
+                        if (numericClean.length === 10 && cellNumeric.length === 10) {
+                            let dist = getLevenshtein(numericClean, cellNumeric);
+                            if (dist <= 2 && dist < bestDistance) {
+                                bestDistance = dist;
+                                bestMatch = b;
+                                bestRealJobNo = cellNumeric;
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (bestMatch && bestDistance <= 2) {
+                let rawEngineer = bestMatch['Engineer Name'] || bestMatch['Engineer'] || 'Teknisi Unmapped';
+                rawEngineer = String(rawEngineer).trim().toUpperCase().replace(/^\d+\s+/, '');
+                if (!rawEngineer || /^\d+$/.test(rawEngineer) || rawEngineer.includes('UNMAPPED')) {
+                     rawEngineer = 'Teknisi Unmapped';
+                }
+
+                let rawAsc = bestMatch['ASC Name'] || bestMatch['ASC'] || bestMatch['Service Center'] || bestMatch.asc || 'UNMAPPED';
+                
+                function shortAsc(name, matchObj = null) {
+                    if (matchObj) {
+                        let ccName = '';
+                        for (let key in matchObj) {
+                            let k = key.toLowerCase().replace(/[^a-z]/g, '');
+                            if (k === 'collectioncentername' || k === 'collectioncenter' || k === 'ccname') {
+                                ccName = String(matchObj[key] || '').toUpperCase();
+                                break;
+                            }
+                        }
+                        if (ccName.includes('CELLULAR WORLD')) return 'DENPASAR - CELLULAR WORLD';
+                        if (ccName.includes('PLANET GADGET')) return 'DENPASAR - PLANET GADGET';
+                    }
+                    let u = String(name).toUpperCase();
+                    if (u.includes('KARYA') || u.includes('KUPANG')) return 'KUPANG';
+                    if (u.includes('MAHENDRA') || u.includes('DENPASAR')) return 'DENPASAR';
+                    if (u.includes('SAKA') || u.includes('SINGARAJA')) return 'SINGARAJA';
+                    if (u.includes('TEUKU') || u.includes('CELLULAR WORLD')) return 'DENPASAR - CELLULAR WORLD';
+                    if (u.includes('GATOT') || u.includes('PLANET GADGET')) return 'DENPASAR - PLANET GADGET';
+                    return name;
+                }
+
+                matchedBill = {
+                    jobNo: bestDistance > 0 ? bestRealJobNo : cleanJobNo,
+                    engineer: rawEngineer,
+                    model: bestMatch['Model'] || bestMatch.model || 'Model N/A',
+                    customer: bestMatch['Customer Name'] || bestMatch.customer || '-',
+                    category: bestMatch['Product Category'] || bestMatch.category || '-',
+                    status: bestMatch['Status'] || bestMatch.status || 'REDO'
+                };
+                matchedAsc = shortAsc(rawAsc);
+                
+                if (bestDistance > 0) {
+                    cleanJobNo = bestRealJobNo;
+                }
             }
         }
         
+        // 3. Search in prodJobs if available (Productivity Data)
+        if (!matchedBill && window.prodJobs && Array.isArray(window.prodJobs)) {
+            const found = window.prodJobs.find(b => b.jobNo === cleanJobNo);
+            if (found) {
+                matchedBill = {
+                    jobNo: cleanJobNo,
+                    engineer: found.engineer,
+                    model: 'Model N/A',
+                    customer: '-',
+                    category: '-',
+                    status: 'REDO'
+                };
+                matchedAsc = found.branch;
+            }
+        }
+        
+        // 3. Add to redoList (either with full bill info or fallback OCR info)
         if (matchedBill) {
             window.redoList.push({
-                asc: matchedAsc,
-                jobNo: matchedBill.jobNo,
-                engineer: matchedBill.engineer,
-                model: matchedBill.model,
-                customer: matchedBill.customer,
-                category: matchedBill.category,
-                status: matchedBill.status
+                asc: matchedAsc || 'UNMAPPED',
+                jobNo: matchedBill.jobNo || cleanJobNo,
+                engineer: matchedBill.engineer || 'Teknisi Unmapped',
+                model: matchedBill.model || 'REDO Item',
+                customer: matchedBill.customer || '-',
+                category: matchedBill.category || '-',
+                status: matchedBill.status || 'REDO'
+            });
+        } else {
+            // FALLBACK: Always add to REDO list even if not matched in Excel data yet!
+            window.redoList.push({
+                asc: 'SCAN OCR',
+                jobNo: cleanJobNo,
+                engineer: 'Unmapped (Belum upload Excel)',
+                model: 'REDO Ticket',
+                customer: '-',
+                category: '-',
+                status: 'REDO'
             });
         }
     });
 }
 
+window.reMapRedoList = function() {
+    if (!window.redoList || window.redoList.length === 0) return;
+    
+    let changed = false;
+    window.redoList.forEach(item => {
+        if (item.asc === 'SCAN OCR') {
+            let matchedBill = null;
+            let matchedAsc = null;
+            let cleanJobNo = item.jobNo;
+
+            // Search directly in globalRawSOList to get the raw un-overridden Engineer Name
+            if (window.globalRawSOList && Array.isArray(window.globalRawSOList)) {
+                
+                function getLevenshtein(a, b) {
+                    if (a.length === 0) return b.length;
+                    if (b.length === 0) return a.length;
+                    let matrix = [];
+                    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+                    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+                    for (let i = 1; i <= b.length; i++) {
+                        for (let j = 1; j <= a.length; j++) {
+                            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                                matrix[i][j] = matrix[i - 1][j - 1];
+                            } else {
+                                matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
+                            }
+                        }
+                    }
+                    return matrix[b.length][a.length];
+                }
+
+                let bestMatch = null;
+                let bestDistance = 999;
+                let bestRealJobNo = '';
+
+                window.globalRawSOList.forEach(b => {
+                    for (let key in b) {
+                        if (b[key]) {
+                            let cellVal = String(b[key]).trim();
+                            let numericClean = cleanJobNo.replace(/\D/g, '');
+                            let cellNumeric = cellVal.replace(/\D/g, '');
+                            
+                            if (cellVal === cleanJobNo || (numericClean.length > 5 && cellNumeric === numericClean)) {
+                                bestDistance = 0;
+                                bestMatch = b;
+                                bestRealJobNo = numericClean.length === 10 ? numericClean : cellVal;
+                                return; 
+                            }
+                            
+                            if (numericClean.length === 10 && cellNumeric.length === 10) {
+                                let dist = getLevenshtein(numericClean, cellNumeric);
+                                if (dist <= 2 && dist < bestDistance) {
+                                    bestDistance = dist;
+                                    bestMatch = b;
+                                    bestRealJobNo = cellNumeric;
+                                }
+                            }
+                        }
+                    }
+                });
+
+                if (bestMatch && bestDistance <= 2) {
+                    // Extract RAW engineer name to avoid PIC DPS overrides
+                    let rawEngineer = bestMatch['Engineer Name'] || bestMatch['Engineer'] || 'Teknisi Unmapped';
+                    rawEngineer = String(rawEngineer).trim().toUpperCase().replace(/^\d+\s+/, '');
+                    if (!rawEngineer || /^\d+$/.test(rawEngineer) || rawEngineer.includes('UNMAPPED')) {
+                         rawEngineer = 'Teknisi Unmapped';
+                    }
+
+                    let rawAsc = bestMatch['ASC Name'] || bestMatch['ASC'] || bestMatch['Service Center'] || bestMatch.asc || 'UNMAPPED';
+                    
+                    // Simple branch shortener inline
+                    function shortAsc(name, matchObj = null) {
+                        if (matchObj) {
+                            let ccName = '';
+                            for (let key in matchObj) {
+                                let k = key.toLowerCase().replace(/[^a-z]/g, '');
+                                if (k === 'collectioncentername' || k === 'collectioncenter' || k === 'ccname') {
+                                    ccName = String(matchObj[key] || '').toUpperCase();
+                                    break;
+                                }
+                            }
+                            if (ccName.includes('CELLULAR WORLD')) return 'DENPASAR - CELLULAR WORLD';
+                            if (ccName.includes('PLANET GADGET')) return 'DENPASAR - PLANET GADGET';
+                        }
+                        let u = String(name).toUpperCase();
+                        if (u.includes('KARYA') || u.includes('KUPANG')) return 'KUPANG';
+                        if (u.includes('MAHENDRA') || u.includes('DENPASAR')) return 'DENPASAR';
+                        if (u.includes('SAKA') || u.includes('SINGARAJA')) return 'SINGARAJA';
+                        if (u.includes('TEUKU') || u.includes('CELLULAR WORLD')) return 'DENPASAR - CELLULAR WORLD';
+                        if (u.includes('GATOT') || u.includes('PLANET GADGET')) return 'DENPASAR - PLANET GADGET';
+                        return name;
+                    }
+
+                    matchedBill = {
+                        jobNo: bestDistance > 0 ? bestRealJobNo : cleanJobNo,
+                        engineer: rawEngineer,
+                        model: bestMatch['Model'] || bestMatch.model || 'Model N/A',
+                        customer: bestMatch['Customer Name'] || bestMatch.customer || '-',
+                        category: bestMatch['Product Category'] || bestMatch.category || '-',
+                        status: bestMatch['Status'] || bestMatch.status || 'REDO'
+                    };
+                    matchedAsc = shortAsc(rawAsc);
+                    
+                    if (bestDistance > 0) {
+                        item.jobNo = bestRealJobNo;
+                    }
+                }
+            }
+            
+            // 3. Search in prodJobs (Productivity Data)
+            if (!matchedBill && window.prodJobs && Array.isArray(window.prodJobs)) {
+                const found = window.prodJobs.find(b => b.jobNo === cleanJobNo);
+                if (found) {
+                    matchedBill = {
+                        jobNo: cleanJobNo,
+                        engineer: found.engineer,
+                        model: 'Model N/A',
+                        customer: '-',
+                        category: '-',
+                        status: 'REDO'
+                    };
+                    matchedAsc = found.branch;
+                }
+            }
+            
+            // Update if found
+            if (matchedBill) {
+                item.asc = matchedAsc || 'UNMAPPED';
+                item.engineer = matchedBill.engineer || 'Teknisi Unmapped';
+                item.model = matchedBill.model || 'REDO Item';
+                item.customer = matchedBill.customer || '-';
+                item.category = matchedBill.category || '-';
+                item.status = matchedBill.status || 'REDO';
+                changed = true;
+            }
+        }
+    });
+    
+    if (changed && typeof renderRedoTable === 'function') {
+        renderRedoTable();
+    }
+};
+
 function renderRedoTable() {
     const tbody = document.querySelector('#redo-table tbody');
     if (!tbody) return;
+    
+    // Apply branch filter
+    if (window.currentUserBranches && window.currentUserBranches.length > 0 && window.redoList) {
+        const allowed = window.currentUserBranches;
+        window.redoList = window.redoList.filter(s => {
+            if (!s.asc) return false;
+            let upper = String(s.asc).toUpperCase();
+            return allowed.some(a => upper.includes(a));
+        });
+    }
     
     if (!window.redoList || window.redoList.length === 0) {
         tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada hasil scan OCR</td></tr>';
@@ -2271,22 +2921,56 @@ function renderRedoTable() {
         const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">⚠️ TELANJUR RC</span>' : '';
         const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
         
+        let branchDisplay = item.asc || 'UNKNOWN';
+        if (typeof shortenASC === 'function') {
+            branchDisplay = shortenASC(branchDisplay);
+        } else {
+            branchDisplay = branchDisplay.replace(/PT\.?\s*BEKARYA\s+UGERTAMA\s+JAYA\s+MANDIRI\s*/gi, '')
+                                         .replace(/SAMSUNG\s+SERVICE\s+CENTER\s*/gi, '')
+                                         .replace(/UNICOM\s*/gi, '')
+                                         .replace(/^\d+_/, '')
+                                         .split('_')[0]
+                                         .trim();
+        }
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><strong>${item.asc}</strong></td>
+            <td><strong>${branchDisplay}</strong></td>
             <td style="color:var(--text-main); font-weight: 500; font-size: 0.85rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <span style="color:var(--accent-red); font-weight:bold;">${item.engineer}</span>
-                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">${item.jobNo} | ${item.model} ${warningTag}</div>
+                        <span style="color:var(--accent-red); font-weight:bold;">${item.engineer || 'PIC ' + branchDisplay}</span>
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">
+                            ${item.jobNo} 
+                            | ${item.model || '-'} ${warningTag}
+                        </div>
                     </div>
-                    
                 </div>
             </td>
         `;
         tbody.appendChild(tr);
     });
 }
+window.renderRedoTable = renderRedoTable;
+
+window.editRedoJobNo = function(oldJobNo) {
+    const newJobNo = prompt("Koreksi hasil scan OCR yang salah (Masukkan Job No yang benar):", oldJobNo);
+    if (!newJobNo || newJobNo === oldJobNo) return;
+    
+    const idx = window.redoList.findIndex(r => r.jobNo === oldJobNo);
+    if (idx !== -1) {
+        window.redoList[idx].jobNo = newJobNo.trim();
+        window.redoList[idx].asc = 'SCAN OCR';
+        window.redoList[idx].engineer = 'Unmapped (Belum upload Excel)';
+        window.redoList[idx].model = 'REDO Ticket';
+        window.redoList[idx].status = 'Unmapped';
+        
+        if (typeof window.reMapRedoList === 'function') {
+            window.reMapRedoList();
+            if (typeof renderRedoTable === 'function') renderRedoTable();
+        }
+    }
+};
 
 window.sendWARedo = function(engName, jobNo, model) {
     const phone = (window.techContacts || {})[engName];
@@ -2353,25 +3037,41 @@ window.renderGdTrendChart = function(gdTrendData) {
     // Ambil daftar bulan (X-axis) dan urutkan secara kronologis
     const months = Object.keys(gdTrendData).sort();
     
-    // Kumpulkan semua cabang unik yang ada di seluruh bulan
-    const branchesSet = new Set();
+    // Hitung total 6 bulan per cabang untuk semua cabang yang memiliki GD
+    const branchTotals = {};
     months.forEach(m => {
-        Object.keys(gdTrendData[m]).forEach(b => branchesSet.add(b));
+        Object.keys(gdTrendData[m]).forEach(b => {
+            const count = gdTrendData[m][b] || 0;
+            branchTotals[b] = (branchTotals[b] || 0) + count;
+        });
     });
-    const branches = Array.from(branchesSet).sort();
+
+    // Ambil SEMUA cabang yang memiliki GD > 0, urutkan berdasarkan total terbanyak
+    const branches = Object.keys(branchTotals)
+        .filter(b => branchTotals[b] > 0)
+        .sort((a, b) => branchTotals[b] - branchTotals[a]);
     
-    // Siapkan dataset (satu garis per cabang)
+    // Fixed Brand Colors per Cabang
+    const branchColors = {
+        'MAKASSAR': '#3b82f6',
+        'DENPASAR': '#a855f7',
+        'KUPANG': '#eab308',
+        'SINGARAJA': '#06b6d4',
+        'DENPASAR - CELLULAR WORLD': '#ef4444',
+        'DENPASAR - PLANET GADGET': '#10b981'
+    };
+
+    // Siapkan dataset untuk semua cabang aktif
     const datasets = branches.map((branch, index) => {
-        // Tentukan warna yang berbeda-beda
-        const hue = (index * 137.5) % 360;
-        const color = `hsl(${hue}, 70%, 50%)`;
+        const color = branchColors[branch] || `hsl(${(index * 137.5) % 360}, 75%, 55%)`;
         
         return {
-            label: branch,
+            label: `${branch} (${branchTotals[branch]} GD)`,
             data: months.map(m => gdTrendData[m][branch] || 0),
             borderColor: color,
             backgroundColor: color,
-            borderWidth: 2,
+            borderWidth: 3,
+            pointRadius: 4,
             tension: 0.3,
             fill: false
         };
@@ -2389,23 +3089,111 @@ window.renderGdTrendChart = function(gdTrendData) {
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: '#ccc' }
+                    labels: { color: '#cbd5e1', font: { weight: 'bold' } }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { color: 'rgba(255,255,255,0.1)' },
-                    ticks: { color: '#ccc' }
+                    grid: { color: 'rgba(255,255,255,0.08)' },
+                    ticks: { color: '#94a3b8', font: { weight: '600' } }
                 },
                 x: {
-                    grid: { color: 'rgba(255,255,255,0.1)' },
-                    ticks: { color: '#ccc' }
+                    grid: { color: 'rgba(255,255,255,0.08)' },
+                    ticks: { color: '#94a3b8', font: { weight: '600' } }
                 }
             }
         }
     });
 };
+
+window.renderGdDailyTable = function(gdDailyData) {
+    const table = document.getElementById('gd-daily-table');
+    if (!table) return;
+    
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    if (!thead || !tbody) return;
+    
+    if (!gdDailyData || Object.keys(gdDailyData).length === 0) {
+        thead.innerHTML = '';
+        tbody.innerHTML = '<tr><td style="padding:15px; color:var(--text-muted); border: none;">Belum ada data GD harian untuk bulan berjalan.</td></tr>';
+        return;
+    }
+
+    // Filter & Sort: Cabang dengan total GD > 0 diurutkan Z - A by Total GD DESC
+    const activeBranches = Object.keys(gdDailyData).filter(b => {
+        const days = gdDailyData[b] || {};
+        const sum = Object.values(days).reduce((acc, v) => acc + (parseInt(v) || 0), 0);
+        return sum > 0;
+    }).sort((a, b) => {
+        const daysA = gdDailyData[a] || {};
+        const daysB = gdDailyData[b] || {};
+        const sumA = Object.values(daysA).reduce((acc, v) => acc + (parseInt(v) || 0), 0);
+        const sumB = Object.values(daysB).reduce((acc, v) => acc + (parseInt(v) || 0), 0);
+        if (sumB !== sumA) return sumB - sumA;
+        return a.localeCompare(b);
+    });
+
+    if (activeBranches.length === 0) {
+        thead.innerHTML = '';
+        tbody.innerHTML = '<tr><td style="padding:15px; color:var(--text-muted); border: none;">Belum ada cabang dengan pergerakan GD bulan berjalan.</td></tr>';
+        return;
+    }
+
+    let maxDay = 0;
+    activeBranches.forEach(b => {
+        Object.keys(gdDailyData[b] || {}).forEach(day => {
+            const dNum = parseInt(day);
+            if (dNum > maxDay) maxDay = dNum;
+        });
+    });
+    
+    if (maxDay === 0) maxDay = 31;
+
+    // Header (Warna Biru standar sesuai header kolom tabel dashboard)
+    let headerHtml = `<tr style="position: sticky; top: 0; background: var(--accent-blue); z-index: 2;"><th style="padding: 10px 14px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: left;">BRANCH</th>`;
+    for (let day = 1; day <= maxDay; day++) {
+        headerHtml += `<th style="padding: 10px 6px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); min-width: 36px; text-align: center;">${day}</th>`;
+    }
+    headerHtml += `<th style="padding: 10px 14px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center;">TOTAL</th></tr>`;
+    thead.innerHTML = headerHtml;
+
+    // Rows
+    tbody.innerHTML = '';
+    const dayTotals = new Array(maxDay + 1).fill(0);
+    let grandTotal = 0;
+
+    activeBranches.forEach((branch) => {
+        const branchDays = gdDailyData[branch] || {};
+        let branchTotal = 0;
+        let rowHtml = `<tr><td style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); padding: 8px 14px; border: 1px solid var(--border-glass); text-align: left; white-space: nowrap;">${branch}</td>`;
+        
+        for (let day = 1; day <= maxDay; day++) {
+            const val = branchDays[day] || 0;
+            branchTotal += val;
+            dayTotals[day] += val;
+            const displayVal = val > 0 ? val : '-';
+            const textStyle = val > 0 ? 'font-weight: 600; color: var(--text-main);' : 'color: var(--text-muted);';
+            rowHtml += `<td style="font-size: 0.95rem; ${textStyle} padding: 8px 6px; border: 1px solid var(--border-glass); text-align: center;">${displayVal}</td>`;
+        }
+        
+        grandTotal += branchTotal;
+        rowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); padding: 8px 14px; border: 1px solid var(--border-glass); text-align: center;">${branchTotal}</td></tr>`;
+        tbody.innerHTML += rowHtml;
+    });
+
+    // Total Row
+    let totalRowHtml = `<tr style="font-weight: 700; background: var(--bg-panel-hover);"><td style="font-size: 0.95rem; font-weight: 700; color: var(--accent-blue); padding: 10px 14px; border: 1px solid var(--border-glass); text-align: left;">TOTAL</td>`;
+    for (let day = 1; day <= maxDay; day++) {
+        const dVal = dayTotals[day];
+        const displayDVal = dVal > 0 ? dVal : '-';
+        totalRowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: var(--accent-blue); padding: 10px 6px; border: 1px solid var(--border-glass); text-align: center;">${displayDVal}</td>`;
+    }
+    totalRowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: var(--accent-blue); padding: 10px 14px; border: 1px solid var(--border-glass); text-align: center;">${grandTotal}</td></tr>`;
+    tbody.innerHTML += totalRowHtml;
+};
+
 window.showToastNotification = showToastNotification;
 window.openAllProdModal = openAllProdModal;
 

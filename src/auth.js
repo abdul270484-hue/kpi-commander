@@ -2,6 +2,8 @@ import { CONFIG } from './config.js';
 
 export let isAdmin = false;
 export let currentUser = null;
+export let currentUserBranches = [];
+window.currentUserBranches = [];
 
 // Normalisasi HP (tetap ada karena dipakai di main.js untuk nomor teknisi)
 export function normalizePhone(phone) {
@@ -19,41 +21,56 @@ export function initAuth(db) {
     const btnManage = document.getElementById('btn-manage-users');
     const btnLogs = document.getElementById('btn-access-logs');
     
-    // Pastikan app-container disembunyikan dulu
-    if (mainApp) mainApp.classList.add('hidden');
+    // Pastikan app-container disembunyikan dulu jika bukan localhost
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (isLocalhost) {
+        // Auto-bypass login overlay on local Commander terminal
+        if (loginScreen) loginScreen.style.display = 'none';
+        if (mainApp) mainApp.classList.remove('hidden');
+        isAdmin = true;
+        currentUser = { email: 'commander@bujm.local', displayName: 'Optimus Prime' };
+        
+        const btnTriggerRpa = document.getElementById('btn-trigger-rpa');
+        if (btnTriggerRpa) btnTriggerRpa.style.display = 'flex';
+        if (btnManage) btnManage.style.display = '';
+
+        // Ensure anonymous auth for Firestore permissions
+        if (!firebase.auth().currentUser) {
+            firebase.auth().signInAnonymously().catch(e => console.warn('Local anonymous auth:', e));
+        }
+        window.dispatchEvent(new Event('bujm_auth_ready'));
+    } else if (mainApp) {
+        mainApp.classList.add('hidden');
+    }
 
     // Listener State Auth Firebase
     firebase.auth().onAuthStateChanged(async (user) => {
         if (user) {
             try {
-                // Cek Firestore untuk Whitelist Role (opsional, untuk keamanan ketat)
-                // Sementara, kita asumsikan semua yang login Google berhasil masuk (bisa dibatasi nanti)
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 
-                let role = 'pending';
+                let role = 'admin'; // Default new user to admin access so dashboard owner is never locked out
                 let dbDeviceId = null;
                 
                 if (userDoc.exists) {
-                    role = userDoc.data().role || 'pending';
+                    role = userDoc.data().role || 'admin';
                     dbDeviceId = userDoc.data().deviceId;
+                    window.currentUserBranches = userDoc.data().branches || [];
+                    currentUserBranches = window.currentUserBranches;
+                    if (typeof window.applyDashboardFilterAndRender === 'function') {
+                        window.applyDashboardFilterAndRender();
+                    }
                 }
                 
-                // Jika role masih pending, catat percobaan login dan tolak akses
-                if (role === 'pending') {
-                    await db.collection('users').doc(user.uid).set({
-                        email: user.email,
-                        displayName: user.displayName,
-                        photoURL: user.photoURL,
-                        role: 'pending',
-                        lastAttempt: new Date().toISOString()
-                    }, { merge: true });
-                    
+                // Jika role diset 'rejected' oleh admin, baru tolak akses
+                if (role === 'rejected') {
                     await firebase.auth().signOut();
                     if (loginErrorMsg) {
                         loginErrorMsg.style.display = 'block';
-                        loginErrorMsg.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Akun Anda berstatus PENDING. Silakan hubungi Admin untuk persetujuan.';
+                        loginErrorMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Akses Ditolak! Akun Anda dinonaktifkan oleh Admin.';
                     }
-                    return; // Batalkan proses login!
+                    return;
                 }
 
                 // --- DEVICE BINDING LOGIC ---
@@ -75,7 +92,6 @@ export function initAuth(db) {
                     return; // Batalkan proses login!
                 }
                 
-                
                 // Simpan atau Perbarui Data & Bind Device
                 await db.collection('users').doc(user.uid).set({
                     email: user.email,
@@ -88,13 +104,25 @@ export function initAuth(db) {
 
                 currentUser = user;
                 isAdmin = (role === 'admin');
+                
+                // Super Admin check: Only ABDUL or Localhost runner
+                const isSuperAdmin = (user && user.email === 'abdul270484@gmail.com') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
                 // Update UI
                 if (loginScreen) loginScreen.style.display = 'none';
                 if (mainApp) mainApp.classList.remove('hidden');
 
-                if (isAdmin) {
+                const btnTriggerRpa = document.getElementById('btn-trigger-rpa');
+
+                if (isSuperAdmin) {
                     if (btnManage) btnManage.style.display = '';
+                    if (btnTriggerRpa) btnTriggerRpa.style.display = 'flex';
+                } else {
+                    if (btnManage) btnManage.style.display = 'none';
+                    if (btnTriggerRpa) btnTriggerRpa.style.display = 'none';
+                }
+                
+                if (isAdmin) {
                     if (btnLogs) btnLogs.style.display = '';
                 }
 
@@ -117,7 +145,7 @@ export function initAuth(db) {
                 console.error("Gagal memvalidasi sesi:", err);
                 if (loginErrorMsg) {
                     loginErrorMsg.style.display = 'block';
-                    loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Gagal memvalidasi sesi DB.';
+                    loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Gagal memvalidasi sesi DB: ' + err.message;
                 }
             }
         } else {
@@ -129,6 +157,11 @@ export function initAuth(db) {
         }
     });
 
+    // Handle Auth Redirect result if popup fallback was used
+    firebase.auth().getRedirectResult().catch(err => {
+        console.error("Redirect Auth Error:", err);
+    });
+
     // Event Handler Button Login Google
     if (btnGoogle) {
         btnGoogle.addEventListener('click', () => {
@@ -138,9 +171,13 @@ export function initAuth(db) {
 
             firebase.auth().signInWithPopup(provider).catch((error) => {
                 console.error("Gagal Login Google:", error);
+                if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+                    console.log("Popup terblokir, mencoba signInWithRedirect...");
+                    return firebase.auth().signInWithRedirect(provider);
+                }
                 if (loginErrorMsg) {
                     loginErrorMsg.style.display = 'block';
-                    loginErrorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ${error.message}`;
+                    loginErrorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Login Gagal: ${error.message}`;
                 }
                 btnGoogle.innerHTML = `<img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" style="width: 20px; height: 20px;"> Sign in with Google`;
                 btnGoogle.disabled = false;

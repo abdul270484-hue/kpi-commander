@@ -218,16 +218,39 @@ const AGING_REASONS = [
     "Request Tech support (Technical problem)"
 ];
 
-// Shorten ASC Name
-function shortenASC(ascName) {
-    if (!ascName) return 'Unknown ASC';
-    const name = String(ascName).toUpperCase();
-    if (name.includes('CELLULAR WORLD')) return 'DCW';
-    if (name.includes('MAHENDRADATA')) return 'DPS';
-    if (name.includes('PLANET GADGET')) return 'DPG';
-    if (name.includes('KUPANG')) return 'KPG';
-    if (name.includes('SINGARAJA')) return 'SGJ';
-    return ascName; // Default
+// Normalize ASC Name
+function shortenASC(ascName, row = null) {
+    if (!ascName && !row) return 'Unknown ASC';
+
+    if (row && typeof row === 'object') {
+        let ccName = '';
+        for (let key in row) {
+            let k = key.toLowerCase().replace(/[^a-z]/g, '');
+            if (k.includes('collectioncenter') || k === 'ccname' || k === 'collectioncentername') {
+                if (k.includes('name') || k === 'collectioncenter' || k === 'ccname') {
+                    ccName = String(row[key] || '').toUpperCase().trim();
+                    if (ccName && ccName !== 'NONE') break;
+                }
+            }
+        }
+        if (ccName.includes('CELLULAR WORLD') || ccName.includes('TEUKU')) return 'DENPASAR - CELLULAR WORLD';
+        if (ccName.includes('PLANET GADGET') || ccName.includes('GATOT')) return 'DENPASAR - PLANET GADGET';
+    }
+
+    let name = String(ascName || '').trim();
+    name = name.replace(/PT\.?\s*BEKARYA\s+UGERTAMA\s+JAYA\s+MANDIRI\s*/gi, '')
+               .replace(/SAMSUNG\s+SERVICE\s+CENTER\s*/gi, '')
+               .replace(/UNICOM\s*/gi, '')
+               .trim();
+
+    const u = name.toUpperCase();
+    if (u.includes('CELLULAR WORLD') || u.includes('TEUKU')) return 'DENPASAR - CELLULAR WORLD';
+    if (u.includes('PLANET GADGET') || u.includes('GATOT')) return 'DENPASAR - PLANET GADGET';
+    if (u.includes('MAHENDRA') || u.includes('DENPASAR')) return 'DENPASAR';
+    if (u.includes('KUPANG')) return 'KUPANG';
+    if (u.includes('SINGARAJA')) return 'SINGARAJA';
+
+    return name || ascName || 'Unknown ASC';
 }
 
 // Determine product category based on model prefix
@@ -1210,7 +1233,7 @@ function analyzeData(data) {
         }
         
         // Shorten ASC Name here
-        let ascName = shortenASC(row['ASC Name']);
+        let ascName = shortenASC(row['ASC Name'], row);
 
         
         const jobNo = row['ASC Job No'] || row['Service Order No.'] || 'N/A';
@@ -1218,9 +1241,9 @@ function analyzeData(data) {
         let engineer = row['Engineer Name'] ? row['Engineer Name'].toString().trim().toUpperCase() : 'UNKNOWN ENGINEER';
         // --- MANUAL OVERRIDE TECHNICIANS ---
         if (engineer === 'MOHHAMAT BAGAS DWI PRAYOGO') {
-            ascName = 'DPG';
+            ascName = 'DENPASAR - PLANET GADGET';
         } else if (engineer === 'SATRIA EKA ADITA' || engineer === 'SANI LASARO') {
-            ascName = 'DCW';
+            ascName = 'DENPASAR - CELLULAR WORLD';
         }
         
         // Build global Engineer to Branch Map for Wall of Fame sync
@@ -2891,4 +2914,6 @@ document.getElementById('detail-modal').addEventListener('click', (e) => {
         document.getElementById('detail-modal').classList.remove('active');
     }
 });
+
+
 

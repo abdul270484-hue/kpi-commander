@@ -1,19 +1,19 @@
 :root {
-    --bg-dark: #070b14;
-    --bg-panel: rgba(15, 23, 42, 0.65);
-    --bg-panel-hover: rgba(30, 41, 59, 0.85);
-    --border-glass: rgba(59, 130, 246, 0.2);
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
+    --bg-dark: #f0f2f5;
+    --bg-panel: #ffffff;
+    --bg-panel-hover: #f8fafc;
+    --border-glass: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
     
-    --accent-blue: #3b82f6;
-    --accent-purple: #8b5cf6;
+    --accent-blue: #1e3a8a;
+    --accent-purple: #7e22ce;
     --accent-red: #ef4444;
     --accent-orange: #f59e0b;
     --accent-green: #10b981;
     
-    --glow-blue: rgba(59, 130, 246, 0.25);
-    --glow-purple: rgba(139, 92, 246, 0.2);
+    --glow-blue: transparent;
+    --glow-purple: transparent;
 }
 
 * {
@@ -26,11 +26,6 @@
 
 body {
     background-color: var(--bg-dark);
-    background-image: 
-        radial-gradient(circle at 50% 30%, rgba(0, 229, 255, 0.08) 0%, transparent 60%),
-        linear-gradient(rgba(0, 229, 255, 0.01) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 229, 255, 0.01) 1px, transparent 1px);
-    background-size: 100% 100%, 30px 30px, 30px 30px;
     color: var(--text-main);
     min-height: 100vh;
     overflow-x: hidden;
@@ -81,31 +76,19 @@ body {
 /* Glassmorphism Utilities */
 .glass-panel {
     background: var(--bg-panel);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--border-glass);
     border-radius: 12px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     position: relative;
     transition: all 0.3s ease;
 }
 
-/* Corner sci-fi tech details */
+/* Corner sci-fi tech details removed */
 .glass-panel::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; width: 6px; height: 6px;
-    border-top: 2px solid var(--accent-blue);
-    border-left: 2px solid var(--accent-blue);
-    pointer-events: none;
+    display: none;
 }
 .glass-panel::after {
-    content: "";
-    position: absolute;
-    bottom: 0; right: 0; width: 6px; height: 6px;
-    border-bottom: 2px solid var(--accent-blue);
-    border-right: 2px solid var(--accent-blue);
-    pointer-events: none;
+    display: none;
 }
 
 /* Layout */
@@ -141,6 +124,17 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.brand h2 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
+    letter-spacing: -0.5px;
+    margin: 0;
 }
 
 .logo-icon {
@@ -210,12 +204,13 @@ body {
 }
 
 .menu a:hover, .menu a.active {
-    background: rgba(255,255,255,0.05);
+    background: rgba(0, 0, 0, 0.05);
     color: var(--text-main);
 }
 
 .menu a.active {
     border-left: 3px solid var(--accent-blue);
+    font-weight: 700;
 }
 
 .system-status {
@@ -250,11 +245,11 @@ body {
     width: 12px;
 }
 .main-content::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 10px;
 }
 .main-content::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
+    background: #cbd5e1;
     border-radius: 10px;
 }
 
@@ -266,8 +261,14 @@ body {
 }
 
 .page-title h1 {
-    font-size: 1.8rem;
-    font-weight: 600;
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.15);
+    letter-spacing: -0.5px;
+    margin-bottom: 2px;
 }
 
 .page-title p {
@@ -304,6 +305,8 @@ body {
     font-size: 0.9rem;
     font-weight: 600;
 }
+
+
 
 .user-info .role {
     font-size: 0.75rem;
@@ -392,7 +395,6 @@ body {
     font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    text-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
 }
 
 .chart-wrapper {
@@ -420,18 +422,18 @@ th, td {
 }
 
 th {
-    color: var(--accent-blue);
+    color: white;
+    background-color: var(--accent-blue);
     font-weight: 700;
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    text-shadow: 0 0 5px rgba(0, 229, 255, 0.3);
 }
 
 .table-responsive th {
     position: sticky;
     top: 0;
-    background: rgba(2, 7, 16, 0.96);
+    background: var(--accent-blue);
     z-index: 10;
     /* Box shadow to replace border-bottom since border doesn't scroll nicely with sticky */
     box-shadow: 0 1px 0 var(--border-glass);
@@ -504,7 +506,7 @@ td {
 .loading-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(10, 15, 28, 0.8);
+    background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(5px);
     z-index: 100;
     display: flex;
@@ -695,3 +697,50 @@ button, .btn {
     pointer-events: none;
     z-index: 10;
 }
+
+#gd-daily-table {
+    border: 1px solid var(--border-glass) !important;
+    border-collapse: collapse !important;
+    width: 100%;
+}
+
+#gd-daily-table th {
+    border: 1px solid var(--border-glass) !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 8px 10px !important;
+}
+
+#gd-daily-table td {
+    border: 1px solid var(--border-glass) !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 8px 10px !important;
+}
+
+#gd-daily-table tbody tr:hover {
+    background: var(--bg-panel-hover) !important;
+}
+
+/* General Data Tables Grid Border Enhancement */
+.data-table td, .data-table th, 
+#branch-table td, #branch-table th,
+#fame-table td, #fame-table th,
+#shame-table td, #shame-table th,
+#rc-table td, #rc-table th,
+#dosa-cabang-table td, #dosa-cabang-table th,
+#redo-table td, #redo-table th,
+#mpu-table td, #mpu-table th,
+#ub-table td, #ub-table th {
+    border-bottom: 1px solid var(--border-glass) !important;
+}
+
+tbody tr:hover {
+    background: var(--bg-panel-hover) !important;
+}
+
+

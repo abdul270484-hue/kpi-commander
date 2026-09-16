@@ -2,16 +2,43 @@
 // WHATSAPP MESSAGING SERVICE
 // ============================================
 
+function normalizeName(name) {
+    if (!name) return '';
+    // Hapus escape karakter \ yang mungkin masuk dari replace(/'/g, "\\'")
+    let n = name.replace(/\\'/g, "'");
+    return n.trim().replace(/\s+/g, ' ').toUpperCase();
+}
+
 function getTechPhone(engName) {
     const contacts = window.techContacts || JSON.parse(localStorage.getItem('bujm_tech_contacts')) || {};
-    return contacts[engName];
+    const norm = normalizeName(engName);
+    
+    if (contacts[engName]) return contacts[engName];
+    if (contacts[norm]) return contacts[norm];
+    
+    // Fuzzy search
+    for (let key in contacts) {
+        if (normalizeName(key) === norm) {
+            return contacts[key];
+        }
+    }
+    return null;
 }
 
 function getTechName(engName) {
-    if (window.techNames && window.techNames[engName]) {
-        return window.techNames[engName];
+    const names = window.techNames || {};
+    const norm = normalizeName(engName);
+    
+    if (names[engName]) return names[engName];
+    if (names[norm]) return names[norm];
+    
+    // Fuzzy search
+    for (let key in names) {
+        if (normalizeName(key) === norm) {
+            return names[key];
+        }
     }
-    return engName;
+    return engName.replace(/\\'/g, "'");
 }
 
 export function getWAPayloadShame(engName, asc, count, detail) {
@@ -26,14 +53,21 @@ export function getWAPayloadShame(engName, asc, count, detail) {
     
     const displayName = getTechName(engName);
     
-    let text = `🚨 *Peringatan AGING!*\n\nHalo ${displayName},\nAwas, *${count} unit pendingmu* sudah melebihi batas 7 hari. Segera eksekusi sebelum aging makin rusak:\n`;
+    let text = `🚨 *Peringatan AGING!*\n\nHalo ${displayName}, Awas, *${count} unit pendingmu* terutama yg paling lama. Segera eksekusi sebelum aging makin rusak:\n`;
     
-    if (window.engineerData && window.engineerData[engName]) {
-        const bills = window.engineerData[engName].bills;
-        bills.sort((a, b) => b.pendingDays - a.pendingDays);
-        
+    // Bills sekarang disimpan di shameData (bukan engineerData lagi untuk menghemat payload)
+    let bills = [];
+    if (window.shameData && Array.isArray(window.shameData)) {
+        const found = window.shameData.find(s => normalizeName(s.engineer) === normalizeName(engName));
+        if (found && Array.isArray(found.bills)) {
+            bills = [...found.bills];
+        }
+    }
+    
+    if (bills.length > 0) {
+        bills.sort((a, b) => (b.pendingDays || 0) - (a.pendingDays || 0));
         bills.forEach((b, index) => {
-            text += `\n${index+1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n   👤 ${b.customer}\n   📱 ${b.model}\n   ⚠️ ${b.reason}\n`;
+            text += `\n${index+1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n👤 ${b.customer}\n📱 ${b.model}\n📌 ${b.reason}\n`;
         });
     }
     
@@ -70,14 +104,14 @@ export function getWAPayloadRC(asc, count) {
     
     const displayName = getTechName(engName);
     
-    let text = `🚨 *WARNING PENDING DELIVERY (RC) - CABANG ${asc}*\n\nHalo ${displayName},\nMohon dibantu *${count} unit* Pending Delivery yang sudah melebihi 7 hari agar segera di follow up ke kurir / customer:\n`;
+    let text = `🚨 *WARNING PENDING DELIVERY (RC) - CABANG ${asc}*\n\nHalo ${displayName},\nBerikut ada *${count} unit* Pending Delivery (Repair Completed). Mohon segera di-follow up ke kurir / customer (tawarkan D2D):\n`;
     
     if (window.rcData && window.rcData[asc]) {
-        const jobs = window.rcData[asc].jobs;
-        jobs.sort((a, b) => b.pendingDays - a.pendingDays);
+        const bills = window.rcData[asc].bills;
+        bills.sort((a, b) => b.pendingDays - a.pendingDays);
         
-        jobs.forEach((j, index) => {
-            text += `\n${index+1}. *${j.jobNo}* (*${j.pendingDays} Hari*)\n   👤 ${j.customer}\n   📱 ${j.model}\n`;
+        bills.forEach((j, index) => {
+            text += `\n${index+1}. *${j.jobNo}* (*${j.pendingDays} Hari*)\n   👤 ${j.customer}\n   📱 ${j.model}\n   ⚠️ ${j.reason}\n`;
         });
     }
     

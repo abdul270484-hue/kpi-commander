@@ -123,11 +123,12 @@ export function isExpensivePart(desc, category) {
     if (!desc) return false;
     const d = String(desc).toUpperCase();
     if (category === 'VD') {
-        return d.includes('PANEL') || d.includes('MODULE') || d.includes('ASSY BOARD P') || d.includes('ASSY PCB MAIN');
+        return d.includes('PANEL') || d.includes('MODULE') || d.includes('ASSY BOARD P') || d.includes('ASSY PCB MAIN') || d.includes('OPEN CELL');
     } else if (category === 'MX') {
-        return d.includes('OCTA') || d.includes('PBA MAIN');
+        if (d.includes('TAPE') || d.includes('KIT') || d.includes('SUB PBA') || d.includes('IF PBA')) return false;
+        return d.includes('OCTA') || d.includes('PBA MAIN') || d.includes('PBA-MAIN') || d.includes('PBA_MAIN') || d.includes('MAIN PBA') || d.includes('SCREEN ASSY');
     } else if (category === 'DA') {
-        return d.includes('COMPRESSOR') || d.includes('PCB MAIN') || d.includes('ASSY BOARD');
+        return d.includes('COMPRESSOR') || d.includes('COMP') || d.includes('PCB MAIN') || d.includes('ASSY BOARD') || d.includes('MOTOR');
     }
     return false;
 }

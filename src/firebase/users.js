@@ -44,3 +44,23 @@ export function approveUser(uid, email) {
         alert('Gagal menyetujui: ' + err.message);
     });
 }
+
+export function editUserBranches(uid, currentBranches) {
+    const input = prompt('Masukkan daftar nama cabang (ASC) yang dihandle oleh user ini.\nPisahkan dengan koma (Contoh: AMBON, TERNATE, JAYAPURA):', currentBranches);
+    if (input === null) return; // Cancel
+    
+    // Parse
+    const branchesArray = input.split(',').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
+    
+    db.collection('users').doc(uid).update({ branches: branchesArray }).then(() => {
+        if (window.showToastNotification) window.showToastNotification('✅ Daftar cabang berhasil diupdate.');
+    }).catch(err => {
+        alert('Gagal mengupdate cabang: ' + err.message);
+    });
+}
+
+// Expose to window for inline onclick in main.js
+window.editUserBranches = editUserBranches;
+window.resetDeviceLock = resetDeviceLock;
+window.removeApprovedUser = removeApprovedUser;
+window.approveUser = approveUser;

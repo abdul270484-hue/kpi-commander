@@ -71,22 +71,41 @@ export const CONFIG = {
 };
 
 // ASC Formatting Logic
-export function shortenASC(ascName) {
-    if (!ascName) return 'Unknown ASC';
-    const name = String(ascName).toUpperCase();
-    if (name.includes('MAHENDRADATA')) return 'DPS';
-    if (name.includes('KUPANG')) return 'KPG';
-    if (name.includes('SINGARAJA')) return 'SGJ';
-    
-    // Fallback if there are others
-    if (name.includes('SAMSUNG SERVICE CENTER')) {
-        return name.replace('SAMSUNG SERVICE CENTER', '').trim();
+export function shortenASC(ascName, row = null) {
+    if (!ascName && !row) return 'Unknown ASC';
+
+    // Check Collection Center Name if row is provided (for splitting Cellular World & Planet Gadget from Denpasar Mahendradatta)
+    if (row && typeof row === 'object') {
+        let ccName = '';
+        for (let key in row) {
+            let k = key.toLowerCase().replace(/[^a-z]/g, '');
+            if (k.includes('collectioncenter') || k === 'ccname' || k === 'collectioncentername') {
+                if (k.includes('name') || k === 'collectioncenter' || k === 'ccname') {
+                    ccName = String(row[key] || '').toUpperCase().trim();
+                    if (ccName && ccName !== 'NONE') break;
+                }
+            }
+        }
+        if (ccName.includes('CELLULAR WORLD') || ccName.includes('TEUKU')) {
+            return 'DENPASAR - CELLULAR WORLD';
+        }
+        if (ccName.includes('PLANET GADGET') || ccName.includes('GATOT')) {
+            return 'DENPASAR - PLANET GADGET';
+        }
     }
-    if (name.includes('PT. BEKARYA UGERTAMA JAYA MANDIRI')) {
-        return name.replace('PT. BEKARYA UGERTAMA JAYA MANDIRI', '').trim();
-    }
-    if (name.includes('PT BEKARYA UGERTAMA JAYA MANDIRI')) {
-        return name.replace('PT BEKARYA UGERTAMA JAYA MANDIRI', '').trim();
-    }
-    return ascName;
+
+    let name = String(ascName || '').trim();
+    name = name.replace(/PT\.?\s*BEKARYA\s+UGERTAMA\s+JAYA\s+MANDIRI\s*/gi, '')
+               .replace(/SAMSUNG\s+SERVICE\s+CENTER\s*/gi, '')
+               .replace(/UNICOM\s*/gi, '')
+               .trim();
+
+    const u = name.toUpperCase();
+    if (u.includes('CELLULAR WORLD') || u.includes('TEUKU')) return 'DENPASAR - CELLULAR WORLD';
+    if (u.includes('PLANET GADGET') || u.includes('GATOT')) return 'DENPASAR - PLANET GADGET';
+    if (u.includes('MAHENDRA') || u.includes('DENPASAR')) return 'DENPASAR';
+    if (u.includes('KUPANG')) return 'KUPANG';
+    if (u.includes('SINGARAJA')) return 'SINGARAJA';
+
+    return name || ascName || 'Unknown ASC';
 }

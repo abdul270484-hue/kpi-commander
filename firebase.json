@@ -1,11 +1,17 @@
 {
   "hosting": {
+    "site": "management-bujm-dashboard",
     "public": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
+      "GSPN_Playwright_RPA/**",
+      "Auto_Scraper/**",
+      "JARVIS_WA_Blaster_Release/**",
       "yes/**",
+      "JARVIS_Portable_Cabang_Final/**",
+      "**/*.zip",
       "**/*.bat",
       "**/*.exe"
     ],

@@ -26,8 +26,10 @@ self.onmessage = function(e) {
 
 function analyzeProductivity(data) {
     let prodStats = {};
+    let invalidGdJobs = [];
     let uniqueWorkingDays = new Set();
     let gdTrendData = {};
+    let gdDailyData = {};
     
     // Step 0: Find dynamic column indices
     let col = {
@@ -36,11 +38,11 @@ function analyzeProductivity(data) {
     
     // Check first 3 rows for headers to fix column mappings
     let engineerNameColFound = false;
+    let bareEngineerCol = -1;
     for (let i = 0; i < 3 && i < data.length; i++) {
         const r = data[i];
         if (!r) continue;
         let foundAny = false;
-        let bareEngineerCol = -1;
         
         for (let j = 0; j < r.length; j++) {
             const h = String(r[j]).trim().toLowerCase();
@@ -62,38 +64,38 @@ function analyzeProductivity(data) {
         if (foundAny) break;
     }
     
-    // Step 0.1: If the detected engineer column contains numeric IDs, scan nearby columns for actual names
-    if (!engineerNameColFound) {
-        let engCol = col.eng;
-        // Check if current eng column has numbers (IDs) in data rows
-        let isNumeric = true;
-        for (let i = 2; i < Math.min(10, data.length); i++) {
-            const val = data[i] && data[i][engCol];
-            if (val && isNaN(Number(val))) { isNumeric = false; break; }
+    // Step 0.1: If the detected engineer column contains numeric IDs, scan nearby columns (and bareEngineerCol) for actual names
+    let engCol = col.eng;
+    let isNumeric = true;
+    let hasData = false;
+    for (let i = 2; i < Math.min(10, data.length); i++) {
+        const val = data[i] && data[i][engCol];
+        if (val) {
+            hasData = true;
+            if (isNaN(Number(val))) { isNumeric = false; break; }
         }
-        
-        if (isNumeric) {
-            // Scan columns around the engineer ID column for one containing text names
-            let candidates = [engCol + 1, engCol - 1, engCol + 2];
-            for (let c of candidates) {
-                if (c < 0) continue;
-                let hasText = false;
-                let allEmpty = true;
-                for (let i = 2; i < Math.min(10, data.length); i++) {
-                    const val = data[i] && data[i][c];
-                    if (!val) continue;
-                    allEmpty = false;
-                    const s = String(val).trim();
-                    // Name-like: contains letters, not just numbers
-                    if (s.length > 2 && /[a-zA-Z]/.test(s) && isNaN(Number(s))) {
-                        hasText = true;
-                        break;
-                    }
-                }
-                if (hasText && !allEmpty) {
-                    col.eng = c;
+    }
+    
+    if (isNumeric && hasData) {
+        let candidates = [bareEngineerCol, engCol + 1, engCol - 1, engCol + 2];
+        for (let c of candidates) {
+            if (c === undefined || c < 0) continue;
+            let hasText = false;
+            let allEmpty = true;
+            for (let i = 2; i < Math.min(10, data.length); i++) {
+                const val = data[i] && data[i][c];
+                if (!val) continue;
+                allEmpty = false;
+                const s = String(val).trim();
+                // Name-like: contains letters
+                if (s.length > 2 && /[a-zA-Z]/.test(s)) {
+                    hasText = true;
                     break;
                 }
+            }
+            if (hasText && !allEmpty) {
+                col.eng = c;
+                break;
             }
         }
     }
@@ -156,6 +158,8 @@ function analyzeProductivity(data) {
         prevYear--;
     }
 
+    let prodJobs = [];
+
     // Step 2: Calculate stats
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
@@ -164,15 +168,15 @@ function analyzeProductivity(data) {
         const gdDate = row[col.date];
         if (!gdDate) continue;
         
-        let branch = shortenASC(row[col.branch]);
-        let engName = row[col.eng] ? String(row[col.eng]).trim().toUpperCase() : null;
+        let branch = shortenASC(row[col.branch], row);
+        let engName = row[col.eng] ? String(row[col.eng]).trim().toUpperCase().replace(/^\d+\s+/, '') : null;
         if (!engName) continue;
         
-        // Override cabang untuk teknisi yang secara administratif di DPS tapi sebenarnya milik cabang lain
+        // Override cabang untuk teknisi yang secara administratif di Denpasar tapi sebenarnya milik cabang lain
         const techBranchOverride = {
-            'MOHHAMAT BAGAS DWI PRAYOGO': 'DPG',
-            'SATRIA EKA ADITA': 'DCW',
-            'SANI LASARO': 'DCW'
+            'MOHHAMAT BAGAS DWI PRAYOGO': 'DENPASAR - PLANET GADGET',
+            'SATRIA EKA ADITA': 'DENPASAR - CELLULAR WORLD',
+            'SANI LASARO': 'DENPASAR - CELLULAR WORLD'
         };
         if (techBranchOverride[engName]) {
             branch = techBranchOverride[engName];
@@ -185,10 +189,16 @@ function analyzeProductivity(data) {
         
         const parsedGdDate = parseExcelDate(gdDate, formatHint, applyCorruptionFix);
         
-        if (!parsedGdDate || isNaN(parsedGdDate.getTime())) continue;
+        if (!parsedGdDate || isNaN(parsedGdDate.getTime())) {
+        if (String(gdDate).includes('00.00.0000')) {
+            invalidGdJobs.push({ jobNo: row[0], engName: engName });
+        }
+        continue;
+    }
 
         const gdMonth = parsedGdDate.getMonth();
         const gdYear = parsedGdDate.getFullYear();
+        const gdDay = parsedGdDate.getDate();
         
         // --- Kumpulkan Data Trend GD (Semua Bulan yang ada di file) ---
         const monthYearStr = `${gdYear}-${String(gdMonth + 1).padStart(2, '0')}`;
@@ -196,12 +206,27 @@ function analyzeProductivity(data) {
         if (!gdTrendData[monthYearStr][branch]) gdTrendData[monthYearStr][branch] = 0;
         gdTrendData[monthYearStr][branch]++;
 
+        // --- Kumpulkan Data Harian GD (Bulan Berjalan Saja) ---
+        if (gdMonth === currMonth && gdYear === currYear) {
+            if (!gdDailyData[branch]) gdDailyData[branch] = {};
+            if (!gdDailyData[branch][gdDay]) gdDailyData[branch][gdDay] = 0;
+            gdDailyData[branch][gdDay]++;
+        }
+
         let prodJobNo = null;
         for (let j = 0; j < 5; j++) {
             if (row[j] && String(row[j]).startsWith('4') && String(row[j]).length === 10) {
                 prodJobNo = String(row[j]);
                 break;
             }
+        }
+
+        if (prodJobNo) {
+            prodJobs.push({
+                jobNo: prodJobNo,
+                engineer: engName,
+                branch: branch
+            });
         }
 
         if (gdMonth === prevMonth && gdYear === prevYear) {
@@ -232,7 +257,7 @@ function analyzeProductivity(data) {
         prodStats[engName].laborOOW += laborOOW;
         
         if (laborIW > 0) prodStats[engName].gdRepair++;
-        else if (laborOOW > 0 && laborOOW < 100000) prodStats[engName].gdCancel++;
+        else if (laborOOW > 0 && laborOOW < 80000) prodStats[engName].gdCancel++;
         else prodStats[engName].gdRepair++;
         
         if (isDateToday(gdDate, formatHint, applyCorruptionFix)) {
@@ -258,9 +283,7 @@ function analyzeProductivity(data) {
         return b.gdCount - a.gdCount;
     });
     
-
-    
-    return { fameList: fameList, gdTrendData: gdTrendData };
+    return { fameList: fameList, gdTrendData: gdTrendData, gdDailyData: gdDailyData, invalidGdJobs: invalidGdJobs, prodJobs: prodJobs };
 }
 
 function performAnalysis(data, customModels, customReasons) {
@@ -314,10 +337,15 @@ function performAnalysis(data, customModels, customReasons) {
             category = 'MX'; 
         }
         
-        let warranty = row['In Out Warranty Flag'] || '';
-        if (typeof warranty === 'string') warranty = warranty.trim().toUpperCase();
-        const isIW = (warranty === 'IW' || warranty === 'LP' || warranty === 'L');
-
+        let warranty = '';
+        for (let k in row) {
+            let kLow = k.toLowerCase().replace(/[^a-z]/g, '');
+            if (kLow.includes('warranty') || kLow === 'inoutwarrantyflag' || kLow === 'inoutflag' || kLow === 'wty' || kLow === 'iwow') {
+                if (row[k]) { warranty = String(row[k]).trim().toUpperCase(); break; }
+            }
+        }
+        const isIW = (warranty === 'IW' || warranty === 'LP' || warranty === 'L' || warranty.startsWith('IN') || warranty === 'IN WARRANTY');
+        
         if (isIW) stats.totalCat[category]++;
         
         const status = row['Status'] || '';
@@ -340,13 +368,41 @@ function performAnalysis(data, customModels, customReasons) {
             }
         }
         
-        let ascName = shortenASC(row['ASC Name']);
-        const jobNo = row['ASC Job No'] || row['Service Order No.'] || 'N/A';
-        const repairCode = row['Repair Code'] || '';
-        let engineer = row['Engineer Name'] ? row['Engineer Name'].toString().trim().toUpperCase() : 'UNKNOWN ENGINEER';
+        let ascName = shortenASC(row['ASC Name'] || row['ASC'] || row['Service Center'], row);
         
-        if (engineer === 'MOHHAMAT BAGAS DWI PRAYOGO') ascName = 'DPG';
-        else if (engineer === 'SATRIA EKA ADITA' || engineer === 'SANI LASARO') ascName = 'DCW';
+        let jobNo = 'N/A';
+        for (let key in row) {
+            let k = key.toLowerCase().trim();
+            if (k.includes('job') || k.includes('order') || k.includes('ticket') || k === 'so' || k === 'so no' || k === 'so.') {
+                if (row[key] && row[key].toString().trim() !== '') {
+                    jobNo = row[key].toString().trim();
+                    break;
+                }
+            }
+        }
+        
+        // Fallback: search any column for a 10-digit number starting with 4
+        if (jobNo === 'N/A') {
+            for (let key in row) {
+                if (row[key]) {
+                    let sVal = String(row[key]).trim();
+                    if (/^4\d{9}$/.test(sVal.replace(/\D/g, ''))) {
+                        jobNo = sVal;
+                        break;
+                    }
+                }
+            }
+        }
+        const repairCode = row['Repair Code'] || '';
+        let engineer = row['Engineer Name'] ? row['Engineer Name'].toString().trim().toUpperCase().replace(/^\d+\s+/, '') : null;
+        if (!engineer || /^\d+$/.test(engineer)) {
+            let backup = row['Engineer'] ? row['Engineer'].toString().trim().toUpperCase().replace(/^\d+\s+/, '') : null;
+            if (backup && /[a-zA-Z]/.test(backup)) {
+                engineer = backup;
+            } else {
+                engineer = engineer || 'UNKNOWN ENGINEER';
+            }
+        }
         
         if (status.includes('Assigned to Service Center') || status.includes('Acknowledge')) {
             engineer = `PIC ${ascName}`;
@@ -396,20 +452,73 @@ function performAnalysis(data, customModels, customReasons) {
         let hasOcta = false;
         let ubPartsFound = [];
         
-        for (let i = 1; i <= 10; i++) {
-            let descKey = `Parts description ${i.toString().padStart(2, '0')}`;
-            let noKey = `Parts No ${i.toString().padStart(2, '0')}`;
-            let partDesc = row[descKey];
-            let partNo = row[noKey] || partDesc; 
-            
-            if (partDesc) {
+        // Scan standard numbered keys (1 to 20) as well as any key containing part/part description
+        const visitedPartKeys = new Set();
+        for (let i = 1; i <= 20; i++) {
+            const padI = i.toString().padStart(2, '0');
+            const descKeys = [
+                `Parts description ${padI}`,
+                `Parts Description ${padI}`,
+                `Part description ${padI}`,
+                `Part Description ${padI}`,
+                `Parts description ${i}`,
+                `Part description ${i}`,
+                `Parts Description ${i}`,
+                `Part Description ${i}`
+            ];
+            const noKeys = [
+                `Parts No ${padI}`,
+                `Parts No ${i}`,
+                `Part No ${padI}`,
+                `Part No ${i}`,
+                `Parts Code ${padI}`,
+                `Part Code ${padI}`
+            ];
+
+            let partDesc = null;
+            let partNo = null;
+
+            for (let k of descKeys) {
+                if (row[k]) { partDesc = String(row[k]).trim(); visitedPartKeys.add(k); break; }
+            }
+            for (let k of noKeys) {
+                if (row[k]) { partNo = String(row[k]).trim(); visitedPartKeys.add(k); break; }
+            }
+
+            if (partDesc || partNo) {
+                const effectiveDesc = partDesc || partNo;
+                const effectiveNo = partNo || partDesc;
+                const partDescUpper = effectiveDesc.toUpperCase();
+                const isRealOcta = partDescUpper.includes('OCTA') && !partDescUpper.includes('TAPE') && !partDescUpper.includes('KIT');
+
                 partsUsedCount++;
-                if (isExpensivePart(partDesc, category) && !expensivePartsFound.includes(partNo)) {
-                    expensivePartsFound.push(partNo);
+                if (isExpensivePart(effectiveDesc, category) && !expensivePartsFound.includes(effectiveNo)) {
+                    expensivePartsFound.push(effectiveNo);
                 }
-                if (String(partDesc).toUpperCase().includes('OCTA')) {
+                if (isRealOcta) {
                     hasOcta = true;
-                    if (!ubPartsFound.includes(partNo)) ubPartsFound.push(partNo);
+                    if (!ubPartsFound.includes(effectiveNo)) ubPartsFound.push(effectiveNo);
+                }
+            }
+        }
+
+        // Catch-all dynamic loop for other column naming variations
+        for (let key in row) {
+            if (visitedPartKeys.has(key)) continue;
+            const kLow = key.toLowerCase();
+            if ((kLow.includes('part') && (kLow.includes('desc') || kLow.includes('nama') || kLow.includes('name'))) || kLow.includes('parts description')) {
+                const val = row[key] ? String(row[key]).trim() : '';
+                if (val && val !== '-' && val !== 'N/A') {
+                    const valUpper = val.toUpperCase();
+                    const isRealOcta = valUpper.includes('OCTA') && !valUpper.includes('TAPE') && !valUpper.includes('KIT');
+                    partsUsedCount++;
+                    if (isExpensivePart(val, category) && !expensivePartsFound.includes(val)) {
+                        expensivePartsFound.push(val);
+                    }
+                    if (isRealOcta) {
+                        hasOcta = true;
+                        if (!ubPartsFound.includes(val)) ubPartsFound.push(val);
+                    }
                 }
             }
         }
@@ -523,15 +632,13 @@ function performAnalysis(data, customModels, customReasons) {
             }
         }
 
-        if (isIW) {
-            if (expensivePartsFound.length > 1) {
-                stats.mpuViolations++; branchStats[ascName].mpu++; branchStats[ascName].bills.mpu.push(billInfo);
-                mpuList.push({ jobNo, asc: ascName, model, parts: expensivePartsFound.join(" + "), category, status, engineer });
-            }
-            if (model && String(model).toUpperCase().startsWith('SM-F') && hasOcta) {
-                stats.ubViolations++; branchStats[ascName].ub++; branchStats[ascName].bills.ub.push(billInfo);
-                ubList.push({ jobNo, asc: ascName, model, parts: ubPartsFound.join(" + "), status, engineer });
-            }
+        if (expensivePartsFound.length > 1) {
+            stats.mpuViolations++; branchStats[ascName].mpu++; branchStats[ascName].bills.mpu.push(billInfo);
+            mpuList.push({ jobNo, asc: ascName, model, parts: expensivePartsFound.join(" + "), category, status, engineer });
+        }
+        if (model && String(model).toUpperCase().startsWith('SM-F') && hasOcta) {
+            stats.ubViolations++; branchStats[ascName].ub++; branchStats[ascName].bills.ub.push(billInfo);
+            ubList.push({ jobNo, asc: ascName, model, parts: ubPartsFound.join(" + "), status, engineer });
         }
     });
 
@@ -543,11 +650,18 @@ function performAnalysis(data, customModels, customReasons) {
             shameList.push({ engineer: eng, asc: es.asc, count: totalDosa, detail: `MX:${es.mxAging} VD:${es.vdAging} DA:${es.daAging}` });
         }
     }
-    shameList.sort((a, b) => a.asc.localeCompare(b.asc));
+    // Sort: 1. Branch A-Z, 2. Aging Units DESC
+    shameList.sort((a, b) => {
+        const comp = (a.asc || '').localeCompare(b.asc || '');
+        if (comp !== 0) return comp;
+        return b.count - a.count;
+    });
 
+    // Sort: 1. Branch A-Z, 2. Pending Days DESC
     dosaCabangOver7.sort((a, b) => {
-        if (b.pendingDays !== a.pendingDays) return b.pendingDays - a.pendingDays;
-        return a.asc.localeCompare(b.asc);
+        const comp = (a.asc || '').localeCompare(b.asc || '');
+        if (comp !== 0) return comp;
+        return b.pendingDays - a.pendingDays;
     });
 
     let dosaCabangStats = {};
@@ -575,3 +689,5 @@ function performAnalysis(data, customModels, customReasons) {
         unknownReasons: Array.from(unknownReasons)
     };
 }
+
+

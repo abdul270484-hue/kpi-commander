@@ -45,17 +45,34 @@ export async function scanRedoImage(file) {
 
     try {
         const { data: { text } } = await ocrWorker.recognize(file);
+        console.log("Raw OCR Text:", text);
+
+        // Preprocess text to fix common OCR misreadings for 10-digit numbers starting with 4
+        // 1. Remove spaces or hyphens that split 10-digit numbers (e.g. 4436 455768 -> 4436455768)
+        let cleanedText = text.replace(/(4\d{2,4})[\s\-]+(\d{4,7})/g, '$1$2');
         
-        // Cari angka 10 digit yang berawalan angka 4
-        const regex = /\b4\d{9}\b/g;
-        const matches = text.match(regex);
+        // 2. Fix common character confusions in 10-digit candidate strings (O/o->0, I/l/|->1, S/s->5, B->8, A/a->4)
+        cleanedText = cleanedText.replace(/\b[4Aa][0-9OoSsIiLlBb|]{9}\b/g, m => {
+            return m.replace(/[O|o]/g, '0')
+                    .replace(/[I|l|i|\|]/g, '1')
+                    .replace(/[S|s]/g, '5')
+                    .replace(/B/g, '8')
+                    .replace(/[A|a]/g, '4');
+        });
+
+        // 3. Match 10-digit job numbers starting with 4 (or 43/44/45/49 etc)
+        const regex = /4\d{9}/g;
+        const matchesRaw = text.match(regex) || [];
+        const matchesCleaned = cleanedText.match(regex) || [];
+        const combinedMatches = [...matchesRaw, ...matchesCleaned];
         
-        if (!matches || matches.length === 0) {
+        if (combinedMatches.length === 0) {
             return { success: true, uniqueJobs: [] };
         }
 
         // Hapus duplikat job number
-        const uniqueJobs = [...new Set(matches)];
+        const uniqueJobs = [...new Set(combinedMatches)];
+        console.log("Extracted Job Numbers:", uniqueJobs);
         return { success: true, uniqueJobs };
     } catch (err) {
         console.error("OCR Error:", err);
