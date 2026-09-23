@@ -138,7 +138,7 @@ export function isReasonMatched(reasonStr, predefinedList, customKeywords) {
     if (predefinedList.includes(reasonStr)) return true;
     const rUpper = String(reasonStr).toUpperCase();
     for (let kw of customKeywords) {
-        if (rUpper === kw) return true;
+        if (rUpper === kw || rUpper.includes(kw)) return true;
     }
     return false;
 }

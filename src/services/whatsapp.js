@@ -49,11 +49,23 @@ export function getWAPayloadShame(engName, asc, count, detail) {
     let waNumber = phone.replace(/\D/g, '');
     if (waNumber.startsWith('0')) {
         waNumber = '62' + waNumber.substring(1);
+    } else if (waNumber.startsWith('8')) {
+        waNumber = '62' + waNumber;
+    } else if (waNumber.startsWith('8')) {
+        waNumber = '62' + waNumber;
     }
     
     const displayName = getTechName(engName);
     
-    let text = `🚨 *Peringatan AGING!*\n\nHalo ${displayName}, Awas, *${count} unit pendingmu* terutama yg paling lama. Segera eksekusi sebelum aging makin rusak:\n`;
+const now = new Date();
+    const hours = now.getHours();
+    let greeting = 'Pagi';
+    if (hours >= 11 && hours < 15) greeting = 'Siang';
+    else if (hours >= 15 && hours < 18) greeting = 'Sore';
+    else if (hours >= 18) greeting = 'Malam';
+    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+    let text = `🚨 *Peringatan AGING! [Update: ${timeStr} WIB]*\n\nSelamat ${greeting} ${displayName}, Awas, *${count} unit pendingmu* terutama yg paling lama. Segera eksekusi sebelum aging makin rusak:\n`;
     
     // Bills sekarang disimpan di shameData (bukan engineerData lagi untuk menghemat payload)
     let bills = [];
@@ -100,11 +112,23 @@ export function getWAPayloadRC(asc, count) {
     let waNumber = phone.replace(/\D/g, '');
     if (waNumber.startsWith('0')) {
         waNumber = '62' + waNumber.substring(1);
+    } else if (waNumber.startsWith('8')) {
+        waNumber = '62' + waNumber;
+    } else if (waNumber.startsWith('8')) {
+        waNumber = '62' + waNumber;
     }
     
     const displayName = getTechName(engName);
     
-    let text = `🚨 *WARNING PENDING DELIVERY (RC) - CABANG ${asc}*\n\nHalo ${displayName},\nBerikut ada *${count} unit* Pending Delivery (Repair Completed). Mohon segera di-follow up ke kurir / customer (tawarkan D2D):\n`;
+const now = new Date();
+    const hours = now.getHours();
+    let greeting = 'Pagi';
+    if (hours >= 11 && hours < 15) greeting = 'Siang';
+    else if (hours >= 15 && hours < 18) greeting = 'Sore';
+    else if (hours >= 18) greeting = 'Malam';
+    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+    let text = `🚨 *WARNING PENDING DELIVERY (RC) - CABANG ${asc} [Update: ${timeStr} WIB]*\n\nSelamat ${greeting} ${displayName},\nBerikut ada *${count} unit* Pending Delivery (Repair Completed). Mohon segera di-follow up ke kurir / customer (tawarkan D2D):\n`;
     
     if (window.rcData && window.rcData[asc]) {
         const bills = window.rcData[asc].bills;
@@ -142,6 +166,10 @@ export function sendWADosaSingleBranch(asc) {
     let waNumber = phone.replace(/\D/g, '');
     if (waNumber.startsWith('0')) {
         waNumber = '62' + waNumber.substring(1);
+    } else if (waNumber.startsWith('8')) {
+        waNumber = '62' + waNumber;
+    } else if (waNumber.startsWith('8')) {
+        waNumber = '62' + waNumber;
     }
     
     const displayName = getTechName(engName);
@@ -173,6 +201,10 @@ export function sendWARedo(engName, jobNo, model) {
     let waNumber = phone.replace(/\D/g, '');
     if (waNumber.startsWith('0')) {
         waNumber = '62' + waNumber.substring(1);
+    } else if (waNumber.startsWith('8')) {
+        waNumber = '62' + waNumber;
+    } else if (waNumber.startsWith('8')) {
+        waNumber = '62' + waNumber;
     }
     
     const displayName = getTechName(engName);

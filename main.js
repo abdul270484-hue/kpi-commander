@@ -58,6 +58,8 @@ analyzerWorker.onmessage = function(e) {
         window.prodData = engineerStats; 
         window.dtsMxData = dtsMxData;
         window.dtsIhData = dtsIhData;
+        window.unknownModels = unknownModels || [];
+        window.unknownReasons = unknownReasons || [];
         window.dosaCabangData = dosaCabangOver7;
         window.dosaCabangStatsGlobal = dosaCabangStats;
         window.engineerData = engineerStats;
@@ -198,7 +200,7 @@ if (dropZoneQueue && fileInputQueue) {
 }
 
 // ==========================================
-// JARVIS WA BLASTER INTEGRATION (via Firestore)
+// Sistem Bot WA WA BLASTER INTEGRATION (via Firestore)
 // ==========================================
 let isJarvisOnline = false;
 let lastJarvisQr = null;
@@ -217,7 +219,7 @@ function updateJarvisUI(isReady, qrCode) {
         statusEl.style.color = '#10b981';
         statusEl.style.borderColor = '#10b981';
         statusEl.style.cursor = 'default';
-        textEl.innerText = 'JARVIS: Online';
+        textEl.innerText = 'Sistem Bot WA: Online';
         if (qrModal && qrModal.classList.contains('active')) qrModal.classList.remove('active');
     } else if (qrCode) {
         isJarvisOnline = false;
@@ -226,7 +228,7 @@ function updateJarvisUI(isReady, qrCode) {
         statusEl.style.color = '#f59e0b';
         statusEl.style.borderColor = '#f59e0b';
         statusEl.style.cursor = 'pointer';
-        textEl.innerText = 'JARVIS: Scan QR';
+        textEl.innerText = 'Sistem Bot WA: Scan QR';
         if (qrImg) qrImg.src = qrCode;
     } else {
         isJarvisOnline = false;
@@ -235,7 +237,7 @@ function updateJarvisUI(isReady, qrCode) {
         statusEl.style.color = 'var(--accent-red)';
         statusEl.style.borderColor = 'var(--accent-red)';
         statusEl.style.cursor = 'default';
-        textEl.innerText = 'JARVIS: Offline';
+        textEl.innerText = 'Sistem Bot WA: Offline';
     }
 }
 
@@ -245,7 +247,7 @@ function startJarvisFirestoreListener() {
     try {
         if (window.db) {
             window.db.collection('rpa_commands').doc('wa_status').onSnapshot(snap => {
-                // If the user is running their own local JARVIS, ignore the central Firestore status
+                // If the user is running their own local Sistem Bot WA, ignore the central Firestore status
                 if (isLocalJarvisDetected) return;
                 if (snap.exists) {
                     const d = snap.data();
@@ -266,7 +268,7 @@ function startJarvisFirestoreListener() {
 startJarvisFirestoreListener();
 
 function checkJarvisStatus() {
-    fetch('http://localhost:3001/api/status')
+    fetch('http://127.0.0.1:3001/api/status')
         .then(res => res.json())
         .then(data => {
             isLocalJarvisDetected = true;
@@ -291,7 +293,7 @@ if (jarvisBadge) {
             if (qrModal) qrModal.classList.add('active');
         } else if (!isJarvisOnline) {
             if (window.showToastNotification) {
-                window.showToastNotification('⚠️ JARVIS Super Engine sedang memulai di port 3001...');
+                window.showToastNotification('⚠️ Sistem Bot WA Super Engine sedang memulai di port 3001...');
             }
         }
     });
@@ -313,14 +315,14 @@ setInterval(checkJarvisStatus, 5000);
 
 async function blastViaJarvis(blastQueueArray) {
     if (!isJarvisOnline) {
-        showToastNotification('JARVIS sedang Offline! Pastikan file start_jarvis_background.vbs sudah dijalankan.');
+        showToastNotification('Sistem WA sedang Offline! Pastikan file start_jarvis_background.vbs sudah dijalankan.');
         return false;
     }
     
-    showToastNotification(`Mengirim ${blastQueueArray.length} data ke JARVIS...`);
+    showToastNotification(`Mengirim ${blastQueueArray.length} data ke Sistem Bot WA...`);
     
     try {
-        const response = await fetch('http://localhost:3001/api/blast', {
+        const response = await fetch('http://127.0.0.1:3001/api/blast', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -333,14 +335,14 @@ async function blastViaJarvis(blastQueueArray) {
         
         const result = await response.json();
         if (result.success) {
-            showToastNotification('BERHASIL! JARVIS sekarang sedang mengirim WA di background secara otomatis.');
+            showToastNotification('BERHASIL! Sistem Bot WA sekarang sedang mengirim WA di background secara otomatis.');
             return true;
         } else {
-            showToastNotification('Gagal mengirim ke JARVIS: ' + result.error);
+            showToastNotification('Gagal mengirim ke Sistem Bot WA: ' + result.error);
             return false;
         }
     } catch (err) {
-        showToastNotification('Error komunikasi dengan JARVIS: ' + err.message);
+        showToastNotification('Error komunikasi dengan Sistem Bot WA: ' + err.message);
         return false;
     }
 }
@@ -354,7 +356,7 @@ if (btnBlastShame) {
             return;
         }
 
-        // Kumpulkan payload JARVIS
+        // Kumpulkan payload Sistem Bot WA
         const blastQueueArray = [];
         const blastQueueManual = [];
         
@@ -378,11 +380,11 @@ if (btnBlastShame) {
         }
 
         if (isJarvisOnline) {
-            // JARVIS Mode
+            // Sistem Bot WA Mode
             await blastViaJarvis(blastQueueArray);
         } else {
             // Manual Fallback Mode
-            showToastNotification(`JARVIS Offline. Memulai WA Blast MANUAL ke ${blastQueueManual.length} teknisi... Pastikan POPUP BLOCKER diizinkan!`);
+            showToastNotification(`Sistem WA Offline. Memulai WA Blast MANUAL ke ${blastQueueManual.length} teknisi... Pastikan POPUP BLOCKER diizinkan!`);
             let index = 0;
             const blastInterval = setInterval(() => {
                 if (index >= blastQueueManual.length) {
@@ -395,7 +397,7 @@ if (btnBlastShame) {
                     window.sendWA(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
                 }
                 index++;
-            }, 17000); // 17 seconds delay
+            }, 10000); // 17 seconds delay
         }
     });
 }
@@ -433,11 +435,11 @@ if (btnBlastRC) {
         }
 
         if (isJarvisOnline) {
-            // JARVIS Mode
+            // Sistem Bot WA Mode
             await blastViaJarvis(blastQueueArray);
         } else {
             // Manual Fallback Mode
-            showToastNotification(`JARVIS Offline. Memulai WA Blast MANUAL ke ${blastQueueManual.length} cabang... Pastikan POPUP BLOCKER diizinkan!`);
+            showToastNotification(`Sistem WA Offline. Memulai WA Blast MANUAL ke ${blastQueueManual.length} cabang... Pastikan POPUP BLOCKER diizinkan!`);
             let index = 0;
             const blastInterval = setInterval(() => {
                 if (index >= blastQueueManual.length) {
@@ -450,7 +452,7 @@ if (btnBlastRC) {
                     window.sendWARC(item.asc, item.count);
                 }
                 index++;
-            }, 17000); // 17 seconds delay
+            }, 10000); // 17 seconds delay
         }
     });
 }
@@ -493,6 +495,56 @@ if (btnShareDosaCabang) {
             console.error('Failed to copy text: ', err);
             showToastNotification('Gagal menyalin teks.');
         });
+    });
+}
+
+
+// Event Listener for Share Wall of Fame
+const btnShareFame = document.getElementById('btnShareFame');
+if (btnShareFame) {
+    btnShareFame.addEventListener('click', () => {
+        if (!window.fameData || window.fameData.length === 0) {
+            showToastNotification('Belum ada data Wall of Fame atau daftar kosong!');
+            return;
+        }
+        
+        const dateStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        
+        // Penentuan sapaan berdasarkan waktu
+        const hour = new Date().getHours();
+        let greeting = 'Selamat pagi';
+        if (hour >= 11 && hour < 15) greeting = 'Selamat siang';
+        else if (hour >= 15 && hour < 18) greeting = 'Selamat sore';
+        else if (hour >= 18 || hour < 4) greeting = 'Selamat malam';
+        
+        let text = `*WALL OF FAME (TOP PERFORMERS)* 🏆\n` +
+                   `Update: ${dateStr}\n\n` +
+                   `${greeting} Tim, mari berikan apresiasi kepada Teknisi dengan produktivitas GD tertinggi (Bulan Berjalan):\n\n`;
+        
+        window.fameData.forEach((eng, idx) => {
+            let medali = '';
+            if (idx === 0) medali = '🥇';
+            else if (idx === 1) medali = '🥈';
+            else if (idx === 2) medali = '🥉';
+            else medali = '🎖️';
+            
+            text += `${medali} *${eng.engineer}* (${eng.resolvedBranch})\n` +
+                    `   Total GD : ${eng.gdCount}\n` +
+                    `   Repair   : ${eng.gdRepair}\n` +
+                    `   Cancel   : ${eng.gdCancel}\n\n`;
+        });
+        
+        text += `Terus tingkatkan produktivitas dan pertahankan performa luar biasa ini! 🔥👏`;
+        
+        
+        
+        navigator.clipboard.writeText(text).then(() => {
+            showToastNotification('Daftar Wall of Fame berhasil disalin! Silakan paste di Grup WA.');
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            showToastNotification('Gagal menyalin teks. Pastikan browser mengizinkan akses Clipboard.');
+        });
+
     });
 }
 
@@ -952,11 +1004,12 @@ function isDateToday(dateVal) {
 // Productivity Core Analytics Engine
 
 function renderFameTable(fameList) {
+    window.fameData = fameList;
     const tbodyFame = document.querySelector('#fame-table tbody');
     tbodyFame.innerHTML = '';
     
     if (fameList.length === 0) {
-        tbodyFame.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">No Good Delivered data found!</td></tr>`;
+        tbodyFame.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">No Good Delivered data found!</td></tr>`;
     } else {
         fameList.forEach(item => {
             let gdCountText = item.gdCount > 0 ? `${item.gdCount} Units` : '';
@@ -969,7 +1022,6 @@ function renderFameTable(fameList) {
             tr.innerHTML = `
                 <td style="font-size: 0.85rem; font-weight: 500;">${item.resolvedBranch}</td>
                 <td style="font-size: 0.85rem; font-weight: 500;">${item.engineer}</td>
-                <td style="text-align:center; color:var(--text-muted); font-size: 0.9rem;">${gdPrevText}</td>
                 <td style="text-align:center;"><span style="color:var(--accent-blue); font-size:1rem; font-weight: 700;">${gdCountText}</span></td>
                 <td style="text-align:center; font-weight:700; font-size:1rem;">${avgGdText}</td>
                 <td style="color:var(--accent-green); font-weight:700; font-size: 1rem; text-align:center;">${repairText}</td>
@@ -1983,6 +2035,47 @@ window.addEventListener('click', (e) => {
     if (e.target === usersModal) usersModal.classList.add('hidden');
 });
 
+
+window.fillModelRule = function(val) {
+    document.getElementById('rule-model-keyword').value = val;
+};
+window.fillReasonRule = function(val) {
+    document.getElementById('rule-reason-keyword').value = val;
+};
+
+function renderUnmappedSuggestions() {
+    const ml = document.getElementById('unmapped-models-list');
+    const rl = document.getElementById('unmapped-reasons-list');
+    if (!ml || !rl) return;
+    
+    ml.innerHTML = '';
+    rl.innerHTML = '';
+    
+    const unModels = window.unknownModels || [];
+    const unReasons = window.unknownReasons || [];
+    
+    if (unModels.length === 0) ml.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted);">Tidak ada</span>';
+    else {
+        unModels.forEach(m => {
+            const btn = document.createElement('button');
+            btn.textContent = m;
+            btn.style.cssText = 'background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #dc2626; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;';
+            btn.onclick = () => fillModelRule(m);
+            ml.appendChild(btn);
+        });
+    }
+    
+    if (unReasons.length === 0) rl.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted);">Tidak ada</span>';
+    else {
+        unReasons.forEach(r => {
+            const btn = document.createElement('button');
+            btn.textContent = r;
+            btn.style.cssText = 'background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #dc2626; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;';
+            btn.onclick = () => fillReasonRule(r);
+            rl.appendChild(btn);
+        });
+    }
+}
 function renderCustomRules() {
     const tbodyModels = document.getElementById('custom-models-list');
     if(tbodyModels) {
@@ -2016,9 +2109,11 @@ function renderCustomRules() {
                     <td style="text-align:center;"><button onclick="deleteCustomRule('reason', ${idx})" style="background: none; border: none; color: var(--accent-red); cursor: pointer;" title="Hapus"><i class="fa-solid fa-trash"></i></button></td>
                 `;
                 tbodyReasons.appendChild(tr);
-            });
-        }
-    }
+              });
+          }
+      }
+      renderUnmappedSuggestions();
+
 
     // Render Misterious Models
     let modelsAlertContainer = document.getElementById('unknown-models-alert');
@@ -3198,3 +3293,52 @@ window.showToastNotification = showToastNotification;
 window.openAllProdModal = openAllProdModal;
 
 }); // End of bujm_auth_ready block
+
+
+// ==========================================
+// AUTO ALERT SYSTEM (CRON JOB FRONTEND)
+// ==========================================
+const AUTO_ALERT_TIMES = ['09:10', '12:10', '15:10'];
+setInterval(() => {
+    const now = new Date();
+    const dateStr = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate(); 
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    let completedAlerts = JSON.parse(localStorage.getItem('bujm_completed_alerts') || '{}');
+
+    // Reset old dates to prevent localStorage from growing forever
+    if (completedAlerts.date !== dateStr) {
+        completedAlerts = { date: dateStr };
+    }
+
+    let needsSave = false;
+    const AUTO_ALERT_TIMES = ['09:10', '12:10', '15:10'];
+
+    AUTO_ALERT_TIMES.forEach(targetTime => {
+        const parts = targetTime.split(':');
+        const targetTotalMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        
+        const alertKey = targetTime;
+        
+        // Window is 45 minutes to account for throttled background tabs
+        if (currentMins >= targetTotalMins && currentMins < targetTotalMins + 45 && !completedAlerts[alertKey]) {
+            completedAlerts[alertKey] = true; 
+            needsSave = true;
+            console.log('[AUTO ALERT] Triggering Scheduled Blast for ' + targetTime);
+            
+            const btnShame = document.getElementById('btnBlastShame');
+            if (btnShame) {
+                setTimeout(() => btnShame.click(), 2000); 
+            }
+            
+            const btnRC = document.getElementById('btnBlastRC');
+            if (btnRC && targetTime === '09:10') {
+                setTimeout(() => btnRC.click(), 5000); 
+            }
+        }
+    });
+
+    if (needsSave) {
+        localStorage.setItem('bujm_completed_alerts', JSON.stringify(completedAlerts));
+    }
+}, 30000); // Cek setiap 30 detik
