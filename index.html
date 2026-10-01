@@ -69,7 +69,7 @@
         <main class="main-content" style="padding-right: 0;">
             <header class="topbar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; margin-bottom: 15px;">
                 <div class="page-title" style="display: flex; flex-direction: column; gap: 4px;">
-                    <h1 style="font-size: 2.3rem; font-weight: 900; margin: 0; line-height: 1.1; letter-spacing: -0.5px;">Executive Dashboard</h1>
+                    <h1 style="font-size: 2.3rem; font-weight: 900; margin: 0; line-height: 1.1; letter-spacing: -0.5px;"><span class="exec">Executive</span> <span class="dash">Dashboard</span></h1>
                     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                         <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Real-time KPI Tracking & Analysis</p>
                         <span style="color: rgba(255,255,255,0.2);">|</span>
@@ -105,81 +105,102 @@
 
             <div class="dashboard-grid" id="dashboard-content">
                 <!-- Summary Cards -->
-                <div class="card glass-panel span-10">
+                <div class="card glass-panel span-12">
                     <h3 style="color: var(--text-main); margin-bottom: 15px;"><i class="fa-solid fa-chart-pie" style="color: var(--accent-blue);"></i> OVERALL SUMMARY</h3>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <div style="background: var(--accent-blue); border: 1px solid rgba(255,255,255,0.25); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; text-align:center;">
-                            <div style="font-size: 0.70rem; color: #e2e8f0; text-transform: uppercase;">Total Service Orders</div>
-                            <div class="value" id="val-total-so" style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.70rem; color: #ffffff;"><i class="fa-solid fa-clipboard-list"></i> Unit</div>
-                        </div>
-
-                        <div style="background: var(--accent-blue); border: 1px solid rgba(255,255,255,0.25); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; text-align:center;">
-                            <div style="font-size: 0.70rem; color: #e2e8f0; text-transform: uppercase;">Total LTP (Aging)</div>
-                            <div class="value" id="val-total-ltp" style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.70rem; color: #ffffff;"><i class="fa-solid fa-fire"></i> Pending</div>
-                        </div>
-
-                        <div style="background: var(--accent-blue); border: 1px solid rgba(255,255,255,0.25); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; text-align:center;">
-                            <div style="font-size: 0.70rem; color: #e2e8f0; text-transform: uppercase;">Total Ex-LTP</div>
-                            <div class="value" id="val-total-exltp" style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.70rem; color: #ffffff;"><i class="fa-solid fa-skull-crossbones"></i> Pending</div>
-                        </div>
-
-                        <div style="background: var(--accent-blue); border: 1px solid rgba(255,255,255,0.25); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; text-align:center;">
-                            <div style="font-size: 0.70rem; color: #e2e8f0; text-transform: uppercase;">MPU Penalties</div>
-                            <div class="value" id="val-total-mpu" style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.70rem; color: #ffffff;"><i class="fa-solid fa-screwdriver-wrench"></i> Violations</div>
-                        </div>
-
-                        <div style="background: var(--accent-blue); border: 1px solid rgba(255,255,255,0.25); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; text-align:center;">
-                            <div style="font-size: 0.70rem; color: #e2e8f0; text-transform: uppercase;">UB Penalties</div>
-                            <div class="value" id="val-total-ub" style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.70rem; color: #ffffff;"><i class="fa-solid fa-mobile-screen"></i> Violations</div>
-                        </div>
-
-                        <div style="background: var(--accent-blue); border: 1px solid rgba(255,255,255,0.25); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; text-align:center;">
-                            <div style="font-size: 0.70rem; color: #e2e8f0; text-transform: uppercase;">X09 Violations</div>
-                            <div class="value" id="val-total-x09" style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.70rem; color: #ffffff;"><i class="fa-solid fa-ban"></i> Violations</div>
-                        </div>
-
-                        <div style="background: var(--accent-blue); border: 1px solid rgba(255,255,255,0.25); padding: 10px 5px; border-radius: 8px; flex: 1; min-width: 80px; text-align:center;">
-                            <div style="font-size: 0.70rem; color: #e2e8f0; text-transform: uppercase;">Total Redo</div>
-                            <div class="value" id="val-total-redo" style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin: 5px 0;">0</div>
-                            <div style="font-size: 0.70rem; color: #ffffff;"><i class="fa-solid fa-recycle"></i> Violations</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts Area -->
-                <div class="card glass-panel chart-container span-5">
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; padding: 0 15px 15px 15px;">
+    <div class="kpi-master-card bg-blue">
+        <div class="kpi-icon-left"><i class="fa-solid fa-clipboard-list"></i></div>
+        <div class="kpi-content">
+            <div class="kpi-title">Total Service Orders</div>
+            <div class="value" id="val-total-so">0</div>
+            <div class="kpi-subtitle"><i class="fa-solid fa-clipboard-list"></i> Unit</div>
+        </div>
+        <div class="kpi-chart-right"><i class="fa-solid fa-chart-simple"></i></div>
+    </div>
+    <div class="kpi-master-card bg-gold">
+        <div class="kpi-icon-left"><i class="fa-regular fa-clock"></i></div>
+        <div class="kpi-content">
+            <div class="kpi-title">Total LTP (Aging)</div>
+            <div class="value" id="val-total-ltp">0</div>
+            <div class="kpi-subtitle"><i class="fa-solid fa-fire"></i> Pending</div>
+        </div>
+        <div class="kpi-chart-right"><i class="fa-solid fa-chart-line"></i></div>
+    </div>
+    <div class="kpi-master-card bg-orange">
+        <div class="kpi-icon-left"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="kpi-content">
+            <div class="kpi-title">Total Ex-LTP</div>
+            <div class="value" id="val-total-exltp">0</div>
+            <div class="kpi-subtitle"><i class="fa-solid fa-skull-crossbones"></i> Pending</div>
+        </div>
+        <div class="kpi-chart-right"><i class="fa-solid fa-chart-area"></i></div>
+    </div>
+    <div class="kpi-master-card bg-coral">
+        <div class="kpi-icon-left"><i class="fa-solid fa-file-circle-xmark"></i></div>
+        <div class="kpi-content">
+            <div class="kpi-title">MPU Penalties</div>
+            <div class="value" id="val-total-mpu">0</div>
+            <div class="kpi-subtitle"><i class="fa-solid fa-screwdriver-wrench"></i> Violations</div>
+        </div>
+        <div class="kpi-chart-right"><i class="fa-solid fa-chart-bar"></i></div>
+    </div>
+    <div class="kpi-master-card bg-pink">
+        <div class="kpi-icon-left"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+        <div class="kpi-content">
+            <div class="kpi-title">UB Penalties</div>
+            <div class="value" id="val-total-ub">0</div>
+            <div class="kpi-subtitle"><i class="fa-solid fa-mobile-screen"></i> Violations</div>
+        </div>
+        <div class="kpi-chart-right"><i class="fa-solid fa-chart-column"></i></div>
+    </div>
+    <div class="kpi-master-card bg-purple">
+        <div class="kpi-icon-left"><i class="fa-solid fa-gear"></i></div>
+        <div class="kpi-content">
+            <div class="kpi-title">X09 Violations</div>
+            <div class="value" id="val-total-x09">0</div>
+            <div class="kpi-subtitle"><i class="fa-solid fa-ban"></i> Violations</div>
+        </div>
+        <div class="kpi-chart-right"><i class="fa-solid fa-chart-line"></i></div>
+    </div>
+    <div class="kpi-master-card bg-cyan">
+        <div class="kpi-icon-left"><i class="fa-solid fa-recycle"></i></div>
+        <div class="kpi-content">
+            <div class="kpi-title">Total Redo</div>
+            <div class="value" id="val-total-redo">0</div>
+            <div class="kpi-subtitle"><i class="fa-solid fa-rotate-left"></i> Violations</div>
+        </div>
+        <div class="kpi-chart-right"><i class="fa-solid fa-chart-simple"></i></div>
+    </div>
+</div>
+</div>
+<!-- Charts Area -->
+                <div class="card glass-panel chart-container span-6">
                     <div class="card-header">
                         <h3>LTP Breakdown by Product (Aging Only)</h3>
                     </div>
-                    <div class="chart-wrapper">
-                        <canvas id="ltpChart"></canvas>
+                    <div class="chart-wrapper" style="height: 220px;">
+                          <canvas id="ltpChart"></canvas>
                     </div>
                 </div>
 
-                <div class="card glass-panel chart-container span-5">
+                <div class="card glass-panel chart-container span-6">
                     <div class="card-header">
                         <h3>Delay Responsibility (AGING vs SEIN)</h3>
                     </div>
-                    <div class="chart-wrapper">
-                        <canvas id="responsibilityChart"></canvas>
+                    <div class="chart-wrapper" style="height: 220px;">
+                          <canvas id="responsibilityChart"></canvas>
                     </div>
                 </div>
 
                 <!-- Data Tables Area -->
-                <div class="card glass-panel table-container span-10">
+                <div class="card glass-panel table-container span-12">
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <h3><i class="fa-solid fa-building"></i> Branch Performance Breakdown</h3>
                         <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-arrows-up-down"></i> Scroll / Geser untuk lihat semua cabang</span>
                     </div>
                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px;">
                         <table id="branch-table">
-                            <thead style="position: sticky; top: 0; background: #0f172a; z-index: 2;">
+                            <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
                                 <tr>
                                     <th>Branch (ASC)</th>
                                     <th style="text-align:center;">Total S/O</th>
@@ -212,7 +233,7 @@
                     </div>
                     <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
                         <table id="redo-table">
-                            <thead style="position: sticky; top: 0; background: #0f172a; z-index: 2;">
+                            <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
                                 <tr>
                                     <th style="width: 35%">Cabang</th>
                                     <th style="width: 65%">Teknisi / Job No</th>
@@ -225,16 +246,13 @@
                     </div>
                 </div>
 
-                <div class="card glass-panel table-container span-4">
-                    <div class="card-header">
-                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-triangle-exclamation"></i> Critical MPU Violations (IW)</h3>
+                <div class="card glass-panel table-container span-3"><div class="card-header"><div style="display: flex; justify-content: space-between; align-items: center; width: 100%;"><h3 style="color: var(--kpi-orange);"><i class="fa-solid fa-triangle-exclamation"></i> Critical MPU Violations (IW)</h3>
                             <button id="btnShareMpu" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
                         </div>
                     </div>
                     <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                        <table id="mpu-table">
-                            <thead>
+                                                <table id="mpu-table">
+                            <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
                                 <tr>
                                     <th>Cabang</th>
                                     <th>Teknisi / Job No</th>
@@ -250,15 +268,14 @@
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div>
-                                <h3 style="color: var(--accent-orange);"><i class="fa-solid fa-mobile-screen"></i> UB Repair Violations (Folding/Flip)</h3>
-                                
+                                <h3 style="color: var(--kpi-blue);"><i class="fa-solid fa-mobile-screen"></i> UB Repair Violations (Folding/Flip)</h3>
                             </div>
                             <button id="btnShareUb" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
                         </div>
                     </div>
                     <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
                         <table id="ub-table">
-                            <thead>
+                            <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
                                 <tr>
                                     <th>Cabang</th>
                                     <th>Teknisi / Job No</th>
@@ -270,12 +287,7 @@
                     </div>
                 </div>
 
-                <div class="card glass-panel table-container span-5">
-                    <div class="card-header">
-                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <div>
-                                <h3 style="color: var(--accent-blue); font-size: 1.1rem;"><i class="fa-solid fa-box-open"></i> Pending Delivery (Repair Completed)</h3>
-                                
+                <div class="card glass-panel table-container span-3"><div class="card-header"><div style="display: flex; justify-content: space-between; align-items: center; width: 100%;"><div><h3 style="color: var(--kpi-cyan);"><i class="fa-solid fa-box-open"></i> Pending Delivery (Repair Completed)</h3>
                             </div>
                             <div style="display: flex; gap: 10px;">
                                 <button id="btnBlastRC" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(37, 211, 102, 0.2); color: #25D366; border: 1px solid #25D366;" title="Kirim WA satu per satu secara otomatis ke setiap PIC cabang (dengan jeda 10 detik)"><i class="fa-solid fa-paper-plane"></i> Blast All</button>
@@ -284,7 +296,7 @@
                     </div>
                     <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
                         <table id="rc-table">
-                            <thead style="position: sticky; top: 0; background: #0f172a; z-index: 2;">
+                            <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
                                 <tr>
                                     <th>Branch (ASC)</th>
                                     <th>Total Unit (RC)</th>
@@ -296,11 +308,7 @@
                     </div>
                 </div>
 
-                <div class="card glass-panel table-container span-5">
-                    <div class="card-header">
-                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <div>
-                                <h3 style="color: var(--accent-red); font-size: 1.1rem;"><i class="fa-solid fa-triangle-exclamation"></i> Aging Dosa Cabang (> 7 Hari)</h3>
+                <div class="card glass-panel table-container span-3"><div class="card-header"><div style="display: flex; justify-content: space-between; align-items: center; width: 100%;"><div><h3 style="color: var(--kpi-red);"><i class="fa-solid fa-triangle-exclamation"></i> Aging Dosa Cabang (> 7 Hari)</h3>
                                 
                             </div>
                             <button id="btnShareDosaCabang" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
@@ -308,7 +316,7 @@
                     </div>
                     <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
                         <table id="dosa-cabang-table">
-                            <thead style="position: sticky; top: 0; background: #0f172a; z-index: 2;">
+                              <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
                                 <tr>
                                     <th>Branch (ASC)</th>
                                     <th>Total Unit (Dosa)</th>
@@ -320,11 +328,7 @@
                     </div>
                 </div>
 
-                <div class="card glass-panel table-container span-5">
-                    <div class="card-header">
-                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <div>
-                                <h3 style="color: var(--accent-red);"><i class="fa-solid fa-skull"></i> Wall of Shame: Worst Technicians</h3>
+                <div class="card glass-panel table-container span-3"><div class="card-header"><div style="display: flex; justify-content: space-between; align-items: center; width: 100%;"><div><h3 style="color: var(--kpi-pink);"><i class="fa-solid fa-skull"></i> Wall of Shame: Worst Technicians</h3>
                                 
                             </div>
                             <div style="display: flex; gap: 10px;">
@@ -335,7 +339,7 @@
                     </div>
                     <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
                         <table id="shame-table">
-                            <thead style="position: sticky; top: 0; background: #0f172a; z-index: 2;">
+                              <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
                                 <tr>
                                     <th>Branch (ASC)</th>
                                     <th>Engineer Name</th>
@@ -348,16 +352,13 @@
                     </div>
                 </div>
 
-                <div class="card glass-panel table-container span-5">
-                    <div class="card-header">
-                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <h3 style="color: var(--accent-blue); margin: 0;"><i class="fa-solid fa-trophy"></i> Wall of Fame: Top Performers</h3>
+                <div class="card glass-panel table-container span-3"><div class="card-header"><div style="display: flex; justify-content: space-between; align-items: center; width: 100%;"><h3 style="color: #059669; margin: 0;"><i class="fa-solid fa-trophy"></i> Wall of Fame: Top Performers</h3>
                             <button id="btnShareFame" class="btn" style="padding: 5px 15px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red);"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
                         </div>
                     </div>
                     <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
                         <table id="fame-table">
-                            <thead style="position: sticky; top: 0; background: #0f172a; z-index: 2;">
+                              <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
                                 <tr>
                                     <th>Branch</th>
                                     <th>Engineer Name</th>
@@ -376,28 +377,52 @@
                 </div>
 
                 <!-- GD Trend Chart (6 Months - Full Width) -->
-                <div class="card glass-panel chart-container span-10">
-                    <div class="card-header">
-                        <h3 style="color: var(--accent-blue);"><i class="fa-solid fa-chart-line"></i> 6-Month GD Productivity Trend</h3>
+                <div class="card glass-panel chart-container span-3"><div class="card-header"><h3 style="color: var(--kpi-cyan);"><i class="fa-solid fa-chart-line"></i> 6-Month GD Productivity Trend</h3>
                     </div>
-                    <div class="chart-wrapper" style="height: 320px; width: 100%;">
-                        <canvas id="gdTrendChart"></canvas>
+                    <div class="chart-wrapper" style="min-height: 320px; width: 100%; display: flex; align-items: stretch; flex: 1;">
+                        <canvas id="gdTrendChart" style="width: 100%; height: 100%;"></canvas>
                     </div>
                 </div>
 
 
                 <!-- GD Daily Table (Bulan Berjalan) -->
-                <div class="card glass-panel table-container span-10">
+                <div class="card glass-panel table-container span-12" style="grid-column: 1 / -1; width: 100%; clear: both;">
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <h3 style="color: var(--accent-blue);"><i class="fa-solid fa-calendar-days"></i> Update GD Harian (Bulan Berjalan)</h3>
-                        <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-arrows-left-right"></i> Geser horizontal untuk melihat tanggal</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-arrows-left-right"></i> Scroll horizontally to view dates</span>
                     </div>
                     <div class="table-responsive" style="max-height: 380px; overflow-x: auto; overflow-y: auto; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px;">
                         <table id="gd-daily-table" class="data-table" style="min-width: 100%; border-collapse: collapse;">
-                            <thead>
+                              <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
                             </thead>
                             <tbody>
                                 <tr><td style="padding:15px; color:var(--text-muted); text-align: center;">Waiting for Daily GD Data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Parts Sales Table (Aksesoris) -->
+                <div class="card glass-panel table-container span-12" style="grid-column: 1 / -1; width: 100%; clear: both; margin-top: 20px;">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="color: var(--accent-blue);"><i class="fa-solid fa-cart-shopping"></i> Accessories Sales Report (Current Month)</h3>
+                        <div class="table-actions">
+                            <input type="text" id="search-parts" placeholder="Search Branch..." style="padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: white;">
+<button id="btnShareParts" style="background:#25d366; color:white; border:none; padding:5px 12px; border-radius:4px; cursor:pointer; margin-left:10px; font-weight:bold;"><i class="fa-brands fa-whatsapp"></i> Share to WA</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table id="parts-sales-table" class="data-table" style="min-width: 100%;">
+                              <thead class="table-header-dark" style="position: sticky; top: 0; z-index: 2;">
+                                <tr>
+                                    <th>CABANG</th>
+                                    <th>PARTS NO</th>
+                                    <th>NAMA PARTS (DESCRIPTION)</th>
+                                    <th style="text-align:center;">QTY TERJUAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">No accessories sales data available...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -595,7 +620,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="main.js?v=76" type="module"></script>
+    <script src="main.js?v=20260928_v2" type="module"></script>
 
     <!-- WhatsApp QR Modal -->
     <div id="jarvis-qr-modal" class="modal hidden">
@@ -618,3 +643,14 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
