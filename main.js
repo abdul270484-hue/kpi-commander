@@ -1,11 +1,11 @@
-import { CONFIG } from './src/config.js';
-import { scanRedoImage, initTesseract } from './src/services/ocr.js';
-import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo, getWAPayloadShame, getWAPayloadRC } from './src/services/whatsapp.js';
-import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as configDeleteRule, initContactsListener, saveTechContacts } from './src/firebase/config.js';
-import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser } from './src/firebase/users.js';
-import { initAuth, isAdmin, normalizePhone } from './src/auth.js';
-import { handleFiles, handleProductivityFiles } from './src/parser.js';
-import { initFirebaseAutoSync } from './src/firebase_sync.js?v=46';
+import { CONFIG } from './src/config.js?v=1790141904536';
+import { scanRedoImage, initTesseract } from './src/services/ocr.js?v=1790141904536';
+import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo, getWAPayloadShame, getWAPayloadRC } from './src/services/whatsapp.js?v=1790141904536';
+import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as configDeleteRule, initContactsListener, saveTechContacts } from './src/firebase/config.js?v=1790141904536';
+import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser } from './src/firebase/users.js?v=1790141904536';
+import { initAuth, isAdmin, normalizePhone } from './src/auth.js?v=1790141904536';
+import { handleFiles, handleProductivityFiles } from './src/parser.js?v=1790141904536';
+import { initFirebaseAutoSync } from './src/firebase_sync.js?v=1790141904536';
 
 // Expose services to global scope for HTML inline onclick handlers
 window.sendWA = sendWA;
@@ -103,6 +103,7 @@ analyzerWorker.onmessage = function(e) {
             if (typeof window.renderGdTrendChart === 'function') {
                 window.renderGdTrendChart(gdTrendData);
             }
+            if (typeof window.renderPartsSalesTable === 'function') { window.renderPartsSalesTable(payload.partsDailyData || {}); }
             if (typeof window.renderGdDailyTable === 'function') {
                 window.renderGdDailyTable(gdDailyData);
             }
@@ -205,7 +206,7 @@ if (dropZoneQueue && fileInputQueue) {
 let isJarvisOnline = false;
 let lastJarvisQr = null;
 
-function updateJarvisUI(isReady, qrCode) {
+function updateJarvisUI(isReady, qrCode, isLocal = false) {
     const statusEl = document.getElementById('jarvis-status');
     const textEl = document.getElementById('jarvis-status-text');
     const qrModal = document.getElementById('jarvis-qr-modal');
@@ -213,13 +214,18 @@ function updateJarvisUI(isReady, qrCode) {
     if (!statusEl || !textEl) return;
 
     if (isReady) {
-        isJarvisOnline = true;
+        if (isLocal) {
+            isJarvisOnline = true;
+            textEl.innerText = 'Sistem Bot WA: Online (Local)';
+        } else {
+            isJarvisOnline = false;
+            textEl.innerText = 'Sistem Bot WA: Online (Pusat)';
+        }
         lastJarvisQr = null;
         statusEl.style.background = 'rgba(16, 185, 129, 0.2)';
         statusEl.style.color = '#10b981';
         statusEl.style.borderColor = '#10b981';
         statusEl.style.cursor = 'default';
-        textEl.innerText = 'Sistem Bot WA: Online';
         if (qrModal && qrModal.classList.contains('active')) qrModal.classList.remove('active');
     } else if (qrCode) {
         isJarvisOnline = false;
@@ -272,7 +278,7 @@ function checkJarvisStatus() {
         .then(res => res.json())
         .then(data => {
             isLocalJarvisDetected = true;
-            updateJarvisUI(data.ready, data.qr || null);
+            updateJarvisUI(data.ready, data.qr || null, true);
         })
         .catch(() => {
             if (isLocalJarvisDetected) {
@@ -384,7 +390,7 @@ if (btnBlastShame) {
             await blastViaJarvis(blastQueueArray);
         } else {
             // Manual Fallback Mode
-            showToastNotification(`Sistem WA Offline. Memulai WA Blast MANUAL ke ${blastQueueManual.length} teknisi... Pastikan POPUP BLOCKER diizinkan!`);
+            showToastNotification(`Menggunakan WA Chrome (Mode Manual) ke ${blastQueueManual.length} teknisi... Pastikan POPUP BLOCKER diizinkan!`);
             let index = 0;
             const blastInterval = setInterval(() => {
                 if (index >= blastQueueManual.length) {
@@ -439,7 +445,7 @@ if (btnBlastRC) {
             await blastViaJarvis(blastQueueArray);
         } else {
             // Manual Fallback Mode
-            showToastNotification(`Sistem WA Offline. Memulai WA Blast MANUAL ke ${blastQueueManual.length} cabang... Pastikan POPUP BLOCKER diizinkan!`);
+            showToastNotification(`Menggunakan WA Chrome (Mode Manual) ke ${blastQueueManual.length} cabang... Pastikan POPUP BLOCKER diizinkan!`);
             let index = 0;
             const blastInterval = setInterval(() => {
                 if (index >= blastQueueManual.length) {
@@ -1141,9 +1147,9 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                 label: 'Pending LTP/Ex-LTP',
                 data: [stats.breakdownLtp.MX, stats.breakdownLtp.VD, stats.breakdownLtp.DA],
                 backgroundColor: [
-                    'rgba(59, 130, 246, 0.7)',
-                    'rgba(139, 92, 246, 0.7)',
-                    'rgba(239, 68, 68, 0.7)'
+                    'rgba(37, 99, 235, 0.85)',
+                    'rgba(139, 92, 246, 0.85)',
+                    'rgba(244, 63, 94, 0.85)'
                 ],
                 borderRadius: 6
             }]
@@ -1153,7 +1159,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
                 x: { grid: { display: false } }
             }
         }
@@ -1223,7 +1229,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             labels: ['AGING (Branch Fault)', 'SEIN (Samsung Fault)', 'OTHER'],
             datasets: [{
                 data: [stats.responsibility.AGING, stats.responsibility.SEIN, stats.responsibility.OTHER],
-                backgroundColor: ['#ef4444', '#10b981', '#3b82f6'],
+                backgroundColor: ['#f43f5e', '#10b981', '#3b82f6'],
                 borderColor: '#ffffff',
                 borderWidth: 2,
                 hoverOffset: 15
@@ -1348,24 +1354,26 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     }
 
     // ==========================================
-    // TOP 5 CRITICAL CASES WIDGET (EXECUTIVE CONTROL TOWER)
+    // EXECUTIVE CONTROL TOWER WIDGETS
     // ==========================================
     let top5Container = document.getElementById('top5-critical-widget');
     if (!top5Container) {
-        // Create widget if not exists
         top5Container = document.createElement('div');
         top5Container.id = 'top5-critical-widget';
-        top5Container.className = 'card glass-panel span-10';
+        top5Container.className = 'span-10'; // holding multiple cards now
         top5Container.style.marginTop = '20px';
+        top5Container.style.display = 'flex';
+        top5Container.style.flexDirection = 'column';
+        top5Container.style.gap = '20px';
         
-        // Insert before Branch Performance Breakdown
+        // Insert below Branch Performance Breakdown
         const branchTableCard = document.querySelector('#branch-table').closest('.card');
         if (branchTableCard && branchTableCard.parentNode) {
-            branchTableCard.parentNode.insertBefore(top5Container, branchTableCard);
+            branchTableCard.parentNode.insertBefore(top5Container, branchTableCard.nextSibling);
         }
     }
     
-    // Gather all >7 days bills and sort by AI Risk Score
+    // Gather all bills
     let allAgingBills = [];
     if (window.dosaCabangStatsGlobal) {
         Object.entries(window.dosaCabangStatsGlobal).forEach(([branchName, branchStats]) => {
@@ -1378,60 +1386,77 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         });
     }
     
-    allAgingBills.sort((a, b) => {
+    // Split into Extreme (>=10) and Critical (7-9)
+    let extremeBills = allAgingBills.filter(b => (b.pendingDays || 0) >= 10);
+    let criticalBills = allAgingBills.filter(b => (b.pendingDays || 0) >= 7 && (b.pendingDays || 0) < 10);
+
+    // Sort by AI Risk Score
+    const sortFn = (a, b) => {
         const riskA = a.ai_riskScore || 0;
         const riskB = b.ai_riskScore || 0;
         if (riskB !== riskA) return riskB - riskA;
         return (b.pendingDays || 0) - (a.pendingDays || 0);
-    });
+    };
+
+    extremeBills.sort(sortFn);
+    criticalBills.sort(sortFn);
     
-    const top5 = allAgingBills.slice(0, 5);
+    const top5Extreme = extremeBills.slice(0, 5);
+    const top5Critical = criticalBills.slice(0, 5);
     
-    let top5HTML = `
-        <div class="card-header" style="background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);">
-            <h3 style="color: white; font-size: 1.1rem;"><i class="fa-solid fa-robot"></i> Executive Control Tower: Top 5 Critical Cases</h3>
-        </div>
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
+    const renderTableHtml = (title, items, icon, colorGrad) => {
+        let html = `
+            <div class="card glass-panel control-tower-card" style="width:100%; border:2px solid ${colorGrad.includes('#f43f5e') ? '#f43f5e' : '#f97316'}; box-shadow:0 10px 25px rgba(0,0,0,0.15); margin-bottom: 25px;">
+                <div class="card-header" style="background: ${colorGrad}; border-bottom: none; display: flex; justify-content: space-between; align-items: center; padding: 20px;">
+                    <h3 style="color: white; font-size: 1.25rem; font-weight: 800; margin:0; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px;"><span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px;"><i class="${icon}"></i></span> ${title}</h3><div style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: bold; border: 1px solid rgba(255,255,255,0.4);">ACTION REQUIRED</div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Branch</th>
+                                <th>Job No</th>
+                                <th>Customer</th>
+                                <th>Reason</th>
+                                <th>Aging</th>
+                                <th>AI Priority</th>
+                                <th>Action Required</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        if (items.length === 0) {
+            html += `<tr><td colspan="7" style="text-align:center; padding:15px; color:#94a3b8;">Tidak ada kasus di kategori ini. Excellent!</td></tr>`;
+        } else {
+            items.forEach(b => {
+                const priorityColor = b.ai_priority?.level === 'CRITICAL' ? 'var(--accent-red)' :
+                                      b.ai_priority?.level === 'HIGH' ? 'orange' : 'var(--text-muted)';
+                const priorityText = b.ai_priority ? `<span style="color: ${priorityColor}; font-weight: bold;">${b.ai_priority.level} (Score: ${Math.round(b.ai_riskScore || 0)})</span>` : '-';
+                const actionText = b.ai_action ? `<span style="font-size: 0.8rem; color: #a5b4fc;">${b.ai_action.actionText}</span>` : '-';
+                
+                html += `
                     <tr>
-                        <th>Branch</th>
-                        <th>Job No</th>
-                        <th>Customer</th>
-                        <th>Reason</th>
-                        <th>Aging</th>
-                        <th>AI Priority</th>
-                        <th>Action Required</th>
+                        <td><strong>${b.ascName || b.asc || '-'}</strong><br><span style="font-size: 0.7rem; color: #9ca3af;">${b.engineer || '-'}</span></td>
+                        <td>${b.jobNo}</td>
+                        <td>${b.customer}</td>
+                        <td style="font-size:0.8rem; color:var(--text-muted);">${b.reason || '-'}</td>
+                        <td style="color: var(--accent-red); font-weight: bold;">${b.pendingDays} days</td>
+                        <td>${priorityText}</td>
+                        <td>${actionText}</td>
                     </tr>
-                </thead>
-                <tbody>
-    `;
+                `;
+            });
+        }
+        
+        html += `</tbody></table></div></div>`;
+        return html;
+    };
+
+    let finalHtml = renderTableHtml('Executive Control Tower: Top 5 EXTREME Cases (Aging >= 10 Hari)', top5Extreme, 'fa-solid fa-triangle-exclamation', 'linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)');
+    finalHtml += renderTableHtml('Executive Control Tower: Top 5 CRITICAL Cases (Aging 7-9 Hari)', top5Critical, 'fa-solid fa-fire', 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)');
     
-    if (top5.length === 0) {
-        top5HTML += `<tr><td colspan="7" style="text-align:center;">Tidak ada kasus kritis. Excellent!</td></tr>`;
-    } else {
-        top5.forEach(b => {
-            const priorityColor = b.ai_priority?.level === 'CRITICAL' ? 'var(--accent-red)' :
-                                  b.ai_priority?.level === 'HIGH' ? 'orange' : 'var(--text-muted)';
-            const priorityText = b.ai_priority ? `<span style="color: ${priorityColor}; font-weight: bold;">${b.ai_priority.level} (Score: ${Math.round(b.ai_riskScore || 0)})</span>` : '-';
-            const actionText = b.ai_action ? `<span style="font-size: 0.8rem; color: #a5b4fc;">${b.ai_action.actionText}</span>` : '-';
-            
-            top5HTML += `
-                <tr>
-                    <td><strong>${b.ascName || b.asc || '-'}</strong><br><span style="font-size: 0.7rem; color: #9ca3af;">${b.engineer || '-'}</span></td>
-                    <td>${b.jobNo}</td>
-                    <td>${b.customer}</td>
-                    <td style="font-size:0.8rem; color:var(--text-muted);">${b.reason || '-'}</td>
-                    <td style="color: var(--accent-red); font-weight: bold;">${b.pendingDays} days</td>
-                    <td>${priorityText}</td>
-                    <td>${actionText}</td>
-                </tr>
-            `;
-        });
-    }
-    
-    top5HTML += `</tbody></table></div>`;
-    if (top5Container) top5Container.innerHTML = top5HTML;
+    if (top5Container) top5Container.innerHTML = finalHtml;
 
     // Render Wall of Shame Table
     const tbodyShame = document.querySelector('#shame-table tbody');
@@ -3184,7 +3209,7 @@ window.renderGdTrendChart = function(gdTrendData) {
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: '#cbd5e1', font: { weight: 'bold' } }
+                    labels: { color: '#64748b', font: { weight: 'bold' } }
                 }
             },
             scales: {
@@ -3212,7 +3237,7 @@ window.renderGdDailyTable = function(gdDailyData) {
     
     if (!gdDailyData || Object.keys(gdDailyData).length === 0) {
         thead.innerHTML = '';
-        tbody.innerHTML = '<tr><td style="padding:15px; color:var(--text-muted); border: none;">Belum ada data GD harian untuk bulan berjalan.</td></tr>';
+        tbody.innerHTML = '<tr><td style="padding:15px; color:var(--text-muted); border: none;">No daily GD data available for current month.</td></tr>';
         return;
     }
 
@@ -3232,7 +3257,7 @@ window.renderGdDailyTable = function(gdDailyData) {
 
     if (activeBranches.length === 0) {
         thead.innerHTML = '';
-        tbody.innerHTML = '<tr><td style="padding:15px; color:var(--text-muted); border: none;">Belum ada cabang dengan pergerakan GD bulan berjalan.</td></tr>';
+        tbody.innerHTML = '<tr><td style="padding:15px; color:var(--text-muted); border: none;">No branches with GD movement this month.</td></tr>';
         return;
     }
 
@@ -3312,7 +3337,7 @@ setInterval(() => {
     }
 
     let needsSave = false;
-    const AUTO_ALERT_TIMES = ['09:10', '12:10', '15:10'];
+    const AUTO_ALERT_TIMES = []; // DIMATIKAN SEMENTARA
 
     AUTO_ALERT_TIMES.forEach(targetTime => {
         const parts = targetTime.split(':');
@@ -3342,3 +3367,106 @@ setInterval(() => {
         localStorage.setItem('bujm_completed_alerts', JSON.stringify(completedAlerts));
     }
 }, 30000); // Cek setiap 30 detik
+
+
+
+window.renderPartsSalesTable = function(partsList) {
+    const tbody = document.querySelector('#parts-sales-table tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    if (!partsList || partsList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada data penjualan aksesoris...</td></tr>';
+        return;
+    }
+    
+    partsList.sort((a, b) => {
+        if (a.branch !== b.branch) return a.branch.localeCompare(b.branch);
+        return b.qty - a.qty;
+    });
+    
+    partsList.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${item.branch}</strong></td>
+            <td>${item.partNo}</td>
+            <td>${item.desc}</td>
+            <td style="text-align:center; font-weight:bold; color:var(--accent-blue);">${item.qty}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const searchParts = document.getElementById('search-parts');
+    if (searchParts) {
+        searchParts.addEventListener('keyup', (e) => {
+            const term = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#parts-sales-table tbody tr');
+            rows.forEach(row => {
+                if (row.innerText.toLowerCase().includes(term)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    const btnShare = document.getElementById('btnShareParts');
+    if (btnShare) {
+        btnShare.addEventListener('click', () => {
+            const table = document.getElementById('parts-sales-table');
+            if (!table || table.querySelectorAll('tbody tr').length <= 1) {
+                alert('No data to share!');
+                return;
+            }
+            
+            let text = "*ACCESSORIES SALES REPORT*\n*(Current Month)*\n\n";
+            let currentBranch = '';
+            
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                if(row.innerText.includes('TOTAL QTY') || row.innerText.includes('Belum ada')) return;
+                
+                const cells = row.querySelectorAll('td');
+                if(cells.length < 2) return;
+                
+                const rowKey = cells[0].innerText;
+                if(rowKey.includes('TOTAL')) return;
+                
+                const parts = rowKey.split(' - ');
+                const branch = parts[0];
+                const item = parts.length > 1 ? parts[1] : '';
+                
+                const total = cells[cells.length - 1].innerText;
+                
+                if (branch !== currentBranch) {
+                    text += "*" + branch + "*\n";
+                    currentBranch = branch;
+                }
+                
+                if (item) {
+                    text += "- " + item + ": " + total + "\n";
+                }
+            });
+            
+            text += "\n_Generated by BUJM Dashboard_";
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const orig = btnShare.innerHTML;
+                btnShare.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                setTimeout(() => { btnShare.innerHTML = orig; }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy', err);
+                alert('Failed to copy to clipboard!');
+            });
+        });
+    }
+});
+
+
+
+
