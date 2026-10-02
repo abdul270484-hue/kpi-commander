@@ -3337,7 +3337,8 @@ setInterval(() => {
     }
 
     let needsSave = false;
-    const AUTO_ALERT_TIMES = []; // DIMATIKAN SEMENTARA
+    // Jadwal diaktifkan kembali
+    // const AUTO_ALERT_TIMES = []; // DIMATIKAN SEMENTARA
 
     AUTO_ALERT_TIMES.forEach(targetTime => {
         const parts = targetTime.split(':');
