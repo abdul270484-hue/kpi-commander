@@ -39,6 +39,9 @@ Data yang dirender ke UI memiliki aturan perhitungan khusus:
   - *Bot Server (Pusat):* Mengeksekusi pesan secara *background* dari *Node.js*.
   - *Fallback Chrome (Remote Manager):* Jika Manager membuka dari PC lain (Cek *Firestore state* vs *Local state*), WAJIB *fallback* ke wa.me (tab Chrome berantai). Jangan merusak *flag* isLocal / isJarvisOnline yang membedakan ini.
 - **Rule 5.2 - Autostart Bot:** Skrip .vbs dan .bat berjalan otomatis (*invisible*). Dilarang menyisipkan pause atau interaksi CLI yang akan membuat *bot* ter-jeda/nyangkut saat PC *restart*.
+- **Rule 5.3 - Jadwal Tembak (Schedule Logic Wajib):** Jadwal *Blast All* tidak boleh diubah tanpa persetujuan, dengan aturan ketat:
+  - **09:10 WIB:** Menembak "Dosa Cabang" (Teknisi) DAN "Pending Delivery / RC" (PIC Cabang).
+  - **12:10 & 15:10 WIB:** HANYA menembak "Dosa Cabang" (Teknisi). Dilarang menyertakan *Pending Delivery* di jam ini agar PIC cabang tidak merasa di-*spam*.
 
 ## BAB 6: ATURAN PROTEKSI ERROR BATCH (FAIL-SAFE)
 - Segala *loop* pemrosesan data (Excel/JSON) wajib memiliki proteksi *null/undefined* (if (!row) continue;).
