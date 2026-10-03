@@ -1630,7 +1630,15 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
     if (existingProd) {
         // Merge gdTrendData (retain past 5 months, overwrite current month)
         if (existingProd.gdTrendData) {
-            prodAnalytics.gdTrendData = { ...existingProd.gdTrendData, ...prodAnalytics.gdTrendData };
+                        const mergedTrend = { ...existingProd.gdTrendData };
+            for (const month in prodAnalytics.gdTrendData) {
+                if (!mergedTrend[month]) {
+                    mergedTrend[month] = { ...prodAnalytics.gdTrendData[month] };
+                } else {
+                    mergedTrend[month] = { ...mergedTrend[month], ...prodAnalytics.gdTrendData[month] };
+                }
+            }
+            prodAnalytics.gdTrendData = mergedTrend;
         }
         
         // Merge fameList (Inject GD Prev Month if possible)
