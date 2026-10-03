@@ -1202,7 +1202,7 @@ tbody tr:hover { background: #f8fafc !important; box-shadow: none !important; }
     display: flex !important;
     flex-direction: column !important;
 }
-.table-responsive { flex: 1 !important; }
+/* removed flex:1 */
 .chart-wrapper { position: relative; }
 
 
