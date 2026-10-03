@@ -5,6 +5,7 @@
     "ignore": [
       "firebase.json",
       "**/.*",
+      ".git/**",
       "**/node_modules/**",
       "GSPN_Playwright_RPA/**",
       "Auto_Scraper/**",
@@ -26,5 +27,8 @@
         ]
       }
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }

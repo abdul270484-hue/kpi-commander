@@ -1285,7 +1285,91 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
         console.log(`  🔗 VLOOKUP Customer Name: Berhasil memetakan ${matchedCount} / ${baseData.length} baris data konsumen.`);
     }
 
+
+    let partsSalesMap = {}; // key: branch + '_' + partNo
+    let partsSalesList = [];
+    let partsDailyData = {};
+    (downloadedFiles.partsFiles || []).forEach(f => {
+        try {
+            const rows = parseExcelFile(f.path);
+            if (!rows || rows.length === 0) return;
+            rows.forEach(r => {
+                let colBranch = Object.keys(r).find(k => k.toLowerCase().includes('partner') || k.toLowerCase().includes('asc') || k.toLowerCase().includes('branch'));
+                let colPart = Object.keys(r).find(k => k.toLowerCase().includes('material code') || k.toLowerCase().includes('parts no') || k.toLowerCase().includes('part') || k.toLowerCase().includes('item'));
+                let colDesc = Object.keys(r).find(k => k.toLowerCase().includes('description') || k.toLowerCase().includes('desc'));
+                let colQty = Object.keys(r).find(k => k.toLowerCase() === 'qty' || k.toLowerCase().includes('quantity') || k.toLowerCase().includes('sale qty') || k.toLowerCase().includes('amt'));
+                let branch = f.branch.replace(/_/g, ' ');
+                let partNo = colPart ? r[colPart] : '';
+                let desc = colDesc ? r[colDesc] : '';
+                let qtyStr = colQty ? r[colQty] : '0';
+                let qty = parseInt(String(qtyStr).replace(/,/g, '')) || 0;
+                if (!partNo) return;
+                branch = String(branch).replace(/PT.?s*BINTANGs+UTAMAs+JAYAs+MAKMURs*/gi, '').replace(/^-?s*/, '').trim();
+                if (branch === f.branch && branch.includes('_')) {
+                    let parts = branch.split('_');
+                    if (parts.length > 1) {
+                        let namePart = parts.find(p => isNaN(p) && p !== 'PTBINTANG' && p !== 'UTAMA' && p !== 'JAYA' && p !== 'MAKMUR');
+                        if (namePart) branch = namePart;
+                    }
+                }
+                if (!branch) branch = 'UNKNOWN';
+                
+                let key = branch + '_' + partNo;
+                if (!partsSalesMap[key]) {
+                    partsSalesMap[key] = { branch, partNo, desc, qty: 0 };
+                }
+                partsSalesMap[key].qty += qty;
+                
+                // Parts Daily Data (Filtered to ADAPTOR & DATA LINK)
+                let colDate = Object.keys(r).find(k => k.toLowerCase() === 's/o date' || k.toLowerCase().includes('date'));
+                let dateVal = colDate ? r[colDate] : null;
+                
+                let isAdaptor = desc.toLowerCase().includes('adaptor') || desc.toLowerCase().includes('travel adapter');
+                let isDataLink = desc.toLowerCase().includes('data link') || desc.toLowerCase().includes('cable');
+                let itemType = null;
+                if (isAdaptor) itemType = 'ADAPTOR';
+                else if (isDataLink) itemType = 'DATA LINK';
+
+                if (itemType && dateVal) {
+                    dateVal = String(dateVal).replace(/\D/g, ''); // 20260924
+                    if (dateVal.length === 8) {
+                        let y = parseInt(dateVal.substring(0,4));
+                        let m = parseInt(dateVal.substring(4,6)) - 1;
+                        let d = parseInt(dateVal.substring(6,8));
+                        
+                        let now = new Date();
+                        if (m === now.getMonth() && y === now.getFullYear()) {
+                            let rowKey = branch + ' - ' + itemType;
+                            if (!partsDailyData[rowKey]) partsDailyData[rowKey] = {};
+                            if (!partsDailyData[rowKey][d]) partsDailyData[rowKey][d] = 0;
+                            partsDailyData[rowKey][d] += qty;
+                        }
+                    }
+                }
+
+            });
+        } catch (err) {
+            console.error('Error parsing parts file:', f.path, err.message);
+        }
+    });
+    const ObjectValues = Object.values(partsSalesMap);
+    ObjectValues.forEach(item => {
+        if (item.qty > 0) {
+            partsSalesList.push(item);
+        }
+    });
+
+
     console.log(`\n📊 Data Parsed: ${baseData.length} SO rows | ${prodData.length} GD rows`);
+
+    if (baseData.length < 500) {
+        console.error('\n============================================================');
+        console.error('[CRITICAL ERROR] Total Service Order sangat sedikit (' + baseData.length + ').');
+        console.error('GSPN kemungkinan memblokir atau mereturn file kosong.');
+        console.error('Proses sinkronisasi DIBATALKAN untuk mencegah penghapusan massal!');
+        console.error('============================================================\n');
+        return { success: false, failed: 1, error: 'Abort: Data SO tidak wajar' };
+    }
 
     // Ensure authenticated session
     await ensureFirebaseAuth();
@@ -1305,7 +1389,20 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
     const analytics = calculateAnalytics(baseData, customModels, customReasons);
     
     // TAHAP 1 AGING COMMANDER: Menjalankan State Tracker
+
+    // Flag REDO items in baseData before passing to Aging Commander
+    if (downloadedFiles.redoItems && downloadedFiles.redoItems.length > 0) {
+        const redoSet = new Set(downloadedFiles.redoItems.map(r => String(r.jobNo).trim()));
+        baseData.forEach(row => {
+            const rawJobNo = row['Service Order No.'] || row['Job No'] || row['Tracking No.'];
+            if (rawJobNo && redoSet.has(rawJobNo.toString().trim())) {
+                row['isRedo'] = true;
+            }
+        });
+    }
+    
     await trackAgingStates(db, baseData);
+
     
     // ==========================================
     // AGING SUPERVISOR INTELLIGENCE
@@ -1493,7 +1590,9 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
         unknownModels: analytics.unknownModels,
         unknownReasons: analytics.unknownReasons,
         totalRawRows: analytics.totalRawRows,
-        status: 'SUCCESS'
+        status: 'SUCCESS',
+        partsSalesList: partsSalesList,
+        partsDailyData: partsDailyData
     };
 
     // DOC 2: Violations lists (mpuList, ubList, x09List, redoList)
@@ -1552,6 +1651,13 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
         }
     }
 
+    const payloadPartsSales = {
+        lastUpdated: `${dateStr} ${timeStr} WIB`,
+        timestamp: Date.now(),
+        partsSalesList: partsSalesList,
+        partsDailyData: partsDailyData
+    };
+
     const payloadProd = {
         lastUpdated: `${dateStr} ${timeStr} WIB`,
         timestamp: Date.now(),
@@ -1574,6 +1680,7 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
             setDoc(doc(db, 'dashboard_data', 'latest_violations'), payloadViolations),
             setDoc(doc(db, 'dashboard_data', 'latest_eng'), payloadEng),
             setDoc(doc(db, 'dashboard_data', 'latest_prod'), payloadProd),
+            setDoc(doc(db, 'dashboard_data', 'latest_parts_sales'), payloadPartsSales),
         ]);
         console.log('  ✅ [LATEST] Semua 4 dokumen dashboard_data berhasil diperbarui!');
 
@@ -1587,7 +1694,7 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
 
         // Clean up temporary downloaded files
         console.log('\n🧹 Membersihkan file temporary downloads...');
-        [...downloadedFiles.soFiles, ...downloadedFiles.gdFiles, ...(downloadedFiles.statusFiles || [])].forEach(f => {
+        [...downloadedFiles.soFiles, ...downloadedFiles.gdFiles, ...(downloadedFiles.statusFiles || []), ...(downloadedFiles.partsFiles || [])].forEach(f => {
             try { 
                 const fs = require('fs');
                 fs.unlinkSync(f.path); 
@@ -1614,3 +1721,5 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
 }
 
 module.exports = { processAndSyncToFirebase, calculateAnalytics, analyzeProductivity, shortenASC, parseExcelFile, parseProductivityFile };
+
+

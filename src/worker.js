@@ -173,13 +173,10 @@ function analyzeProductivity(data) {
         if (!engName) continue;
         
         // Override cabang untuk teknisi yang secara administratif di Denpasar tapi sebenarnya milik cabang lain
-        const techBranchOverride = {
-            'MOHHAMAT BAGAS DWI PRAYOGO': 'DENPASAR - PLANET GADGET',
-            'SATRIA EKA ADITA': 'DENPASAR - CELLULAR WORLD',
-            'SANI LASARO': 'DENPASAR - CELLULAR WORLD'
-        };
-        if (techBranchOverride[engName]) {
-            branch = techBranchOverride[engName];
+        if (engName.includes('BAGAS') || engName.includes('MOHHAMAT')) {
+            branch = 'DENPASAR - PLANET GADGET';
+        } else if (engName.includes('SATRIA') || engName.includes('SANI LASARO') || engName.includes('SANI')) {
+            branch = 'DENPASAR - CELLULAR WORLD';
         }
         
         const laborIWStr = row[col.labIW] || "0";

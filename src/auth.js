@@ -47,6 +47,11 @@ export function initAuth(db) {
     // Listener State Auth Firebase
     firebase.auth().onAuthStateChanged(async (user) => {
         if (user) {
+            if (user.isAnonymous) {
+                console.log('Anonymous user detected, skipping DB profile creation.');
+                window.dispatchEvent(new Event('bujm_auth_ready'));
+                return;
+            }
             try {
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 

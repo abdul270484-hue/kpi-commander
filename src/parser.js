@@ -2,7 +2,7 @@
 // FILE PARSING & DRAG-DROP HANDLER
 // ==========================================
 
-import { validateHeaders } from './analytics.js';
+import { validateHeaders } from './analytics.js?v=1790141919181';
 
 function showLoading() {
     const overlay = document.getElementById('loading-overlay');

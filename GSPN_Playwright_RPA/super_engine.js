@@ -273,7 +273,7 @@ async function executeRpaCycle(slotName = 'MANUAL') {
             ).catch(() => {});
         };
 
-        const downloadedFiles = await scrapeAllBranches(false, false, onProgress);
+        const downloadedFiles = await scrapeAllBranches(true, false, onProgress);
 
         await lockManager.updateProgress('SYNC', '🧠 Memproses Data & Intelijen AI (Validation, Sync)...');
         syncResult = await processAndSyncToFirebase(downloadedFiles, slotName);
@@ -345,11 +345,14 @@ async function startRemoteListener() {
     });
 }
 
-// 4. Start Cron Schedulers (09:00, 12:00, 15:00, 17:00 WIB)
-cron.schedule('0 9 * * *', () => executeRpaCycle('09:00'), { timezone: 'Asia/Jakarta' });
-cron.schedule('0 12 * * *', () => executeRpaCycle('12:00'), { timezone: 'Asia/Jakarta' });
-cron.schedule('0 15 * * *', () => executeRpaCycle('15:00'), { timezone: 'Asia/Jakarta' });
-cron.schedule('0 17 * * *', () => executeRpaCycle('17:00'), { timezone: 'Asia/Jakarta' });
+// 4. Start Cron Schedulers (Setiap 30 menit dari jam 09:00 - 17:30 WIB)
+const triggerCycle = () => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+    executeRpaCycle(timeStr);
+};
+cron.schedule('*/30 9-16 * * *', triggerCycle, { timezone: 'Asia/Jakarta' });
+cron.schedule('0,30 17 * * *', triggerCycle, { timezone: 'Asia/Jakarta' });
 
 signInAnonymously(auth).then(() => {
     console.log('ðŸ” Terautentikasi ke Firebase Service.');

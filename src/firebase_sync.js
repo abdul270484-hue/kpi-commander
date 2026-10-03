@@ -39,6 +39,9 @@ export function initFirebaseAutoSync(db) {
     db.collection('dashboard_data').doc('latest_prod').onSnapshot((snap) => {
         if (snap.exists) { Object.assign(_mergedData, snap.data()); _tryRender(); }
     });
+    db.collection('dashboard_data').doc('latest_parts_sales').onSnapshot((snap) => {
+        if (snap.exists) { Object.assign(_mergedData, snap.data()); _tryRender(); }
+    });
 
 
     window.applyDashboardFilterAndRender = function() {
@@ -61,6 +64,7 @@ export function initFirebaseAutoSync(db) {
             if (Array.isArray(data.fameList)) data.fameList = data.fameList.filter(s => ascMatch(s.asc || s.branch));
             if (Array.isArray(data.redoItems)) data.redoItems = data.redoItems.filter(s => ascMatch(s.asc || s.branch));
             if (Array.isArray(data.dosaCabangOver7)) data.dosaCabangOver7 = data.dosaCabangOver7.filter(s => ascMatch(s.asc || s.branch));
+            if (Array.isArray(data.partsSalesList)) data.partsSalesList = data.partsSalesList.filter(s => ascMatch(s.asc || s.branch));
             
             const filterObj = (obj) => {
                 if (!obj) return obj;
@@ -142,6 +146,9 @@ export function initFirebaseAutoSync(db) {
                 }
                 if (data.gdDailyData && typeof window.renderGdDailyTable === 'function') {
                     window.renderGdDailyTable(data.gdDailyData);
+                }
+                if (typeof window.renderPartsSalesTable === 'function') {
+                    window.renderPartsSalesTable(data.partsSalesList || []);
                 }
             } else {
                 setTimeout(renderData, 250);

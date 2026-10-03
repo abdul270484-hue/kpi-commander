@@ -103,9 +103,11 @@ export function shortenASC(ascName, row = null) {
     const u = name.toUpperCase();
     if (u.includes('CELLULAR WORLD') || u.includes('TEUKU')) return 'DENPASAR - CELLULAR WORLD';
     if (u.includes('PLANET GADGET') || u.includes('GATOT')) return 'DENPASAR - PLANET GADGET';
-    if (u.includes('MAHENDRA') || u.includes('DENPASAR')) return 'DENPASAR';
+    if (u.includes('MAHENDRA') || u.includes('DENPASAR') || u.includes('BALI')) return 'DENPASAR';
     if (u.includes('KUPANG')) return 'KUPANG';
     if (u.includes('SINGARAJA')) return 'SINGARAJA';
+
+    if (name === '' && ascName.toUpperCase().includes('BEKARYA')) return 'DENPASAR';
 
     return name || ascName || 'Unknown ASC';
 }
