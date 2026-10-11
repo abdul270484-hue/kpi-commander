@@ -44,6 +44,46 @@ const PORT = 3001;
 const AUTH_DIR = path.join(__dirname, '.wwebjs_auth');
 if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR, { recursive: true });
 
+// Auto-clean zombie Chrome processes and stale lockfiles on startup
+function cleanupStaleSessionLocks() {
+    try {
+        const { execSync } = require('child_process');
+        // Terminate any zombie chrome instance using .wwebjs_auth
+        const cmd = `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name = 'chrome.exe'\\" | Where-Object { \\$_.CommandLine -like '*wwebjs*' } | ForEach-Object { Stop-Process -Id \\$_.ProcessId -Force -ErrorAction SilentlyContinue }"`;
+        execSync(cmd, { stdio: 'ignore' });
+    } catch (_) {}
+
+    // AUTO-RESET HARIAN: Reset sesi WhatsApp setiap berganti hari agar folder tidak membengkak
+    try {
+        const dateTrackerFile = path.join(AUTH_DIR, 'last_session_date.txt');
+        const todayStr = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
+        let lastDate = '';
+        if (fs.existsSync(dateTrackerFile)) {
+            lastDate = fs.readFileSync(dateTrackerFile, 'utf8').trim();
+        }
+
+        if (lastDate !== todayStr) {
+            console.log(`🌅 Hari baru terdeteksi (${todayStr}). Menjalankan Auto-Reset Sesi WhatsApp agar folder tetap ramping...`);
+            const sessionDir = path.join(AUTH_DIR, 'session');
+            if (fs.existsSync(sessionDir)) {
+                fs.rmSync(sessionDir, { recursive: true, force: true });
+                console.log('✨ Folder sesi WhatsApp lama berhasil dibersihkan (Storage di-reset ke 0 MB)!');
+            }
+            fs.writeFileSync(dateTrackerFile, todayStr, 'utf8');
+        } else {
+            const sessionLock = path.join(AUTH_DIR, 'session', 'lockfile');
+            if (fs.existsSync(sessionLock)) {
+                fs.unlinkSync(sessionLock);
+                console.log('🧹 Cleaned up stale WhatsApp session lockfile.');
+            }
+        }
+    } catch (err) {
+        console.warn('⚠️ Warning saat auto-clean sesi:', err.message);
+    }
+}
+
+cleanupStaleSessionLocks();
+
 let qrData = null;
 let clientReady = false;
 
@@ -192,8 +232,13 @@ async function processBlastQueue() {
 // API: Start Blast (From Dashboard Wall of Shame / Wall of Fame)
 app.post('/api/blast', (req, res) => {
     if (!clientReady) return res.status(400).json({ error: 'WhatsApp belum terkoneksi' });
-    const { data, template } = req.body;
+    const { data, template, allowedBranches } = req.body;
     if (!data || data.length === 0) return res.status(400).json({ error: 'Data kosong' });
+
+    console.log(`\n📢 [BLAST INCOMING] Permintaan blast untuk ${data.length} penerima.`);
+    if (allowedBranches && Array.isArray(allowedBranches)) {
+        console.log(`🔒 [BLAST AREA FILTER] Cabang Area Diizinkan: ${allowedBranches.join(', ')}`);
+    }
 
     if (!isBlasting) {
         blastProgress = { total: 0, sent: 0, failed: 0, current: 'Memulai...', logs: [] };
@@ -201,6 +246,19 @@ app.post('/api/blast', (req, res) => {
     
     let added = 0;
     data.forEach(item => {
+        // DOUBLE CHECK: Validasi cabang jika metadata branch tersedia
+        if (item.branch && allowedBranches && Array.isArray(allowedBranches) && allowedBranches.length > 0) {
+            const b = String(item.branch).toUpperCase().trim();
+            const ok = allowedBranches.some(a => {
+                const cleanA = String(a).toUpperCase().trim();
+                return b.includes(cleanA) || cleanA.includes(b);
+            });
+            if (!ok) {
+                console.warn(`⛔ [BLAST REJECTED] Item ${item.name} (${item.phone}) di cabang [${item.branch}] BUKAN bagian dari area yang diizinkan! Ditolak demi keamanan.`);
+                return;
+            }
+        }
+
         let message = template;
         Object.keys(item).forEach(key => {
             const regex = new RegExp('\\[\\s*' + key + '\\s*\\]', 'gi');
@@ -219,7 +277,7 @@ app.post('/api/blast', (req, res) => {
     blastProgress.total += added;
 
     processBlastQueue();
-    res.json({ success: true, message: 'Blasting dimulai!' });
+    res.json({ success: true, message: `Blasting dimulai untuk ${added} penerima cabang area Anda!` });
 });
 
 app.get('/api/progress', (req, res) => {
@@ -273,13 +331,15 @@ async function executeRpaCycle(slotName = 'MANUAL') {
             ).catch(() => {});
         };
 
+        // Robot Chrome berjalan di background (headless: true)
         const downloadedFiles = await scrapeAllBranches(true, false, onProgress);
 
         await lockManager.updateProgress('SYNC', '🧠 Memproses Data & Intelijen AI (Validation, Sync)...');
         syncResult = await processAndSyncToFirebase(downloadedFiles, slotName);
 
-        await lockManager.updateProgress('NOTIFY', '🚀 Mengirim Alert / Notifikasi...');
-        // await handleSmartAlerts(syncResult); // [DISABLED] WA Blasting dipindahkan ke Frontend (Decentralized)
+        await lockManager.updateProgress('NOTIFY', '🚀 Mengirim Alert / Notifikasi WA...');
+        // [DISABLED] WA Blasting Backend dinonaktifkan total agar tidak menembak ke semua teknisi
+        // await handleSmartAlerts(syncResult);
 
         console.log(`\n✅ [CYCLE SUCCESS] SIKLUS ${slotName} BERHASIL!`);
         await lockManager.releaseLock('COMPLETED', {
@@ -304,6 +364,7 @@ async function executeRpaCycle(slotName = 'MANUAL') {
             error: err.message,
             durationSec: Math.round((Date.now() - startTime) / 1000)
         });
+        await cleanupStorage();
     }
 }
 
@@ -345,14 +406,15 @@ async function startRemoteListener() {
     });
 }
 
-// 4. Start Cron Schedulers (Setiap 30 menit dari jam 09:00 - 17:30 WIB)
+// 4. Start Cron Schedulers (Setiap 15 menit dari jam 09:00 - 17:45 mengikuti jam lokal Windows/sistem)
 const triggerCycle = () => {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+    const pad = n => String(n).padStart(2, '0');
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
     executeRpaCycle(timeStr);
 };
-cron.schedule('*/30 9-16 * * *', triggerCycle, { timezone: 'Asia/Jakarta' });
-cron.schedule('0,30 17 * * *', triggerCycle, { timezone: 'Asia/Jakarta' });
+// Mengikuti waktu lokal sistem Windows: Menjalankan RPA setiap 15 menit (:00, :15, :30, :45)
+cron.schedule('*/15 9-17 * * *', triggerCycle);
 
 signInAnonymously(auth).then(() => {
     console.log('ðŸ” Terautentikasi ke Firebase Service.');
@@ -392,5 +454,19 @@ setInterval(async () => {
 }, 10 * 60 * 1000); // Tiap 10 menit
 
 
-
-async function cleanupStorage() {}
+async function cleanupStorage() {
+    try {
+        const downloadDir = config.DOWNLOAD_DIR;
+        if (fs.existsSync(downloadDir)) {
+            const files = fs.readdirSync(downloadDir);
+            for (const file of files) {
+                try {
+                    fs.unlinkSync(path.join(downloadDir, file));
+                } catch (e) {}
+            }
+            console.log(`🧹 [STORAGE CLEANUP] Folder temp_downloads dibersihkan total (${files.length} file dihapus). Local disk tetap 100% aman!`);
+        }
+    } catch (err) {
+        console.warn('⚠️ Warning cleanupStorage:', err.message);
+    }
+}

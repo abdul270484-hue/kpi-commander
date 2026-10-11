@@ -21,6 +21,11 @@ export function initAuth(db) {
     const btnManage = document.getElementById('btn-manage-users');
     const btnLogs = document.getElementById('btn-access-logs');
     
+    // Pastikan session disimpan secara persisten di browser (IndexedDB / LocalStorage)
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(err => {
+        console.warn('Set persistence warning:', err);
+    });
+
     // Pastikan app-container disembunyikan dulu jika bukan localhost
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
@@ -29,7 +34,19 @@ export function initAuth(db) {
         if (loginScreen) loginScreen.style.display = 'none';
         if (mainApp) mainApp.classList.remove('hidden');
         isAdmin = true;
-        currentUser = { email: 'commander@bujm.local', displayName: 'Optimus Prime' };
+        currentUser = { email: 'abdul270484@gmail.com', displayName: 'Abdul (Local Commander)' };
+        window.currentUser = currentUser;
+
+        // Kunci cabang area default Abdul untuk Localhost
+        window.currentUserBranches = [
+            'DENPASAR',
+            'DENPASAR - CELLULAR WORLD',
+            'DENPASAR - PLANET GADGET',
+            'KUPANG',
+            'SINGARAJA',
+            'MANADO'
+        ];
+        currentUserBranches = window.currentUserBranches;
         
         const btnTriggerRpa = document.getElementById('btn-trigger-rpa');
         if (btnTriggerRpa) btnTriggerRpa.style.display = 'flex';
@@ -39,6 +56,20 @@ export function initAuth(db) {
         if (!firebase.auth().currentUser) {
             firebase.auth().signInAnonymously().catch(e => console.warn('Local anonymous auth:', e));
         }
+
+        // Ambil branches Abdul secara live dari Firestore jika tersedia
+        if (db) {
+            db.collection('users').doc('DBGCiSp4BXZP8mwXW7cJr2ugrAW2').get().then(snap => {
+                if (snap.exists && snap.data().branches && snap.data().branches.length > 0) {
+                    window.currentUserBranches = snap.data().branches;
+                    currentUserBranches = window.currentUserBranches;
+                    if (typeof window.applyDashboardFilterAndRender === 'function') {
+                        window.applyDashboardFilterAndRender();
+                    }
+                }
+            }).catch(() => {});
+        }
+
         window.dispatchEvent(new Event('bujm_auth_ready'));
     } else if (mainApp) {
         mainApp.classList.add('hidden');
@@ -61,7 +92,18 @@ export function initAuth(db) {
                 if (userDoc.exists) {
                     role = userDoc.data().role || 'admin';
                     dbDeviceId = userDoc.data().deviceId;
-                    window.currentUserBranches = userDoc.data().branches || [];
+                    let dbBranches = userDoc.data().branches || [];
+                    if (user.email === 'abdul270484@gmail.com' && dbBranches.length === 0) {
+                        dbBranches = [
+                            'DENPASAR',
+                            'DENPASAR - CELLULAR WORLD',
+                            'DENPASAR - PLANET GADGET',
+                            'KUPANG',
+                            'SINGARAJA',
+                            'MANADO'
+                        ];
+                    }
+                    window.currentUserBranches = dbBranches;
                     currentUserBranches = window.currentUserBranches;
                     if (typeof window.applyDashboardFilterAndRender === 'function') {
                         window.applyDashboardFilterAndRender();
@@ -73,45 +115,56 @@ export function initAuth(db) {
                     await firebase.auth().signOut();
                     if (loginErrorMsg) {
                         loginErrorMsg.style.display = 'block';
-                        loginErrorMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Akses Ditolak! Akun Anda dinonaktifkan oleh Admin.';
+                        loginErrorMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Access Denied! Your account has been disabled by Admin.';
                     }
                     return;
                 }
 
-                // --- DEVICE BINDING LOGIC ---
+                // Super Admin check: Only ABDUL or Localhost runner
+                const isSuperAdmin = (user && user.email === 'abdul270484@gmail.com') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (isSuperAdmin) {
+                    role = 'admin';
+                }
+
+                // --- DEVICE BINDING LOGIC (HANYA UNTUK USER BIASA / BUKAN ADMIN / BUKAN SUPER ADMIN) ---
                 let localDeviceId = localStorage.getItem('bujm_device_id');
                 if (!localDeviceId) {
-                    // Generate unique ID untuk device ini
                     localDeviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
                     localStorage.setItem('bujm_device_id', localDeviceId);
                 }
 
-                // Jika akun sudah punya deviceId di DB, tapi tidak cocok dengan device ini
-                // Pengecualian untuk Admin agar tidak terkunci dari sistemnya sendiri
-                if (dbDeviceId && dbDeviceId !== localDeviceId && role !== 'admin') {
-                    await firebase.auth().signOut();
-                    if (loginErrorMsg) {
-                        loginErrorMsg.style.display = 'block';
-                        loginErrorMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Akses Ditolak! Akun Gmail ini terikat di perangkat lain. Hubungi Admin.';
+                // Super Admin & Admin BERHAK LOGIN DARI DEVICE MANAPUN (Bebas tanpa batas device)
+                if (!isSuperAdmin && role !== 'admin') {
+                    // Jika akun user biasa sudah punya deviceId di DB dan berbeda dengan device ini, tolak
+                    if (dbDeviceId && dbDeviceId !== localDeviceId) {
+                        await firebase.auth().signOut();
+                        if (loginErrorMsg) {
+                            loginErrorMsg.style.display = 'block';
+                            loginErrorMsg.innerHTML = '<i class="fa-solid fa-lock"></i> Access Denied! This Google account is linked to another device. Please contact Admin.';
+                        }
+                        return; // Batalkan proses login user biasa
                     }
-                    return; // Batalkan proses login!
                 }
                 
-                // Simpan atau Perbarui Data & Bind Device
-                await db.collection('users').doc(user.uid).set({
+                // Simpan atau Perbarui Data
+                const updatePayload = {
                     email: user.email,
                     displayName: user.displayName,
                     photoURL: user.photoURL,
                     role: role,
-                    deviceId: localDeviceId, // Kunci akun ke device ini
                     lastLogin: new Date().toISOString()
-                }, { merge: true }); // Pakai merge agar data lain tidak tertimpa
+                };
+
+                // Hanya kunci deviceId jika ini USER BIASA (User biasa 1 akun = 1 device)
+                // Super Admin / Admin TIDAK dikunci ke satu deviceId agar tidak saling menimpa saat multi-device login
+                if (!isSuperAdmin && role !== 'admin') {
+                    updatePayload.deviceId = localDeviceId;
+                }
+
+                await db.collection('users').doc(user.uid).set(updatePayload, { merge: true });
 
                 currentUser = user;
-                isAdmin = (role === 'admin');
-                
-                // Super Admin check: Only ABDUL or Localhost runner
-                const isSuperAdmin = (user && user.email === 'abdul270484@gmail.com') || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                isAdmin = (role === 'admin' || isSuperAdmin);
 
                 // Update UI
                 if (loginScreen) loginScreen.style.display = 'none';
@@ -148,10 +201,12 @@ export function initAuth(db) {
 
             } catch (err) {
                 console.error("Gagal memvalidasi sesi:", err);
-                if (loginErrorMsg) {
-                    loginErrorMsg.style.display = 'block';
-                    loginErrorMsg.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Gagal memvalidasi sesi DB: ' + err.message;
-                }
+                // Walaupun error baca firestore (misal offline), JANGAN logout jika user sudah terautentikasi Firebase
+                currentUser = user;
+                isAdmin = (user && user.email === 'abdul270484@gmail.com');
+                if (loginScreen) loginScreen.style.display = 'none';
+                if (mainApp) mainApp.classList.remove('hidden');
+                window.dispatchEvent(new Event('bujm_auth_ready'));
             }
         } else {
             // User is signed out
@@ -169,12 +224,15 @@ export function initAuth(db) {
 
     // Event Handler Button Login Google
     if (btnGoogle) {
-        btnGoogle.addEventListener('click', () => {
+        btnGoogle.addEventListener('click', async () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            btnGoogle.innerHTML = 'Memuat...';
+            btnGoogle.innerHTML = 'Loading...';
             btnGoogle.disabled = true;
 
-            firebase.auth().signInWithPopup(provider).catch((error) => {
+            try {
+                await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                await firebase.auth().signInWithPopup(provider);
+            } catch (error) {
                 console.error("Gagal Login Google:", error);
                 if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
                     console.log("Popup terblokir, mencoba signInWithRedirect...");
@@ -182,11 +240,11 @@ export function initAuth(db) {
                 }
                 if (loginErrorMsg) {
                     loginErrorMsg.style.display = 'block';
-                    loginErrorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Login Gagal: ${error.message}`;
+                    loginErrorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Login Failed: ${error.message}`;
                 }
                 btnGoogle.innerHTML = `<img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" style="width: 20px; height: 20px;"> Sign in with Google`;
                 btnGoogle.disabled = false;
-            });
+            }
         });
     }
 

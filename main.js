@@ -1,11 +1,11 @@
 import { CONFIG } from './src/config.js?v=1790141904536';
 import { scanRedoImage, initTesseract } from './src/services/ocr.js?v=1790141904536';
-import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo, getWAPayloadShame, getWAPayloadRC } from './src/services/whatsapp.js?v=1790141904536';
-import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as configDeleteRule, initContactsListener, saveTechContacts } from './src/firebase/config.js?v=1790141904536';
+import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo, getWAPayloadShame, getWAPayloadRC } from './src/services/whatsapp.js?v=20261007_v9';
+import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as configDeleteRule, initContactsListener, saveTechContacts } from './src/firebase/config.js?v=20261007_v8';
 import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser } from './src/firebase/users.js?v=1790141904536';
-import { initAuth, isAdmin, normalizePhone } from './src/auth.js?v=1790141904536';
+import { initAuth, isAdmin, normalizePhone } from './src/auth.js?v=20261005_v5';
 import { handleFiles, handleProductivityFiles } from './src/parser.js?v=1790141904536';
-import { initFirebaseAutoSync } from './src/firebase_sync.js?v=1790141904536';
+import { initFirebaseAutoSync } from './src/firebase_sync.js?v=20261003204';
 
 // Expose services to global scope for HTML inline onclick handlers
 window.sendWA = sendWA;
@@ -75,12 +75,12 @@ analyzerWorker.onmessage = function(e) {
         }
         
         if (unknownModels && unknownModels.length > 0) {
-            showToastNotification('<strong>Perhatian Bos:</strong> Ada ' + unknownModels.length + ' model tidak dikenali.<br>Silakan tambah di <b>Rules Config</b>!');
+            showToastNotification('<strong>Attention:</strong> Found ' + unknownModels.length + ' unmapped models.<br>Please add them in <b>Rules Config</b>!');
         }
 
         if (unknownReasons && unknownReasons.length > 0) {
             setTimeout(() => {
-                showToastNotification('<strong>⚠️ Reason Misterius Terdeteksi!</strong><br>Ada ' + unknownReasons.length + ' alasan asing.<br>Klik <b>Rules Config</b> untuk mendaftarkannya!');
+                showToastNotification('<strong>âš ï¸ Unmapped Reason Detected!</strong><br>Found ' + unknownReasons.length + ' unmapped reasons.<br>Click <b>Rules Config</b> to configure them!');
             }, 4000); 
         }
         
@@ -115,7 +115,7 @@ analyzerWorker.onmessage = function(e) {
         const overlay = document.getElementById('loading-overlay');
         if (overlay) overlay.classList.add('hidden');
     } else if (type === 'ANALYZE_ERROR') {
-        alert("Terjadi kesalahan saat memproses data: " + error);
+        alert("An error occurred while processing data: " + error);
         const overlay = document.getElementById('loading-overlay');
         if (overlay) overlay.classList.add('hidden');
     }
@@ -216,10 +216,10 @@ function updateJarvisUI(isReady, qrCode, isLocal = false) {
     if (isReady) {
         if (isLocal) {
             isJarvisOnline = true;
-            textEl.innerText = 'Sistem Bot WA: Online (Local)';
+            textEl.innerText = 'WA Bot System: Online (Local)';
         } else {
             isJarvisOnline = false;
-            textEl.innerText = 'Sistem Bot WA: Online (Pusat)';
+            textEl.innerText = 'WA Bot System: Online (Central)';
         }
         lastJarvisQr = null;
         statusEl.style.background = 'rgba(16, 185, 129, 0.2)';
@@ -234,7 +234,7 @@ function updateJarvisUI(isReady, qrCode, isLocal = false) {
         statusEl.style.color = '#f59e0b';
         statusEl.style.borderColor = '#f59e0b';
         statusEl.style.cursor = 'pointer';
-        textEl.innerText = 'Sistem Bot WA: Scan QR';
+        textEl.innerText = 'WA Bot System: Scan QR';
         if (qrImg) qrImg.src = qrCode;
     } else {
         isJarvisOnline = false;
@@ -243,7 +243,7 @@ function updateJarvisUI(isReady, qrCode, isLocal = false) {
         statusEl.style.color = 'var(--accent-red)';
         statusEl.style.borderColor = 'var(--accent-red)';
         statusEl.style.cursor = 'default';
-        textEl.innerText = 'Sistem Bot WA: Offline';
+        textEl.innerText = 'WA Bot System: Offline';
     }
 }
 
@@ -299,7 +299,7 @@ if (jarvisBadge) {
             if (qrModal) qrModal.classList.add('active');
         } else if (!isJarvisOnline) {
             if (window.showToastNotification) {
-                window.showToastNotification('⚠️ Sistem Bot WA Super Engine sedang memulai di port 3001...');
+                window.showToastNotification('âš ï¸ WA Bot Super Engine is starting on port 3001...');
             }
         }
     });
@@ -319,13 +319,61 @@ if (qrModalEl) {
 checkJarvisStatus();
 setInterval(checkJarvisStatus, 5000);
 
+// ==========================================
+// AREA BRANCH SECURITY & VALIDATION HELPERS
+// ==========================================
+function getAllowedBranches() {
+    let branches = window.currentUserBranches || [];
+    if (!Array.isArray(branches) || branches.length === 0) {
+        const email = (window.currentUser && window.currentUser.email) || 
+                      (window.firebase && window.firebase.auth().currentUser && window.firebase.auth().currentUser.email);
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (email === 'abdul270484@gmail.com' || isLocal) {
+            branches = ['DENPASAR', 'DENPASAR - CELLULAR WORLD', 'DENPASAR - PLANET GADGET', 'KUPANG', 'SINGARAJA', 'MANADO'];
+            window.currentUserBranches = branches;
+        }
+    }
+    return branches.map(b => String(b).toUpperCase().trim()).filter(Boolean);
+}
+
+function isBranchAllowed(branchName, allowedBranches) {
+    if (!branchName) return false;
+    if (!allowedBranches || !Array.isArray(allowedBranches) || allowedBranches.length === 0) return false;
+    
+    const target = String(branchName).toUpperCase().trim();
+    return allowedBranches.some(allowed => {
+        const a = String(allowed).toUpperCase().trim();
+        if (!a) return false;
+        return target.includes(a) || a.includes(target);
+    });
+}
+window.getAllowedBranches = getAllowedBranches;
+window.isBranchAllowed = isBranchAllowed;
+
 async function blastViaJarvis(blastQueueArray) {
     if (!isJarvisOnline) {
-        showToastNotification('Sistem WA sedang Offline! Pastikan file start_jarvis_background.vbs sudah dijalankan.');
+        showToastNotification('WA System is Offline! Ensure start_jarvis_background.vbs is running.');
+        return false;
+    }
+
+    // 🔒 DOUBLE CHECK AREA KEAMANAN
+    const allowed = getAllowedBranches();
+    if (!allowed || allowed.length === 0) {
+        alert('🚨 KEAMANAN SISTEM:\nTidak ada cabang area yang terdaftar untuk akun Anda! Pengiriman dibatalkan.');
         return false;
     }
     
-    showToastNotification(`Mengirim ${blastQueueArray.length} data ke Sistem Bot WA...`);
+    const safeQueue = blastQueueArray.filter(item => {
+        if (!item.branch) return true;
+        return isBranchAllowed(item.branch, allowed);
+    });
+
+    if (safeQueue.length === 0) {
+        alert('🚨 KEAMANAN SISTEM:\nSemua antrean pesan berada di luar area cabang Anda. Tidak ada pesan yang dikirim.');
+        return false;
+    }
+    
+    showToastNotification(`Mengirim ${safeQueue.length} pesan ke Bot WA (Area: ${allowed.join(', ')})...`);
     
     try {
         const response = await fetch('http://127.0.0.1:3001/api/blast', {
@@ -335,44 +383,63 @@ async function blastViaJarvis(blastQueueArray) {
             },
             body: JSON.stringify({
                 template: '[PesanUtama]',
-                data: blastQueueArray
+                data: safeQueue,
+                allowedBranches: allowed
             })
         });
         
         const result = await response.json();
         if (result.success) {
-            showToastNotification('BERHASIL! Sistem Bot WA sekarang sedang mengirim WA di background secara otomatis.');
+            showToastNotification('SUCCESS! WA Bot System is now sending messages in background automatically.');
             return true;
         } else {
-            showToastNotification('Gagal mengirim ke Sistem Bot WA: ' + result.error);
+            showToastNotification('Failed to send to WA Bot System: ' + result.error);
             return false;
         }
     } catch (err) {
-        showToastNotification('Error komunikasi dengan Sistem Bot WA: ' + err.message);
+        showToastNotification('Communication error with WA Bot System: ' + err.message);
         return false;
     }
 }
 
-// Event Listener for Blast Wall of Shame (Auto send WA to all)
+// Event Listener for Blast Wall of Shame (HANYA AREA SENDIRI)
 const btnBlastShame = document.getElementById('btnBlastShame');
 if (btnBlastShame) {
     btnBlastShame.addEventListener('click', async () => {
-        if (!window.shameData || window.shameData.length === 0) {
-            showToastNotification('Belum ada data Wall of Shame atau daftar kosong!');
+        // 1. Ambil daftar cabang yang diizinkan untuk user aktif
+        const allowedBranches = getAllowedBranches();
+        if (!allowedBranches || allowedBranches.length === 0) {
+            alert('🚨 AKSES DITOLAK!\n\nTidak ada cabang area yang terdaftar untuk akun Anda.\nBlasting DIBATALKAN demi keamanan untuk mencegah pesan terkirim ke cabang lain!');
             return;
         }
 
-        // Kumpulkan payload Sistem Bot WA
+        if (!window.shameData || window.shameData.length === 0) {
+            showToastNotification('Tidak ada data Wall of Shame yang tersedia.');
+            return;
+        }
+
+        // 2. Filter STRICT HANYA cabang area sendiri
+        const areaShameData = window.shameData.filter(item => {
+            return isBranchAllowed(item.asc, allowedBranches);
+        });
+
+        if (areaShameData.length === 0) {
+            showToastNotification(`Tidak ada teknisi Wall of Shame di cabang area Anda (${allowedBranches.join(', ')}).`);
+            return;
+        }
+
+        // 3. Kumpulkan payload Sistem Bot WA
         const blastQueueArray = [];
         const blastQueueManual = [];
         
-        window.shameData.forEach(item => {
+        areaShameData.forEach(item => {
             if (window.getWAPayloadShame) {
                 const payload = window.getWAPayloadShame(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
                 if (payload) {
                     blastQueueArray.push({
                         phone: payload.phone,
                         name: payload.name,
+                        branch: item.asc,
                         PesanUtama: payload.text
                     });
                     blastQueueManual.push(item);
@@ -381,7 +448,27 @@ if (btnBlastShame) {
         });
         
         if (blastQueueArray.length === 0) {
-            showToastNotification('Tidak ada teknisi di Wall of Shame yang memiliki nomor WA di database kontak!');
+            showToastNotification('Semua teknisi di area Anda pada Wall of Shame belum memiliki nomor WA di kontak!');
+            return;
+        }
+
+        // 4. Modal Konfirmasi Transparan & Wajib Setuju
+        const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
+        const sampleRecipients = blastQueueArray.slice(0, 10).map((r, i) => `  ${i + 1}. [${r.branch}] ${r.name} (${r.phone})`).join('\n');
+        const extraCount = blastQueueArray.length > 10 ? `\n  ...dan ${blastQueueArray.length - 10} teknisi lainnya` : '';
+        
+        const confirmMsg = 
+            `⚠️ KONFIRMASI BLAST WA - AREA SENDIRI\n\n` +
+            `📌 Cabang Area Anda: ${allowedBranches.join(', ')}\n` +
+            `🏢 Cabang Target Terdeteksi (${targetBranches.length}): ${targetBranches.join(', ')}\n` +
+            `👥 Total Penerima: ${blastQueueArray.length} teknisi\n\n` +
+            `Daftar Penerima:\n${sampleRecipients}${extraCount}\n\n` +
+            `🔒 KEAMANAN AKTIF: Pesan HANYA akan dikirim ke cabang di area Anda di atas.\n` +
+            `Cabang di luar area Anda TIDAK AKAN dikirimi pesan.\n\n` +
+            `Apakah Anda yakin ingin mengirim BLAST WA ke teknisi di area Anda?`;
+
+        if (!confirm(confirmMsg)) {
+            showToastNotification('Blasting dibatalkan oleh pengguna.');
             return;
         }
 
@@ -390,12 +477,12 @@ if (btnBlastShame) {
             await blastViaJarvis(blastQueueArray);
         } else {
             // Manual Fallback Mode
-            showToastNotification(`Menggunakan WA Chrome (Mode Manual) ke ${blastQueueManual.length} teknisi... Pastikan POPUP BLOCKER diizinkan!`);
+            showToastNotification(`Menggunakan WhatsApp Web (Mode Manual) untuk ${blastQueueManual.length} teknisi area Anda... Izinkan POPUP BROWSER!`);
             let index = 0;
             const blastInterval = setInterval(() => {
                 if (index >= blastQueueManual.length) {
                     clearInterval(blastInterval);
-                    showToastNotification('WA Blast Selesai! Semua pesan peringatan sudah diantrekan.');
+                    showToastNotification('WA Blast Area Selesai! Semua pesan peringatan telah diproses.');
                     return;
                 }
                 const item = blastQueueManual[index];
@@ -403,24 +490,41 @@ if (btnBlastShame) {
                     window.sendWA(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
                 }
                 index++;
-            }, 10000); // 17 seconds delay
+            }, 10000); // 10 seconds delay
         }
     });
 }
 
-// Event Listener for Blast Pending Delivery (Auto send WA to all PICs)
+// Event Listener for Blast Pending Delivery (HANYA AREA SENDIRI)
 const btnBlastRC = document.getElementById('btnBlastRC');
 if (btnBlastRC) {
     btnBlastRC.addEventListener('click', async () => {
+        // 1. Ambil daftar cabang yang diizinkan untuk user aktif
+        const allowedBranches = getAllowedBranches();
+        if (!allowedBranches || allowedBranches.length === 0) {
+            alert('🚨 AKSES DITOLAK!\n\nTidak ada cabang area yang terdaftar untuk akun Anda.\nBlasting DIBATALKAN demi keamanan untuk mencegah pesan terkirim ke cabang lain!');
+            return;
+        }
+
         if (!window.rcData || Object.keys(window.rcData).length === 0) {
-            showToastNotification('Belum ada data Pending Delivery atau daftar kosong!');
+            showToastNotification('Tidak ada data Pending Delivery yang tersedia.');
+            return;
+        }
+
+        // 2. Filter STRICT HANYA cabang area sendiri
+        const areaAscList = Object.keys(window.rcData).filter(asc => {
+            return isBranchAllowed(asc, allowedBranches);
+        });
+
+        if (areaAscList.length === 0) {
+            showToastNotification(`Tidak ada data Pending Delivery di cabang area Anda (${allowedBranches.join(', ')}).`);
             return;
         }
 
         const blastQueueArray = [];
         const blastQueueManual = [];
 
-        Object.keys(window.rcData).forEach(asc => {
+        areaAscList.forEach(asc => {
             if (window.getWAPayloadRC) {
                 const count = window.rcData[asc].count;
                 const payload = window.getWAPayloadRC(asc, count);
@@ -428,6 +532,7 @@ if (btnBlastRC) {
                     blastQueueArray.push({
                         phone: payload.phone,
                         name: payload.name,
+                        branch: asc,
                         PesanUtama: payload.text
                     });
                     blastQueueManual.push({ asc, count });
@@ -436,7 +541,27 @@ if (btnBlastRC) {
         });
         
         if (blastQueueArray.length === 0) {
-            showToastNotification('Tidak ada PIC cabang di daftar Pending Delivery yang memiliki nomor WA di database kontak!');
+            showToastNotification('PIC cabang di area Anda belum memiliki nomor kontak WA terdaftar!');
+            return;
+        }
+
+        // 3. Modal Konfirmasi Transparan & Wajib Setuju
+        const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
+        const sampleRecipients = blastQueueArray.slice(0, 10).map((r, i) => `  ${i + 1}. [${r.branch}] ${r.name} (${r.phone})`).join('\n');
+        const extraCount = blastQueueArray.length > 10 ? `\n  ...dan ${blastQueueArray.length - 10} PIC lainnya` : '';
+
+        const confirmMsg = 
+            `⚠️ KONFIRMASI BLAST PENDING DELIVERY (RC) - AREA SENDIRI\n\n` +
+            `📌 Cabang Area Anda: ${allowedBranches.join(', ')}\n` +
+            `🏢 Cabang Target Terdeteksi (${targetBranches.length}): ${targetBranches.join(', ')}\n` +
+            `👥 Total PIC Penerima: ${blastQueueArray.length} orang\n\n` +
+            `Daftar Penerima:\n${sampleRecipients}${extraCount}\n\n` +
+            `🔒 KEAMANAN AKTIF: Pesan HANYA akan dikirim ke PIC di cabang area Anda di atas.\n` +
+            `Cabang di luar area Anda TIDAK AKAN disentuh sama sekali.\n\n` +
+            `Apakah Anda yakin ingin mengirim BLAST WA ke PIC cabang area Anda?`;
+
+        if (!confirm(confirmMsg)) {
+            showToastNotification('Blasting RC dibatalkan oleh pengguna.');
             return;
         }
 
@@ -445,12 +570,12 @@ if (btnBlastRC) {
             await blastViaJarvis(blastQueueArray);
         } else {
             // Manual Fallback Mode
-            showToastNotification(`Menggunakan WA Chrome (Mode Manual) ke ${blastQueueManual.length} cabang... Pastikan POPUP BLOCKER diizinkan!`);
+            showToastNotification(`Menggunakan WhatsApp Web (Mode Manual) untuk ${blastQueueManual.length} cabang area Anda... Izinkan POPUP BROWSER!`);
             let index = 0;
             const blastInterval = setInterval(() => {
                 if (index >= blastQueueManual.length) {
                     clearInterval(blastInterval);
-                    showToastNotification('WA Blast RC Selesai! Semua pesan peringatan sudah diantrekan.');
+                    showToastNotification('WA Blast RC Area Selesai! Semua peringatan telah diproses.');
                     return;
                 }
                 const item = blastQueueManual[index];
@@ -458,7 +583,7 @@ if (btnBlastRC) {
                     window.sendWARC(item.asc, item.count);
                 }
                 index++;
-            }, 10000); // 17 seconds delay
+            }, 10000); // 10 seconds delay
         }
     });
 }
@@ -468,12 +593,12 @@ const btnShareDosaCabang = document.getElementById('btnShareDosaCabang');
 if (btnShareDosaCabang) {
     btnShareDosaCabang.addEventListener('click', () => {
         if (!window.dosaCabangData || window.dosaCabangData.length === 0) {
-            showToastNotification('Belum ada data Dosa Cabang > 7 hari!');
+            showToastNotification('No Branch Defect data > 7 days available!');
             return;
         }
         
         const dateStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        let text = `*AGING DOSA CABANG (> 7 HARI)*\n*Update:* ${dateStr}\n\nBerikut daftar bill pending murni kesalahan cabang dengan aging di atas 7 hari (tidak termasuk kendala SEIN/Part):\n\n`;
+        let text = `*AGING DOSA CABANG (> 7 HARI)*\n*Update:* ${dateStr}\n\nHere is the list of pending bills originating from branch internal delays over 7 days (excluding SEIN/Part issues):\n\n`;
         
         // Group by Branch
         const grouped = {};
@@ -493,13 +618,13 @@ if (btnShareDosaCabang) {
             text += `\n`;
         });
         
-        text += `Mohon Pelatih/Kacab/PIC segera tindak lanjuti pendingan di atas hari ini juga! Terima kasih. 🙏`;
+        text += `Branch Heads / PIC please follow up on the above pending units today! Thank you. ðŸ™`;
         
         navigator.clipboard.writeText(text).then(() => {
-            showToastNotification('Daftar Dosa Cabang > 7 hari berhasil disalin! Silakan paste di Grup WA.');
+            showToastNotification('Branch Defect list > 7 days copied! Please paste into your WA group.');
         }).catch(err => {
             console.error('Failed to copy text: ', err);
-            showToastNotification('Gagal menyalin teks.');
+            showToastNotification('Failed to copy text.');
         });
     });
 }
@@ -510,7 +635,7 @@ const btnShareFame = document.getElementById('btnShareFame');
 if (btnShareFame) {
     btnShareFame.addEventListener('click', () => {
         if (!window.fameData || window.fameData.length === 0) {
-            showToastNotification('Belum ada data Wall of Fame atau daftar kosong!');
+            showToastNotification('No Wall of Fame data available or list is empty!');
             return;
         }
         
@@ -523,16 +648,16 @@ if (btnShareFame) {
         else if (hour >= 15 && hour < 18) greeting = 'Selamat sore';
         else if (hour >= 18 || hour < 4) greeting = 'Selamat malam';
         
-        let text = `*WALL OF FAME (TOP PERFORMERS)* 🏆\n` +
+        let text = `*WALL OF FAME (TOP PERFORMERS)* ðŸ†\n` +
                    `Update: ${dateStr}\n\n` +
                    `${greeting} Tim, mari berikan apresiasi kepada Teknisi dengan produktivitas GD tertinggi (Bulan Berjalan):\n\n`;
         
         window.fameData.forEach((eng, idx) => {
             let medali = '';
-            if (idx === 0) medali = '🥇';
-            else if (idx === 1) medali = '🥈';
-            else if (idx === 2) medali = '🥉';
-            else medali = '🎖️';
+            if (idx === 0) medali = 'ðŸ¥‡';
+            else if (idx === 1) medali = 'ðŸ¥ˆ';
+            else if (idx === 2) medali = 'ðŸ¥‰';
+            else medali = 'ðŸŽ–ï¸';
             
             text += `${medali} *${eng.engineer}* (${eng.resolvedBranch})\n` +
                     `   Total GD : ${eng.gdCount}\n` +
@@ -540,7 +665,7 @@ if (btnShareFame) {
                     `   Cancel   : ${eng.gdCancel}\n\n`;
         });
         
-        text += `Terus tingkatkan produktivitas dan pertahankan performa luar biasa ini! 🔥👏`;
+        text += `Terus tingkatkan produktivitas dan pertahankan performa luar biasa ini! ðŸ”¥ðŸ‘`;
         
         
         
@@ -548,7 +673,7 @@ if (btnShareFame) {
             showToastNotification('Daftar Wall of Fame berhasil disalin! Silakan paste di Grup WA.');
         }).catch(err => {
             console.error('Failed to copy text: ', err);
-            showToastNotification('Gagal menyalin teks. Pastikan browser mengizinkan akses Clipboard.');
+            showToastNotification('Failed to copy text. Pastikan browser mengizinkan akses Clipboard.');
         });
 
     });
@@ -559,12 +684,12 @@ const btnShareShame = document.getElementById('btnShareShame');
 if (btnShareShame) {
     btnShareShame.addEventListener('click', () => {
         if (!window.shameData || window.shameData.length === 0) {
-            showToastNotification('Belum ada data Wall of Shame atau daftar kosong!');
+            showToastNotification('No Wall of Shame data available or list is empty!');
             return;
         }
         
         const dateStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        let text = `*WALL OF SHAME - DOSA CABANG*\nSelamat pagi Bpk/Ibu, berikut update ${dateStr} daftar teknisi dengan aging yang belum diselesaikan:\n\n`;
+        let text = `*WALL OF SHAME - DOSA CABANG*\nGood morning everyone, here is the update for ${dateStr} technicians with unresolved aging units:\n\n`;
         
         // Group by Branch
         const grouped = {};
@@ -585,13 +710,13 @@ if (btnShareShame) {
             });
         });
         
-        text += `\nDimohon untuk segera menindaklanjuti bill tersebut agar tidak merusak aging cabang.`;
+        text += `\nPlease follow up immediately to maintain branch aging performance.`;
         
         navigator.clipboard.writeText(text).then(() => {
-            showToastNotification('Teks berhasil disalin! Silakan paste di Grup WA Kepala Cabang.');
+            showToastNotification('Text copied! Please paste into Branch Head WA group.');
         }).catch(err => {
             console.error('Failed to copy text: ', err);
-            showToastNotification('Gagal menyalin teks. Pastikan browser mengizinkan akses Clipboard.');
+            showToastNotification('Failed to copy text. Pastikan browser mengizinkan akses Clipboard.');
         });
     });
 }
@@ -601,23 +726,23 @@ const btnShareMpu = document.getElementById('btnShareMpu');
 if (btnShareMpu) {
     btnShareMpu.addEventListener('click', () => {
         if (!window.mpuData || window.mpuData.length === 0) {
-            showToastNotification('Belum ada data MPU Violation atau daftar kosong!');
+            showToastNotification('No MPU Violation data available or list is empty!');
             return;
         }
         
-        let text = `*REPORT PELANGGARAN MPU (Multiple Part Usage)*\nDitemukan penggunaan lebih dari 1 part utama/mahal bill IW:\n\n`;
+        let text = `*MPU VIOLATION REPORT (Multiple Part Usage)*\nDetected multiple main/expensive parts usage on IW bills:\n\n`;
         
         window.mpuData.forEach((item, idx) => {
             text += `${idx + 1}. *${item.asc}* | ${item.engineer} | Job: ${item.jobNo} (${item.model})\n`;
         });
         
-        text += `Mohon segera memeriksa karena ini bisa mengurangi nilai Grading KPI`;
+        text += `Please verify immediately as this degrades KPI Grading.`;
         
         navigator.clipboard.writeText(text).then(() => {
-            showToastNotification('Teks MPU berhasil disalin! Silakan paste di Grup WA Kepala Cabang.');
+            showToastNotification('MPU text copied! Please paste into Branch Head WA group.');
         }).catch(err => {
             console.error('Failed to copy text: ', err);
-            showToastNotification('Gagal menyalin teks. Pastikan browser mengizinkan akses Clipboard.');
+            showToastNotification('Failed to copy text. Pastikan browser mengizinkan akses Clipboard.');
         });
     });
 }
@@ -627,23 +752,23 @@ const btnShareUb = document.getElementById('btnShareUb');
 if (btnShareUb) {
     btnShareUb.addEventListener('click', () => {
         if (!window.ubData || window.ubData.length === 0) {
-            showToastNotification('Belum ada data UB Repair Violation atau daftar kosong!');
+            showToastNotification('No UB Repair Violation data available or list is empty!');
             return;
         }
         
-        let text = `*REPORT PELANGGARAN UB REPAIR (FOLD/FLIP)*\nLarangan Keras! Ditemukan penggantian OCTA pada unit Fold/Flip IW:\n\n`;
+        let text = `*UB REPAIR VIOLATION REPORT (FOLD/FLIP)*\nStrict Prohibition! Detected OCTA replacement on Fold/Flip IW units:\n\n`;
         
         window.ubData.forEach((item, idx) => {
             text += `${idx + 1}. *${item.asc}* | ${item.engineer} | Job: ${item.jobNo} (${item.model})\n`;
         });
         
-        text += `Mohon segera memeriksa karena ini bisa mengurangi nilai Grading KPI`;
+        text += `Please verify immediately as this degrades KPI Grading.`;
         
         navigator.clipboard.writeText(text).then(() => {
-            showToastNotification('Teks UB berhasil disalin! Silakan paste di Grup WA Kepala Cabang.');
+            showToastNotification('UB text copied! Please paste into Branch Head WA group.');
         }).catch(err => {
             console.error('Failed to copy text: ', err);
-            showToastNotification('Gagal menyalin teks. Pastikan browser mengizinkan akses Clipboard.');
+            showToastNotification('Failed to copy text. Pastikan browser mengizinkan akses Clipboard.');
         });
     });
 }
@@ -653,11 +778,11 @@ const btnExportDts = document.getElementById('btnExportDts');
 if (btnExportDts) {
     btnExportDts.addEventListener('click', () => {
         if (!window.dtsMxData || Object.keys(window.dtsMxData).length === 0) {
-            showToastNotification('Belum ada data DTS MX untuk di-share!');
+            showToastNotification('No DTS MX data available to share!');
             return;
         }
         
-        let text = `*REPORT PRODUKTIVITAS TEKNISI MX (CARRY IN)*\n\n`;
+        let text = `*MX TECHNICIAN PRODUCTIVITY REPORT (CARRY IN)*\n\n`;
         
         const grouped = {};
         Object.values(window.dtsMxData).forEach(item => {
@@ -678,10 +803,10 @@ if (btnExportDts) {
         text += `\nMohon memonitor teknisi yang produktivitasnya masih rendah dan segera menyelesaikan sisa aging.`;
         
         navigator.clipboard.writeText(text).then(() => {
-            showToastNotification('Teks DTS MX berhasil disalin! Silakan paste di Grup WA Kepala Cabang.');
+            showToastNotification('DTS MX text copied! Please paste into Branch Head WA group.');
         }).catch(err => {
             console.error('Failed to copy text: ', err);
-            showToastNotification('Gagal menyalin teks. Pastikan browser mengizinkan akses Clipboard.');
+            showToastNotification('Failed to copy text. Pastikan browser mengizinkan akses Clipboard.');
         });
     });
 }
@@ -691,7 +816,7 @@ const btnExportDtsIh = document.getElementById('btnExportDtsIh');
 if (btnExportDtsIh) {
     btnExportDtsIh.addEventListener('click', () => {
         if (!window.dtsIhData || Object.keys(window.dtsIhData).length === 0) {
-            showToastNotification('Belum ada data DTS CE untuk di-share!');
+            showToastNotification('No DTS CE data available to share!');
             return;
         }
         
@@ -718,10 +843,10 @@ if (btnExportDtsIh) {
         text += `\nMohon memonitor teknisi yang produktivitasnya masih rendah dan segera menyelesaikan sisa aging.`;
         
         navigator.clipboard.writeText(text).then(() => {
-            showToastNotification('Teks DTS CE berhasil disalin! Silakan paste di Grup WA Kepala Cabang.');
+            showToastNotification('DTS CE text copied! Please paste into Branch Head WA group.');
         }).catch(err => {
             console.error('Failed to copy text: ', err);
-            showToastNotification('Gagal menyalin teks. Pastikan browser mengizinkan akses Clipboard.');
+            showToastNotification('Failed to copy text. Pastikan browser mengizinkan akses Clipboard.');
         });
     });
 }
@@ -731,7 +856,7 @@ const btnExportQueue = document.getElementById('btnExportQueue');
 if (btnExportQueue) {
     btnExportQueue.addEventListener('click', () => {
         if (!window.queueData || Object.keys(window.queueData).length === 0) {
-            showToastNotification('Belum ada data Queue / Antrean untuk di-share!');
+            showToastNotification('No Queue data available to share!');
             return;
         }
         
@@ -758,7 +883,7 @@ if (btnExportQueue) {
             showToastNotification('Teks CS Performance berhasil disalin! Silakan paste di Grup WA Kepala Cabang.');
         }).catch(err => {
             console.error('Failed to copy text: ', err);
-            showToastNotification('Gagal menyalin teks. Pastikan browser mengizinkan akses Clipboard.');
+            showToastNotification('Failed to copy text. Pastikan browser mengizinkan akses Clipboard.');
         });
     });
 }
@@ -1133,13 +1258,13 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     if (document.getElementById('val-total-redo')) document.getElementById('val-total-redo').innerText = (stats.redoCount !== undefined ? stats.redoCount : (window.redoList ? window.redoList.length : 0));
 
     // Render LTP Chart
-    const ctxLtp = document.getElementById('ltpChart').getContext('2d');
+    const ctxLtp = document.getElementById('ltpChart') ? document.getElementById('ltpChart').getContext('2d') : null;
     if (ltpChartInstance) ltpChartInstance.destroy();
     
     Chart.defaults.color = '#8b9bb4';
     Chart.defaults.font.family = "'Outfit', sans-serif";
     
-    ltpChartInstance = new Chart(ctxLtp, {
+    if(ctxLtp) ltpChartInstance = new Chart(ctxLtp, {
         type: 'bar',
         data: {
             labels: ['MX (Mobile)', 'VD (TV)', 'DA (Appliances)'],
@@ -1166,84 +1291,76 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     });
 
     // Render Responsibility Chart
-    const ctxResp = document.getElementById('responsibilityChart').getContext('2d');
+    const ctxResp = document.getElementById('responsibilityChart') ? document.getElementById('responsibilityChart').getContext('2d') : null;
     if (respChartInstance) respChartInstance.destroy();
+    
+    if (ctxResp) {
+        const h = ctxResp.canvas.height || 300;
+        const gradRed = ctxResp.createLinearGradient(0, 0, 0, h);
+        gradRed.addColorStop(0, '#fca5a5'); gradRed.addColorStop(0.4, '#ef4444'); gradRed.addColorStop(1, '#7f1d1d');
+        const gradGreen = ctxResp.createLinearGradient(0, 0, 0, h);
+        gradGreen.addColorStop(0, '#6ee7b7'); gradGreen.addColorStop(0.4, '#10b981'); gradGreen.addColorStop(1, '#064e3b');
+        const gradBlue = ctxResp.createLinearGradient(0, 0, 0, h);
+        gradBlue.addColorStop(0, '#93c5fd'); gradBlue.addColorStop(0.4, '#3b82f6'); gradBlue.addColorStop(1, '#1e3a8a');
 
-    const h = ctxResp.canvas.height || 300;
-    
-    // Create 3D Cylindrical Gradients
-    const gradRed = ctxResp.createLinearGradient(0, 0, 0, h);
-    gradRed.addColorStop(0, '#fca5a5'); // Highlight
-    gradRed.addColorStop(0.4, '#ef4444'); // Base
-    gradRed.addColorStop(1, '#7f1d1d'); // Shadow
-    
-    const gradGreen = ctxResp.createLinearGradient(0, 0, 0, h);
-    gradGreen.addColorStop(0, '#6ee7b7');
-    gradGreen.addColorStop(0.4, '#10b981');
-    gradGreen.addColorStop(1, '#064e3b');
-    
-    const gradBlue = ctxResp.createLinearGradient(0, 0, 0, h);
-    gradBlue.addColorStop(0, '#93c5fd');
-    gradBlue.addColorStop(0.4, '#3b82f6');
-    gradBlue.addColorStop(1, '#1e3a8a');
-
-    // Pseudo-3D Plugin for Drop Shadow & Bevel Highlight
-    const pseudo3DPlugin = {
-        id: 'pseudo3d',
-        beforeDatasetDraw(chart, args) {
-            const ctx = chart.ctx;
-            ctx.save();
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-            ctx.shadowBlur = 15;
-            ctx.shadowOffsetX = 5;
-            ctx.shadowOffsetY = 15;
-        },
-        afterDatasetDraw(chart, args) {
-            chart.ctx.restore();
-            // Bevel effect (Glass/Plastic reflection on edges)
-            const ctx = chart.ctx;
-            const meta = chart.getDatasetMeta(args.index);
-            meta.data.forEach(arc => {
+        const pseudo3DPlugin = {
+            id: 'pseudo3d',
+            beforeDatasetDraw(chart, args) {
+                const ctx = chart.ctx;
                 ctx.save();
-                ctx.beginPath();
-                ctx.arc(arc.x, arc.y, arc.outerRadius, arc.startAngle, arc.endAngle);
-                ctx.arc(arc.x, arc.y, arc.innerRadius, arc.endAngle, arc.startAngle, true);
-                ctx.closePath();
-                ctx.lineWidth = 1;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.stroke();
-                
-                // Add inner dark shadow bevel
-                ctx.beginPath();
-                ctx.arc(arc.x, arc.y, arc.innerRadius + 1, arc.startAngle, arc.endAngle);
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-                ctx.stroke();
-                ctx.restore();
-            });
-        }
-    };
-
-    respChartInstance = new Chart(ctxResp, {
-        type: 'doughnut',
-        data: {
-            labels: ['AGING (Branch Fault)', 'SEIN (Samsung Fault)', 'OTHER'],
-            datasets: [{
-                data: [stats.responsibility.AGING, stats.responsibility.SEIN, stats.responsibility.OTHER],
-                backgroundColor: ['#f43f5e', '#10b981', '#3b82f6'],
-                borderColor: '#ffffff',
-                borderWidth: 2,
-                hoverOffset: 15
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '65%',
-            plugins: {
-                legend: { position: 'bottom', labels: { color: '#0f172a', font: { weight: 'bold' } } }
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 5;
+                ctx.shadowOffsetY = 15;
+            },
+            afterDatasetDraw(chart, args) {
+                chart.ctx.restore();
+                const ctx = chart.ctx;
+                const meta = chart.getDatasetMeta(args.index);
+                if (meta.type !== 'doughnut') return;
+                meta.data.forEach(arc => {
+                    const outerRadius = arc.outerRadius;
+                    const innerRadius = arc.innerRadius;
+                    const x = arc.x;
+                    const y = arc.y;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(x, y, outerRadius, arc.startAngle, arc.endAngle);
+                    ctx.arc(x, y, innerRadius, arc.endAngle, arc.startAngle, true);
+                    ctx.closePath();
+                    ctx.clip();
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.beginPath();
+                    ctx.arc(x, y - 5, outerRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
             }
-        }
-    });
+        };
+
+        respChartInstance = new Chart(ctxResp, {
+            type: 'doughnut',
+            data: {
+                labels: ['AGING (Branch Fault)', 'SEIN (Samsung Fault)', 'OTHER'],
+                datasets: [{
+                    data: [stats.breakdownResp.aging, stats.breakdownResp.sein, stats.breakdownResp.other],
+                    backgroundColor: [gradRed, gradGreen, gradBlue],
+                    borderColor: ['#f87171', '#34d399', '#60a5fa'],
+                    borderWidth: 2,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { weight: 'bold', size: 9 } } }
+                }
+            },
+            plugins: [pseudo3DPlugin]
+        });
+    }
 
     // Render MPU Table
     const tbodyMpu = document.querySelector('#mpu-table tbody');
@@ -1263,7 +1380,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                 const tr = document.createElement('tr');
                 const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed');
                 const jobColor = isRC ? 'var(--accent-red)' : 'var(--text-main)';
-                const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">⚠️ TELANJUR RC</span>' : '';
+                const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">âš ï¸ TELANJUR RC</span>' : '';
                 
                 tr.innerHTML = `
                     <td><strong>${item.asc}</strong></td>
@@ -1286,7 +1403,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     if (tbodyUb) {
         tbodyUb.innerHTML = '';
         if (ubList.length === 0) {
-            tbodyUb.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px;">Aman! Tidak ada pelanggaran UB Repair.</td></tr>`;
+            tbodyUb.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px;">Aman! None pelanggaran UB Repair.</td></tr>`;
         } else {
             // Sort: 1. Branch A-Z, 2. Engineer Name A-Z
             const sortedUb = [...ubList].sort((a, b) => {
@@ -1299,7 +1416,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                 const tr = document.createElement('tr');
                 const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed');
                 const jobColor = isRC ? 'var(--accent-red)' : 'var(--text-main)';
-                const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">⚠️ TELANJUR RC</span>' : '';
+                const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">âš ï¸ TELANJUR RC</span>' : '';
 
                 tr.innerHTML = `
                     <td><strong>${item.asc}</strong></td>
@@ -1325,7 +1442,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         const branches = Object.keys(statsMap);
         
         if (branches.length === 0) {
-            tbodyDosa.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px;">Bersih! Tidak ada dosa cabang > 7 hari.</td></tr>`;
+            tbodyDosa.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px;">Bersih! None dosa cabang > 7 hari.</td></tr>`;
         } else {
             // Sort: 1. Total Unit (Dosa) DESC (Z - A), 2. Branch A-Z
             const sortedDosaBranches = branches.sort((a, b) => {
@@ -1344,7 +1461,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                 tr.innerHTML = `
                     <td>
                         <strong>${asc}</strong>
-                        <button onclick="sendWADosaSingleBranch('${asc}')" style="background: none; border: none; color: ${waColor}; font-size: 1rem; cursor: pointer; margin-left: 10px;" title="Kirim Peringatan WA ke PIC Dosa Cabang"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button onclick="sendWADosaSingleBranch('${asc}')" style="background: none; border: none; color: ${waColor}; font-size: 1rem; cursor: pointer; margin-left: 10px;" title="Send WA Alert to PIC Dosa Cabang"><i class="fa-brands fa-whatsapp"></i></button>
                     </td>
                     <td><span class="clickable-number" style="color:var(--accent-red); font-size: 1rem; font-weight: 700;" onclick="openDosaModal('${asc}')">${dc.count} Units</span></td>
                 `;
@@ -1360,7 +1477,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     if (!top5Container) {
         top5Container = document.createElement('div');
         top5Container.id = 'top5-critical-widget';
-        top5Container.className = 'span-10'; // holding multiple cards now
+        top5Container.className = 'span-12 page-all'; // holding multiple cards now
         top5Container.style.marginTop = '20px';
         top5Container.style.display = 'flex';
         top5Container.style.flexDirection = 'column';
@@ -1406,7 +1523,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     
     const renderTableHtml = (title, items, icon, colorGrad) => {
         let html = `
-            <div class="card glass-panel control-tower-card" style="width:100%; border:2px solid ${colorGrad.includes('#f43f5e') ? '#f43f5e' : '#f97316'}; box-shadow:0 10px 25px rgba(0,0,0,0.15); margin-bottom: 25px;">
+            <div class="card glass-panel control-tower-card page-all" style="width:100%; border:2px solid ${colorGrad.includes('#f43f5e') ? '#f43f5e' : '#f97316'}; box-shadow:0 10px 25px rgba(0,0,0,0.15); margin-bottom: 25px;">
                 <div class="card-header" style="background: ${colorGrad}; border-bottom: none; display: flex; justify-content: space-between; align-items: center; padding: 20px;">
                     <h3 style="color: white; font-size: 1.25rem; font-weight: 800; margin:0; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px;"><span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px;"><i class="${icon}"></i></span> ${title}</h3><div style="background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: white; font-weight: bold; border: 1px solid rgba(255,255,255,0.4);">ACTION REQUIRED</div>
                 </div>
@@ -1427,7 +1544,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         `;
         
         if (items.length === 0) {
-            html += `<tr><td colspan="7" style="text-align:center; padding:15px; color:#94a3b8;">Tidak ada kasus di kategori ini. Excellent!</td></tr>`;
+            html += `<tr><td colspan="7" style="text-align:center; padding:15px; color:#94a3b8;">None kasus di kategori ini. Excellent!</td></tr>`;
         } else {
             items.forEach(b => {
                 const priorityColor = b.ai_priority?.level === 'CRITICAL' ? 'var(--accent-red)' :
@@ -1475,7 +1592,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         sortedShame.forEach(item => {
             const hasPhone = !!(window.techContacts || {})[item.engineer];
             const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
-            const warningTag = isRC ? '<br><span style=\"background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;\">⚠️ TELANJUR RC</span>' : '';
+            const warningTag = isRC ? '<br><span style=\"background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;\">âš ï¸ TELANJUR RC</span>' : '';
             const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
             
             const tr = document.createElement('tr');
@@ -1487,7 +1604,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                             ${item.engineer}
                             <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">${item.detail}</div>
                         </div>
-                        <button onclick="sendWA('${item.engineer.replace(/'/g, "\\'")}', '${item.asc}', ${item.count}, '${item.detail}')" style="background: none; border: none; color: ${waColor}; font-size: 1.5rem; cursor: pointer;" title="Kirim Teguran WA"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button onclick="sendWA('${item.engineer.replace(/'/g, "\\'")}', '${item.asc}', ${item.count}, '${item.detail}')" style="background: none; border: none; color: ${waColor}; font-size: 1.5rem; cursor: pointer;" title="Send WA Warning"><i class="fa-brands fa-whatsapp"></i></button>
                     </div>
                 </td>
                 <td style="text-align:center;"><span class="clickable-number" style="color:var(--accent-red); font-size:1rem; font-weight: 700;" onclick="openEngModal('${item.engineer.replace(/'/g, "\\'")}')">${item.count} Units</span></td>
@@ -1520,7 +1637,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                             ${item.engineer}
                             <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">${item.detail}</div>
                         </div>
-                        <button onclick="sendWA('${item.engineer.replace(/'/g, "\\'")}', '${item.asc}', ${item.count}, '${item.detail}')" style="background: none; border: none; color: ${waColor}; font-size: 1.5rem; cursor: pointer;" title="Kirim Teguran WA"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button onclick="sendWA('${item.engineer.replace(/'/g, "\\'")}', '${item.asc}', ${item.count}, '${item.detail}')" style="background: none; border: none; color: ${waColor}; font-size: 1.5rem; cursor: pointer;" title="Send WA Warning"><i class="fa-brands fa-whatsapp"></i></button>
                     </div>
                 </td>
                 <td style="text-align:center;"><span class="clickable-number" style="color:var(--accent-red); font-size:1rem; font-weight: 700;" onclick="openEngModal('${item.engineer.replace(/'/g, "\\'")}')">${item.count} Units</span></td>
@@ -1535,7 +1652,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         tbodyRC.innerHTML = '';
         
         if (!rcStats || Object.keys(rcStats).length === 0) {
-            tbodyRC.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted);">Tumben, tidak ada unit ngendap!</td></tr>`;
+            tbodyRC.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted);">Great! No stagnant units pending delivery!</td></tr>`;
         } else {
             // Sort: 1. Total Unit (RC) DESC (Z - A), 2. Branch A-Z
             const sortedRCBranches = Object.keys(rcStats).sort((a, b) => {
@@ -1554,7 +1671,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                 tr.innerHTML = `
                     <td>
                         <strong>${asc}</strong>
-                        <button onclick="sendWARC('${asc}', ${rc.count})" style="background: none; border: none; color: ${waColor}; font-size: 1rem; cursor: pointer; margin-left: 10px;" title="Kirim Peringatan WA ke PIC"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button onclick="sendWARC('${asc}', ${rc.count})" style="background: none; border: none; color: ${waColor}; font-size: 1rem; cursor: pointer; margin-left: 10px;" title="Send WA Alert to PIC"><i class="fa-brands fa-whatsapp"></i></button>
                     </td>
                     <td><span class="clickable-number" style="color:var(--accent-orange); font-size: 1rem; font-weight: 700;" onclick="openRCModal('${asc}')">${rc.count} Units</span></td>
                 `;
@@ -1595,7 +1712,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     });
 
     if (sortedBranches.length === 0) {
-        tbodyBranch.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted); font-size: 0.95rem;">🎉 Luar biasa! Tidak ada cabang yang memiliki pelanggaran/penalti saat ini.</td></tr>`;
+        tbodyBranch.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted); font-size: 0.95rem;">ðŸŽ‰ Awesome! No branches currently have violations or penalties.</td></tr>`;
     } else {
         sortedBranches.forEach(branch => {
             const bs = branchStats[branch];
@@ -1604,7 +1721,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             // Helper to generate clickable cell
             const getCell = (val, metric, colorStyle) => {
                 if (val === 0) return `<td></td>`;
-                return `<td style="text-align:center; ${colorStyle}"><span class="clickable-number" onclick="openModal('${branch}', '${metric}')">${val}</span></td>`;
+                return `<td style="text-align:center; ${colorStyle}"><span class="clickable-number" style="font-size: 1rem; font-weight: 700;" onclick="openModal('${branch}', '${metric}')">${val} Units</span></td>`;
             };
             
             tr.innerHTML = `
@@ -1675,7 +1792,7 @@ function renderRedoTable() {
     });
 
     if (redoList.length === 0) {
-        tbodyRedo.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted);">Aman! Tidak ada pelanggaran REDO yang terdeteksi.</td></tr>`;
+        tbodyRedo.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted);">Clean! No REDO violations detected.</td></tr>`;
         return;
     }
 
@@ -1688,7 +1805,7 @@ function renderRedoTable() {
     sortedRedo.forEach(item => {
         const tr = document.createElement('tr');
         const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed' || item.status === 'REDO');
-        const warningTag = `<br><span style="background:var(--accent-orange); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">⚠️ REDO</span>`;
+        const warningTag = `<br><span style="background:var(--accent-orange); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">âš ï¸ REDO</span>`;
 
         tr.innerHTML = `
             <td><strong>${item.asc}</strong></td>
@@ -1734,7 +1851,7 @@ function renderDtsIhTable() {
     if (tbodyDtsIh) {
         tbodyDtsIh.innerHTML = '';
         if (!window.dtsIhData || Object.keys(window.dtsIhData).length === 0) {
-            tbodyDtsIh.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada data CE hari ini</td></tr>`;
+            tbodyDtsIh.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">No CE data recorded today</td></tr>`;
         } else {
             
             if (window.prodData && Array.isArray(window.prodData)) {
@@ -1787,7 +1904,7 @@ function renderDtsIhTable() {
             });
             
             if (tbodyDtsIh.children.length === 0) {
-                tbodyDtsIh.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada teknisi VD/DA dengan kunjungan/aging hari ini</td></tr>`;
+                tbodyDtsIh.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">No VD/DA technicians with visits/aging today</td></tr>`;
             }
         }
     }
@@ -1799,7 +1916,7 @@ function renderDtsMxTable() {
     if (tbodyDtsMx) {
         tbodyDtsMx.innerHTML = '';
         if (!window.dtsMxData || Object.keys(window.dtsMxData).length === 0) {
-            tbodyDtsMx.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada data MX hari ini</td></tr>`;
+            tbodyDtsMx.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">No MX data recorded today</td></tr>`;
         } else {
             
             if (window.prodData && Array.isArray(window.prodData)) {
@@ -1931,7 +2048,7 @@ if(btnRequestAccessWa) {
         const nama = prompt("Masukkan nama Anda:");
         if (!nama || nama.trim() === '') return;
         
-        const pesan = `🔑 *REQUEST AKSES RULES CONFIG*\n\nHalo Ndan,\nSaya *${nama.trim()}* ingin meminta izin akses ke menu *Rules Config* di Dashboard BUJM.\n\nMohon diberikan password-nya ya Ndan. Terima kasih! 🙏`;
+        const pesan = `ðŸ”‘ *REQUEST AKSES RULES CONFIG*\n\nHalo Ndan,\nSaya *${nama.trim()}* ingin meminta izin akses ke menu *Rules Config* di Dashboard BUJM.\n\nMohon diberikan password-nya ya Ndan. Terima kasih! ðŸ™`;
         
         const url = `https://wa.me/${ADMIN_WA_NUMBER}?text=${encodeURIComponent(pesan)}`;
         window.open(url, '_blank');
@@ -1987,7 +2104,7 @@ function renderApprovedUsers() {
     approvedUsersList.innerHTML = '';
     
     if (approvedUsersCache.length === 0) {
-        approvedUsersList.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">Belum ada user yang masuk</td></tr>`;
+        approvedUsersList.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">No users logged in yet</td></tr>`;
         return;
     }
     
@@ -2005,13 +2122,13 @@ function renderApprovedUsers() {
             roleDisplay = '<i class="fa-solid fa-hourglass-half"></i> PENDING';
         }
         
-        const deviceStatus = user.deviceId ? '<span style="color:var(--accent-green);"><i class="fa-solid fa-lock"></i> Terkunci</span>' : '<span style="color:var(--text-muted);">Bebas</span>';
+        const deviceStatus = user.deviceId ? '<span style="color:var(--accent-green);"><i class="fa-solid fa-lock"></i> Locked</span>' : '<span style="color:var(--text-muted);">Unlocked</span>';
         
-        let branchesDisplay = '<span style="color:var(--text-muted); font-style:italic;">Belum Ada Cabang</span>';
+        let branchesDisplay = '<span style="color:var(--text-muted); font-style:italic;">No Branch Assigned</span>';
         if (user.branches && Array.isArray(user.branches) && user.branches.length > 0) {
             branchesDisplay = '<div style="font-size:0.75rem; color:var(--accent-blue); max-width: 150px; word-wrap: break-word;">' + user.branches.join(', ') + '</div>';
         } else if (user.role === 'admin') {
-            branchesDisplay = '<span style="color:var(--text-muted); font-style:italic;">Semua Cabang (Global)</span>';
+            branchesDisplay = '<span style="color:var(--text-muted); font-style:italic;">All Branches (Global)</span>';
         }
         
         let actionsHTML = '';
@@ -2026,13 +2143,13 @@ function renderApprovedUsers() {
             `;
         } else {
             actionsHTML = `
-                <button onclick="window.editUserBranches('${user.id}', '${(user.branches || []).join(', ')}')" style="background: rgba(59, 130, 246, 0.2); border: 1px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Edit Cabang">
+                <button onclick="window.editUserBranches('${user.id}', '${(user.branches || []).join(', ')}')" style="background: rgba(59, 130, 246, 0.2); border: 1px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Edit Branch">
                     <i class="fa-solid fa-map-location-dot"></i>
                 </button>
-                <button onclick="resetDeviceLock('${user.id}')" style="background: rgba(37, 211, 102, 0.2); border: 1px solid var(--accent-green); color: var(--accent-green); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Reset Device (Buka Kunci)">
+                <button onclick="resetDeviceLock('${user.id}')" style="background: rgba(37, 211, 102, 0.2); border: 1px solid var(--accent-green); color: var(--accent-green); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Reset Device (Unlock)">
                     <i class="fa-solid fa-unlock-keyhole"></i>
                 </button>
-                <button onclick="removeApprovedUser('${user.id}', '${user.email}')" style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--accent-red); color: var(--accent-red); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem;" title="Hapus User">
+                <button onclick="removeApprovedUser('${user.id}', '${user.email}')" style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--accent-red); color: var(--accent-red); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem;" title="Delete User">
                     <i class="fa-solid fa-user-xmark"></i>
                 </button>
             `;
@@ -2079,7 +2196,7 @@ function renderUnmappedSuggestions() {
     const unModels = window.unknownModels || [];
     const unReasons = window.unknownReasons || [];
     
-    if (unModels.length === 0) ml.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted);">Tidak ada</span>';
+    if (unModels.length === 0) ml.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted);">None</span>';
     else {
         unModels.forEach(m => {
             const btn = document.createElement('button');
@@ -2090,7 +2207,7 @@ function renderUnmappedSuggestions() {
         });
     }
     
-    if (unReasons.length === 0) rl.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted);">Tidak ada</span>';
+    if (unReasons.length === 0) rl.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted);">None</span>';
     else {
         unReasons.forEach(r => {
             const btn = document.createElement('button');
@@ -2248,11 +2365,11 @@ btnSaveContacts.addEventListener('click', () => {
     });
     
     saveTechContacts(currentPhones, currentNames, () => {
-        showToastNotification('Database Nomor WA berhasil disimpan ke Cloud!');
+        showToastNotification('WhatsApp Contacts Database saved to Cloud!');
         contactsModal.classList.add('hidden');
         
         if (window.engineerData) {
-            showToastNotification('Simpan sukses! Refresh halaman untuk melihat warna tombol WA yang baru.');
+            showToastNotification('Saved successfully! Refresh page to update WA button status.');
         }
     });
 });
@@ -2311,7 +2428,7 @@ function renderContactsTable() {
             nameHtml = `
                 <div style="font-size:0.75rem; color:var(--text-muted); font-weight:bold; margin-bottom:2px;">[${asc}]</div>
                 <div style="font-size:0.85rem; color:var(--accent-blue); font-weight:bold;">${eng}</div>
-                <input type="text" class="tech-real-name" data-name="${eng}" value="${realName}" placeholder="Ketik nama asli PIC..." style="width: 100%; padding: 6px; margin-top: 4px; border-radius: 4px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.3); color: white; font-size: 0.85rem;">
+                <input type="text" class="tech-real-name" data-name="${eng}" value="${realName}" placeholder="Enter PIC actual name..." style="width: 100%; padding: 6px; margin-top: 4px; border-radius: 4px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.3); color: white; font-size: 0.85rem;">
             `;
         }
         
@@ -2319,7 +2436,7 @@ function renderContactsTable() {
             <tr>
                 <td style="font-weight: 500; font-size: 0.9rem;">${nameHtml}</td>
                 <td>
-                    <input type="text" class="tech-phone" data-name="${eng}" value="${phone}" placeholder="Cth: 0812345..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: white;">
+                    <input type="text" class="tech-phone" data-name="${eng}" value="${phone}" placeholder="e.g. 0812345..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: white;">
                 </td>
             </tr>
         `;
@@ -2643,17 +2760,17 @@ if (redoDropZone && redoFileInput) {
         if (!files.length) return;
         const loadingOverlay = document.getElementById('loading-overlay');
         if (loadingOverlay) loadingOverlay.classList.remove('hidden');
-        showToastNotification(`Memulai pemindaian AI pada ${files.length} gambar... Mohon tunggu.`);
+        showToastNotification(`Starting AI scan on ${files.length} images... Please wait.`);
         
         for (let i = 0; i < files.length; i++) {
             if (files.length > 1) {
-                showToastNotification(`Memindai gambar ${i+1} dari ${files.length}...`);
+                showToastNotification(`Scanning image ${i+1} of ${files.length}...`);
             }
             await handleRedoImage(files[i]);
         }
         
         if (loadingOverlay) loadingOverlay.classList.add('hidden');
-        showToastNotification('Scan OCR Selesai! Tabel Redo telah diperbarui.');
+        showToastNotification('OCR Scan Complete! Redo table updated.');
         renderRedoTable();
     }
 
@@ -2675,7 +2792,7 @@ if (redoDropZone && redoFileInput) {
 
 async function handleRedoImage(file) {
     const loadingOverlay = document.getElementById('loading-overlay');
-    if (loadingOverlay) loadingOverlay.querySelector('p').innerText = 'Memindai teks menggunakan AI (Fast Mode)...';
+    if (loadingOverlay) loadingOverlay.querySelector('p').innerText = 'Scanning text with AI (Fast Mode)...';
     
     const result = await scanRedoImage(file);
     
@@ -2685,8 +2802,8 @@ async function handleRedoImage(file) {
     }
     
     if (!result.uniqueJobs || result.uniqueJobs.length === 0) {
-        console.log('Tidak ditemukan Service Order No di gambar tersebut!');
-        showToastNotification('⚠️ Tidak terdeteksi No. Service Order (Job No 10-digit) pada gambar ini.');
+        console.log('No Service Order No found in image!');
+        showToastNotification('âš ï¸ No Service Order Number (10-digit Job No) detected in this image.');
         return;
     }
 
@@ -2754,10 +2871,10 @@ async function handleRedoImage(file) {
             });
 
             if (bestMatch && bestDistance <= 2) {
-                let rawEngineer = bestMatch['Engineer Name'] || bestMatch['Engineer'] || 'Teknisi Unmapped';
+                let rawEngineer = bestMatch['Engineer Name'] || bestMatch['Engineer'] || 'Unmapped Technician';
                 rawEngineer = String(rawEngineer).trim().toUpperCase().replace(/^\d+\s+/, '');
                 if (!rawEngineer || /^\d+$/.test(rawEngineer) || rawEngineer.includes('UNMAPPED')) {
-                     rawEngineer = 'Teknisi Unmapped';
+                     rawEngineer = 'Unmapped Technician';
                 }
 
                 let rawAsc = bestMatch['ASC Name'] || bestMatch['ASC'] || bestMatch['Service Center'] || bestMatch.asc || 'UNMAPPED';
@@ -2821,7 +2938,7 @@ async function handleRedoImage(file) {
             window.redoList.push({
                 asc: matchedAsc || 'UNMAPPED',
                 jobNo: matchedBill.jobNo || cleanJobNo,
-                engineer: matchedBill.engineer || 'Teknisi Unmapped',
+                engineer: matchedBill.engineer || 'Unmapped Technician',
                 model: matchedBill.model || 'REDO Item',
                 customer: matchedBill.customer || '-',
                 category: matchedBill.category || '-',
@@ -2832,7 +2949,7 @@ async function handleRedoImage(file) {
             window.redoList.push({
                 asc: 'SCAN OCR',
                 jobNo: cleanJobNo,
-                engineer: 'Unmapped (Belum upload Excel)',
+                engineer: 'Unmapped (Excel not uploaded yet)',
                 model: 'REDO Ticket',
                 customer: '-',
                 category: '-',
@@ -2905,10 +3022,10 @@ window.reMapRedoList = function() {
 
                 if (bestMatch && bestDistance <= 2) {
                     // Extract RAW engineer name to avoid PIC DPS overrides
-                    let rawEngineer = bestMatch['Engineer Name'] || bestMatch['Engineer'] || 'Teknisi Unmapped';
+                    let rawEngineer = bestMatch['Engineer Name'] || bestMatch['Engineer'] || 'Unmapped Technician';
                     rawEngineer = String(rawEngineer).trim().toUpperCase().replace(/^\d+\s+/, '');
                     if (!rawEngineer || /^\d+$/.test(rawEngineer) || rawEngineer.includes('UNMAPPED')) {
-                         rawEngineer = 'Teknisi Unmapped';
+                         rawEngineer = 'Unmapped Technician';
                     }
 
                     let rawAsc = bestMatch['ASC Name'] || bestMatch['ASC'] || bestMatch['Service Center'] || bestMatch.asc || 'UNMAPPED';
@@ -2971,7 +3088,7 @@ window.reMapRedoList = function() {
             // Update if found
             if (matchedBill) {
                 item.asc = matchedAsc || 'UNMAPPED';
-                item.engineer = matchedBill.engineer || 'Teknisi Unmapped';
+                item.engineer = matchedBill.engineer || 'Unmapped Technician';
                 item.model = matchedBill.model || 'REDO Item';
                 item.customer = matchedBill.customer || '-';
                 item.category = matchedBill.category || '-';
@@ -3038,7 +3155,7 @@ function renderRedoTable() {
     window.redoList.forEach(item => {
         const hasPhone = !!(window.techContacts || {})[item.engineer];
         const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
-        const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">⚠️ TELANJUR RC</span>' : '';
+        const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">âš ï¸ TELANJUR RC</span>' : '';
         const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
         
         let branchDisplay = item.asc || 'UNKNOWN';
@@ -3074,14 +3191,14 @@ function renderRedoTable() {
 window.renderRedoTable = renderRedoTable;
 
 window.editRedoJobNo = function(oldJobNo) {
-    const newJobNo = prompt("Koreksi hasil scan OCR yang salah (Masukkan Job No yang benar):", oldJobNo);
+    const newJobNo = prompt("Correct OCR scan result (Enter correct Job No):", oldJobNo);
     if (!newJobNo || newJobNo === oldJobNo) return;
     
     const idx = window.redoList.findIndex(r => r.jobNo === oldJobNo);
     if (idx !== -1) {
         window.redoList[idx].jobNo = newJobNo.trim();
         window.redoList[idx].asc = 'SCAN OCR';
-        window.redoList[idx].engineer = 'Unmapped (Belum upload Excel)';
+        window.redoList[idx].engineer = 'Unmapped (Excel not uploaded yet)';
         window.redoList[idx].model = 'REDO Ticket';
         window.redoList[idx].status = 'Unmapped';
         
@@ -3106,7 +3223,7 @@ window.sendWARedo = function(engName, jobNo, model) {
     
     let displayName = (window.techNames || {})[engName] || engName;
     
-    let text = `🚨 *PERINGATAN REDO (BOUNCING)!*\n\nHalo ${displayName},\nKami mendeteksi adanya servis berulang (REDO) untuk Job No: *${jobNo}* (${model}).\n\nTolong segera tindak lanjuti unit ini dengan perbaikan maksimal agar tidak bounce untuk yang ketiga kalinya!\n\nTerima kasih.`;
+    let text = `ðŸš¨ *PERINGATAN REDO (BOUNCING)!*\n\nHalo ${displayName},\nKami mendeteksi adanya servis berulang (REDO) untuk Job No: *${jobNo}* (${model}).\n\nTolong segera tindak lanjuti unit ini dengan perbaikan maksimal agar tidak bounce untuk yang ketiga kalinya!\n\nTerima kasih.`;
     
     const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
@@ -3117,21 +3234,21 @@ const btnShareRedo = document.getElementById('btnShareRedo');
 if (btnShareRedo) {
     btnShareRedo.addEventListener('click', () => {
         if (!window.redoList || window.redoList.length === 0) {
-            showToastNotification('Belum ada data REDO hasil scan OCR atau daftar kosong!');
+            showToastNotification('No OCR REDO data available or list is empty!');
             return;
         }
         
-        let text = `*REPORT PELANGGARAN REDO*\nLarangan Keras! Ditemukan perbaikan recall, cek agar tidak merusak KPI\nkoordinasikan dengan TS jika bill *IW*\n\n`;
+        let text = `*REDO VIOLATION REPORT*\nLarangan Keras! Ditemukan perbaikan recall, cek agar tidak merusak KPI\nkoordinasikan dengan TS jika bill *IW*\n\n`;
         
         window.redoList.forEach((item, idx) => {
             const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
-            const rcWarning = isRC ? ' [⚠️ TELANJUR RC]' : '';
+            const rcWarning = isRC ? ' [âš ï¸ TELANJUR RC]' : '';
             
             text += `${idx + 1}. *${item.asc}* | ${item.engineer} | Job: ${item.jobNo} (${item.model})${rcWarning}\n`;
         });
         
         navigator.clipboard.writeText(text);
-        showToastNotification('Teks REDO berhasil disalin! Silakan paste di Grup WA Kepala Cabang.');
+        showToastNotification('REDO report copied! Please paste into Branch Head WA group.');
     });
 }
 
@@ -3154,13 +3271,20 @@ window.renderGdTrendChart = function(gdTrendData) {
         return;
     }
 
-    // Ambil daftar bulan (X-axis) dan urutkan secara kronologis
-    const months = Object.keys(gdTrendData).sort();
+    // Filter dan urutkan bulan yang memiliki data riil (> 50 GD nasional)
+    const validMonths = Object.keys(gdTrendData).filter(m => {
+        const monthBranches = gdTrendData[m] || {};
+        const sum = Object.values(monthBranches).reduce((a, b) => a + (parseInt(b) || 0), 0);
+        return sum > 50;
+    }).sort();
     
-    // Hitung total 6 bulan per cabang untuk semua cabang yang memiliki GD
+    // Tampilkan hingga 6 bulan terakhir yang valid (mulai dari Juni 2026)
+    const months = validMonths.slice(-6);
+    
+    // Hitung total GD per cabang untuk bulan-bulan yang aktif
     const branchTotals = {};
     months.forEach(m => {
-        Object.keys(gdTrendData[m]).forEach(b => {
+        Object.keys(gdTrendData[m] || {}).forEach(b => {
             const count = gdTrendData[m][b] || 0;
             branchTotals[b] = (branchTotals[b] || 0) + count;
         });
@@ -3173,12 +3297,20 @@ window.renderGdTrendChart = function(gdTrendData) {
     
     // Fixed Brand Colors per Cabang
     const branchColors = {
-        'MAKASSAR': '#3b82f6',
-        'DENPASAR': '#a855f7',
-        'KUPANG': '#eab308',
-        'SINGARAJA': '#06b6d4',
-        'DENPASAR - CELLULAR WORLD': '#ef4444',
-        'DENPASAR - PLANET GADGET': '#10b981'
+        'MAKASSAR': '#3b82f6',                  // Blue
+        'DENPASAR': '#a855f7',                  // Purple
+        'DENPASAR - CELLULAR WORLD': '#ef4444', // Red
+        'DENPASAR - PLANET GADGET': '#10b981',  // Emerald Green
+        'MANADO': '#f97316',                    // Bright Orange (Distinct from Red)
+        'KUPANG': '#eab308',                    // Gold / Amber
+        'SINGARAJA': '#06b6d4',                 // Cyan
+        'BANJARMASIN': '#ec4899',               // Pink
+        'SAMARINDA': '#8b5cf6',                 // Violet
+        'PONTIANAK': '#14b8a6',                 // Teal
+        'SERPONG': '#6366f1',                   // Indigo
+        'SIDOARJO': '#84cc16',                  // Lime
+        'KARAWANG': '#f43f5e',                  // Rose
+        'LAMPUNG': '#0ea5e9'                    // Sky Blue
     };
 
     // Siapkan dataset untuk semua cabang aktif
@@ -3186,14 +3318,15 @@ window.renderGdTrendChart = function(gdTrendData) {
         const color = branchColors[branch] || `hsl(${(index * 137.5) % 360}, 75%, 55%)`;
         
         return {
-            label: `${branch} (${branchTotals[branch]} GD)`,
-            data: months.map(m => gdTrendData[m][branch] || 0),
+            label: branch,
+            data: months.map(m => (gdTrendData[m] && gdTrendData[m][branch]) || 0),
             borderColor: color,
             backgroundColor: color,
             borderWidth: 3,
             pointRadius: 4,
             tension: 0.3,
-            fill: false
+            fill: false,
+            hidden: index >= 10 // Top 10 aktif, sisanya dapat diklik di legend
         };
     });
 
@@ -3303,15 +3436,7 @@ window.renderGdDailyTable = function(gdDailyData) {
         tbody.innerHTML += rowHtml;
     });
 
-    // Total Row
-    let totalRowHtml = `<tr style="font-weight: 700; background: var(--bg-panel-hover);"><td style="font-size: 0.95rem; font-weight: 700; color: var(--accent-blue); padding: 10px 14px; border: 1px solid var(--border-glass); text-align: left;">TOTAL</td>`;
-    for (let day = 1; day <= maxDay; day++) {
-        const dVal = dayTotals[day];
-        const displayDVal = dVal > 0 ? dVal : '-';
-        totalRowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: var(--accent-blue); padding: 10px 6px; border: 1px solid var(--border-glass); text-align: center;">${displayDVal}</td>`;
-    }
-    totalRowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: var(--accent-blue); padding: 10px 14px; border: 1px solid var(--border-glass); text-align: center;">${grandTotal}</td></tr>`;
-    tbody.innerHTML += totalRowHtml;
+    
 };
 
 window.showToastNotification = showToastNotification;
@@ -3321,80 +3446,120 @@ window.openAllProdModal = openAllProdModal;
 
 
 // ==========================================
-// AUTO ALERT SYSTEM (CRON JOB FRONTEND)
+// AUTO ALERT SYSTEM (CRON JOB FRONTEND) - DISABLED
 // ==========================================
-const AUTO_ALERT_TIMES = ['09:10', '12:10', '15:10'];
-setInterval(() => {
-    const now = new Date();
-    const dateStr = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate(); 
-    const currentMins = now.getHours() * 60 + now.getMinutes();
-
-    let completedAlerts = JSON.parse(localStorage.getItem('bujm_completed_alerts') || '{}');
-
-    // Reset old dates to prevent localStorage from growing forever
-    if (completedAlerts.date !== dateStr) {
-        completedAlerts = { date: dateStr };
-    }
-
-    let needsSave = false;
-    // Jadwal diaktifkan kembali
-    // const AUTO_ALERT_TIMES = []; // DIMATIKAN SEMENTARA
-
-    AUTO_ALERT_TIMES.forEach(targetTime => {
-        const parts = targetTime.split(':');
-        const targetTotalMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-        
-        const alertKey = targetTime;
-        
-        // Window is 45 minutes to account for throttled background tabs
-        if (currentMins >= targetTotalMins && currentMins < targetTotalMins + 45 && !completedAlerts[alertKey]) {
-            completedAlerts[alertKey] = true; 
-            needsSave = true;
-            console.log('[AUTO ALERT] Triggering Scheduled Blast for ' + targetTime);
-            
-            const btnShame = document.getElementById('btnBlastShame');
-            if (btnShame) {
-                setTimeout(() => btnShame.click(), 2000); 
-            }
-            
-            const btnRC = document.getElementById('btnBlastRC');
-            if (btnRC && targetTime === '09:10') {
-                setTimeout(() => btnRC.click(), 5000); 
-            }
-        }
-    });
-
-    if (needsSave) {
-        localStorage.setItem('bujm_completed_alerts', JSON.stringify(completedAlerts));
-    }
-}, 30000); // Cek setiap 30 detik
+// [NONAKTIF PERMANEN DEMI KEAMANAN]
+// Auto-blast background dinonaktifkan total agar tidak memicu pengiriman otomatis tanpa konfirmasi pengguna.
+// Semua pengiriman WA Blast WAJIB dipicu secara manual oleh pengguna setelah meninjau daftar penerima dan konfirmasi area.
+const AUTO_ALERT_TIMES = [];
 
 
 
-window.renderPartsSalesTable = function(partsList) {
-    const tbody = document.querySelector('#parts-sales-table tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+window.renderPartsSalesTable = function(partsDailyData) {
+    const table = document.getElementById('parts-sales-table');
+    if (!table) return;
     
-    if (!partsList || partsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">Belum ada data penjualan aksesoris...</td></tr>';
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    if (!thead || !tbody) return;
+    
+    if (!partsDailyData || Object.keys(partsDailyData).length === 0) {
+        thead.innerHTML = '';
+        tbody.innerHTML = '<tr><td style="padding:15px; color:var(--text-muted); border: none;">No daily parts sales data available for current month.</td></tr>';
         return;
     }
-    
-    partsList.sort((a, b) => {
-        if (a.branch !== b.branch) return a.branch.localeCompare(b.branch);
-        return b.qty - a.qty;
+
+    const activeRows = Object.keys(partsDailyData).filter(b => {
+        const days = partsDailyData[b] || {};
+        const sum = Object.keys(days).filter(k => k !== "partNos").reduce((acc, k) => acc + (parseInt(days[k]) || 0), 0);
+        return sum > 0;
+    }).sort((a, b) => a.localeCompare(b));
+
+    if (activeRows.length === 0) {
+        thead.innerHTML = '';
+        tbody.innerHTML = '<tr><td style="padding:15px; color:var(--text-muted); border: none;">No accessories sales this month.</td></tr>';
+        return;
+    }
+
+    let maxDay = 0;
+    activeRows.forEach(b => {
+        Object.keys(partsDailyData[b] || {}).forEach(day => {
+            if (day !== "partNos") {
+                const dNum = parseInt(day);
+                if (dNum > maxDay) maxDay = dNum;
+            }
+        });
     });
+
+    if (maxDay === 0) maxDay = new Date().getDate();
+
+    let ths = `<th style="min-width: 150px;">CABANG</th>`;
+    ths += `<th style="min-width: 150px;">PARTS NO</th>`;
+    ths += `<th style="min-width: 150px;">NAMA PARTS</th>`;
     
-    partsList.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${item.branch}</strong></td>
-            <td>${item.partNo}</td>
-            <td>${item.desc}</td>
-            <td style="text-align:center; font-weight:bold; color:var(--accent-blue);">${item.qty}</td>
-        `;
-        tbody.appendChild(tr);
+    for(let i=1; i<=maxDay; i++) {
+        ths += `<th style="text-align:center;">${i}</th>`;
+    }
+    ths += `<th style="text-align:center; background: rgba(56, 189, 248, 0.1);">TOTAL QTY</th>`;
+    ths += `<th style="text-align:center; background: rgba(37, 99, 235, 0.2); color: #ffffff;">GRAND TOTAL</th>`;
+    
+    thead.innerHTML = `<tr>${ths}</tr>`;
+    tbody.innerHTML = '';
+
+    // Calculate Grand Total (Adaptor + Data Link) per Branch
+    const branchTotals = {};
+    const branchRows = {};
+    activeRows.forEach(rowKey => {
+        const parts = rowKey.split(' - ');
+        const branch = parts[0];
+        const days = partsDailyData[rowKey] || {};
+        const sum = Object.keys(days).filter(k => k !== "partNos").reduce((acc, k) => acc + (parseInt(days[k]) || 0), 0);
+        
+        branchTotals[branch] = (branchTotals[branch] || 0) + sum;
+        if (!branchRows[branch]) branchRows[branch] = [];
+        branchRows[branch].push({ rowKey, sum });
+    });
+
+    // Render grouped by branch so GRAND TOTAL cell can span with rowspan
+    const sortedBranches = Object.keys(branchRows).sort((a, b) => a.localeCompare(b));
+
+    sortedBranches.forEach(branch => {
+        const items = branchRows[branch];
+        const grandTotal = branchTotals[branch] || 0;
+
+        items.forEach((itemObj, index) => {
+            const { rowKey, sum } = itemObj;
+            const parts = rowKey.split(' - ');
+            const itemType = parts.length > 1 ? parts[1] : '';
+            
+            const days = partsDailyData[rowKey] || {};
+            const partNosArr = days.partNos || [];
+            const partNosStr = partNosArr.join(', ');
+            
+            let tds = `<td>${branch}</td>`;
+            tds += `<td><div style="max-width: 200px; white-space: normal; word-wrap: break-word;">${partNosStr}</div></td>`;
+            tds += `<td>${itemType}</td>`;
+            
+            for(let i=1; i<=maxDay; i++) {
+                const val = parseInt(days[i]) || 0;
+                if (val > 0) {
+                    tds += `<td style="text-align:center; font-weight:bold; color:var(--accent-blue);">${val}</td>`;
+                } else {
+                    tds += `<td style="text-align:center; color:var(--text-muted); opacity: 0.3;">-</td>`;
+                }
+            }
+            
+            tds += `<td style="text-align:center; font-weight:bold; background: rgba(56, 189, 248, 0.05); color:var(--accent-blue);">${sum}</td>`;
+            
+            // GRAND TOTAL cell with rowspan for the branch
+            if (index === 0) {
+                tds += `<td rowspan="${items.length}" style="text-align:center; font-weight:800; font-size:1.05rem; background: rgba(37, 99, 235, 0.12); color: var(--accent-blue); vertical-align: middle; border-left: 2px solid rgba(56, 189, 248, 0.3);">${grandTotal}</td>`;
+            }
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = tds;
+            tbody.appendChild(tr);
+        });
     });
 };
 
@@ -3426,35 +3591,55 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             
             let text = "*ACCESSORIES SALES REPORT*\n*(Current Month)*\n\n";
-            let currentBranch = '';
             
             const rows = table.querySelectorAll('tbody tr');
+            const branchMap = {};
+
             rows.forEach(row => {
                 if(row.innerText.includes('TOTAL QTY') || row.innerText.includes('Belum ada')) return;
                 
                 const cells = row.querySelectorAll('td');
-                if(cells.length < 2) return;
+                if(cells.length < 3) return;
                 
-                const rowKey = cells[0].innerText;
-                if(rowKey.includes('TOTAL')) return;
+                const branch = cells[0].innerText.trim();
+                const item = cells[2].innerText.trim();
                 
-                const parts = rowKey.split(' - ');
-                const branch = parts[0];
-                const item = parts.length > 1 ? parts[1] : '';
+                let totalQty = 0;
+                let grandTotal = null;
                 
-                const total = cells[cells.length - 1].innerText;
-                
-                if (branch !== currentBranch) {
-                    text += "*" + branch + "*\n";
-                    currentBranch = branch;
+                if (cells.length >= 4) {
+                    const hasGrandTotal = cells[cells.length - 1].hasAttribute('rowspan') || cells[cells.length - 1].style.verticalAlign === 'middle';
+                    if (hasGrandTotal) {
+                        totalQty = cells[cells.length - 2].innerText.trim();
+                        grandTotal = cells[cells.length - 1].innerText.trim();
+                    } else {
+                        totalQty = cells[cells.length - 1].innerText.trim();
+                    }
                 }
                 
+                if (!branchMap[branch]) {
+                    branchMap[branch] = { items: [], grandTotal: grandTotal };
+                }
+                if (grandTotal) {
+                    branchMap[branch].grandTotal = grandTotal;
+                }
                 if (item) {
-                    text += "- " + item + ": " + total + "\n";
+                    branchMap[branch].items.push({ item, total: totalQty });
                 }
             });
+
+            Object.keys(branchMap).forEach(b => {
+                text += "*" + b + "*\n";
+                branchMap[b].items.forEach(it => {
+                    text += "- " + it.item + ": " + it.total + "\n";
+                });
+                if (branchMap[b].grandTotal) {
+                    text += "👉 *GRAND TOTAL: " + branchMap[b].grandTotal + "*\n";
+                }
+                text += "\n";
+            });
             
-            text += "\n_Generated by BUJM Dashboard_";
+            text += "_Generated by BUJM Dashboard_";
             
             navigator.clipboard.writeText(text).then(() => {
                 const orig = btnShare.innerHTML;
@@ -3467,6 +3652,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
 
 
 
