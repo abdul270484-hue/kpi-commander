@@ -402,57 +402,57 @@ async function blastViaJarvis(blastQueueArray) {
     }
 }
 
-// Event Listener for Blast Wall of Shame (HANYA AREA SENDIRI)
-const btnBlastShame = document.getElementById('btnBlastShame');
-if (btnBlastShame) {
-    btnBlastShame.addEventListener('click', async () => {
-        // 1. Ambil daftar cabang yang diizinkan untuk user aktif
-        const allowedBranches = getAllowedBranches();
-        if (!allowedBranches || allowedBranches.length === 0) {
-            alert('🚨 AKSES DITOLAK!\n\nTidak ada cabang area yang terdaftar untuk akun Anda.\nBlasting DIBATALKAN demi keamanan untuk mencegah pesan terkirim ke cabang lain!');
-            return;
-        }
+// Function for Blast Wall of Shame (HANYA AREA SENDIRI)
+async function executeAreaBlastShame(isAuto = false) {
+    // 1. Ambil daftar cabang yang diizinkan untuk user aktif
+    const allowedBranches = getAllowedBranches();
+    if (!allowedBranches || allowedBranches.length === 0) {
+        console.warn('⚠️ [BLAST SHAME] Ditolak: Tidak ada cabang area yang terdaftar!');
+        if (!isAuto) alert('🚨 AKSES DITOLAK!\n\nTidak ada cabang area yang terdaftar untuk akun Anda.\nBlasting DIBATALKAN demi keamanan untuk mencegah pesan terkirim ke cabang lain!');
+        return;
+    }
 
-        if (!window.shameData || window.shameData.length === 0) {
-            showToastNotification('Tidak ada data Wall of Shame yang tersedia.');
-            return;
-        }
+    if (!window.shameData || window.shameData.length === 0) {
+        if (!isAuto) showToastNotification('Tidak ada data Wall of Shame yang tersedia.');
+        return;
+    }
 
-        // 2. Filter STRICT HANYA cabang area sendiri
-        const areaShameData = window.shameData.filter(item => {
-            return isBranchAllowed(item.asc, allowedBranches);
-        });
+    // 2. Filter STRICT HANYA cabang area sendiri
+    const areaShameData = window.shameData.filter(item => {
+        return isBranchAllowed(item.asc, allowedBranches);
+    });
 
-        if (areaShameData.length === 0) {
-            showToastNotification(`Tidak ada teknisi Wall of Shame di cabang area Anda (${allowedBranches.join(', ')}).`);
-            return;
-        }
+    if (areaShameData.length === 0) {
+        if (!isAuto) showToastNotification(`Tidak ada teknisi Wall of Shame di cabang area Anda (${allowedBranches.join(', ')}).`);
+        return;
+    }
 
-        // 3. Kumpulkan payload Sistem Bot WA
-        const blastQueueArray = [];
-        const blastQueueManual = [];
-        
-        areaShameData.forEach(item => {
-            if (window.getWAPayloadShame) {
-                const payload = window.getWAPayloadShame(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
-                if (payload) {
-                    blastQueueArray.push({
-                        phone: payload.phone,
-                        name: payload.name,
-                        branch: item.asc,
-                        PesanUtama: payload.text
-                    });
-                    blastQueueManual.push(item);
-                }
+    // 3. Kumpulkan payload Sistem Bot WA
+    const blastQueueArray = [];
+    const blastQueueManual = [];
+    
+    areaShameData.forEach(item => {
+        if (window.getWAPayloadShame) {
+            const payload = window.getWAPayloadShame(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
+            if (payload) {
+                blastQueueArray.push({
+                    phone: payload.phone,
+                    name: payload.name,
+                    branch: item.asc,
+                    PesanUtama: payload.text
+                });
+                blastQueueManual.push(item);
             }
-        });
-        
-        if (blastQueueArray.length === 0) {
-            showToastNotification('Semua teknisi di area Anda pada Wall of Shame belum memiliki nomor WA di kontak!');
-            return;
         }
+    });
+    
+    if (blastQueueArray.length === 0) {
+        if (!isAuto) showToastNotification('Semua teknisi di area Anda pada Wall of Shame belum memiliki nomor WA di kontak!');
+        return;
+    }
 
-        // 4. Modal Konfirmasi Transparan & Wajib Setuju
+    // 4. Modal Konfirmasi Transparan & Wajib Setuju (Hanya saat klik Manual)
+    if (!isAuto) {
         const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
         const sampleRecipients = blastQueueArray.slice(0, 10).map((r, i) => `  ${i + 1}. [${r.branch}] ${r.name} (${r.phone})`).join('\n');
         const extraCount = blastQueueArray.length > 10 ? `\n  ...dan ${blastQueueArray.length - 10} teknisi lainnya` : '';
@@ -471,81 +471,86 @@ if (btnBlastShame) {
             showToastNotification('Blasting dibatalkan oleh pengguna.');
             return;
         }
+    } else {
+        console.log(`🤖 [AUTO ALERT] Mengirim chat otomatis ke ${blastQueueArray.length} teknisi area (${allowedBranches.join(', ')})...`);
+        showToastNotification(`🤖 [AUTO ALERT] Mengirim chat otomatis ke ${blastQueueArray.length} teknisi area Anda...`);
+    }
 
-        if (isJarvisOnline) {
-            // Sistem Bot WA Mode
-            await blastViaJarvis(blastQueueArray);
-        } else {
-            // Manual Fallback Mode
-            showToastNotification(`Menggunakan WhatsApp Web (Mode Manual) untuk ${blastQueueManual.length} teknisi area Anda... Izinkan POPUP BROWSER!`);
-            let index = 0;
-            const blastInterval = setInterval(() => {
-                if (index >= blastQueueManual.length) {
-                    clearInterval(blastInterval);
-                    showToastNotification('WA Blast Area Selesai! Semua pesan peringatan telah diproses.');
-                    return;
-                }
-                const item = blastQueueManual[index];
-                if (typeof window.sendWA === 'function') {
-                    window.sendWA(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
-                }
-                index++;
-            }, 10000); // 10 seconds delay
-        }
-    });
+    if (isJarvisOnline) {
+        // Sistem Bot WA Mode
+        await blastViaJarvis(blastQueueArray);
+    } else if (!isAuto) {
+        // Manual Fallback Mode (Hanya saat manual klik di browser)
+        showToastNotification(`Menggunakan WhatsApp Web (Mode Manual) untuk ${blastQueueManual.length} teknisi area Anda... Izinkan POPUP BROWSER!`);
+        let index = 0;
+        const blastInterval = setInterval(() => {
+            if (index >= blastQueueManual.length) {
+                clearInterval(blastInterval);
+                showToastNotification('WA Blast Area Selesai! Semua pesan peringatan telah diproses.');
+                return;
+            }
+            const item = blastQueueManual[index];
+            if (typeof window.sendWA === 'function') {
+                window.sendWA(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
+            }
+            index++;
+        }, 10000); // 10 seconds delay
+    } else {
+        console.warn('⚠️ [AUTO ALERT] Bot WA lokal offline, pengiriman otomatis ditunda.');
+    }
 }
 
-// Event Listener for Blast Pending Delivery (HANYA AREA SENDIRI)
-const btnBlastRC = document.getElementById('btnBlastRC');
-if (btnBlastRC) {
-    btnBlastRC.addEventListener('click', async () => {
-        // 1. Ambil daftar cabang yang diizinkan untuk user aktif
-        const allowedBranches = getAllowedBranches();
-        if (!allowedBranches || allowedBranches.length === 0) {
-            alert('🚨 AKSES DITOLAK!\n\nTidak ada cabang area yang terdaftar untuk akun Anda.\nBlasting DIBATALKAN demi keamanan untuk mencegah pesan terkirim ke cabang lain!');
-            return;
-        }
+// Function for Blast Pending Delivery (HANYA AREA SENDIRI)
+async function executeAreaBlastRC(isAuto = false) {
+    // 1. Ambil daftar cabang yang diizinkan untuk user aktif
+    const allowedBranches = getAllowedBranches();
+    if (!allowedBranches || allowedBranches.length === 0) {
+        console.warn('⚠️ [BLAST RC] Ditolak: Tidak ada cabang area yang terdaftar!');
+        if (!isAuto) alert('🚨 AKSES DITOLAK!\n\nTidak ada cabang area yang terdaftar untuk akun Anda.\nBlasting DIBATALKAN demi keamanan untuk mencegah pesan terkirim ke cabang lain!');
+        return;
+    }
 
-        if (!window.rcData || Object.keys(window.rcData).length === 0) {
-            showToastNotification('Tidak ada data Pending Delivery yang tersedia.');
-            return;
-        }
+    if (!window.rcData || Object.keys(window.rcData).length === 0) {
+        if (!isAuto) showToastNotification('Tidak ada data Pending Delivery yang tersedia.');
+        return;
+    }
 
-        // 2. Filter STRICT HANYA cabang area sendiri
-        const areaAscList = Object.keys(window.rcData).filter(asc => {
-            return isBranchAllowed(asc, allowedBranches);
-        });
+    // 2. Filter STRICT HANYA cabang area sendiri
+    const areaAscList = Object.keys(window.rcData).filter(asc => {
+        return isBranchAllowed(asc, allowedBranches);
+    });
 
-        if (areaAscList.length === 0) {
-            showToastNotification(`Tidak ada data Pending Delivery di cabang area Anda (${allowedBranches.join(', ')}).`);
-            return;
-        }
+    if (areaAscList.length === 0) {
+        if (!isAuto) showToastNotification(`Tidak ada data Pending Delivery di cabang area Anda (${allowedBranches.join(', ')}).`);
+        return;
+    }
 
-        const blastQueueArray = [];
-        const blastQueueManual = [];
+    const blastQueueArray = [];
+    const blastQueueManual = [];
 
-        areaAscList.forEach(asc => {
-            if (window.getWAPayloadRC) {
-                const count = window.rcData[asc].count;
-                const payload = window.getWAPayloadRC(asc, count);
-                if (payload) {
-                    blastQueueArray.push({
-                        phone: payload.phone,
-                        name: payload.name,
-                        branch: asc,
-                        PesanUtama: payload.text
-                    });
-                    blastQueueManual.push({ asc, count });
-                }
+    areaAscList.forEach(asc => {
+        if (window.getWAPayloadRC) {
+            const count = window.rcData[asc].count;
+            const payload = window.getWAPayloadRC(asc, count);
+            if (payload) {
+                blastQueueArray.push({
+                    phone: payload.phone,
+                    name: payload.name,
+                    branch: asc,
+                    PesanUtama: payload.text
+                });
+                blastQueueManual.push({ asc, count });
             }
-        });
-        
-        if (blastQueueArray.length === 0) {
-            showToastNotification('PIC cabang di area Anda belum memiliki nomor kontak WA terdaftar!');
-            return;
         }
+    });
+    
+    if (blastQueueArray.length === 0) {
+        if (!isAuto) showToastNotification('PIC cabang di area Anda belum memiliki nomor kontak WA terdaftar!');
+        return;
+    }
 
-        // 3. Modal Konfirmasi Transparan & Wajib Setuju
+    // 3. Modal Konfirmasi Transparan & Wajib Setuju (Hanya saat klik manual)
+    if (!isAuto) {
         const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
         const sampleRecipients = blastQueueArray.slice(0, 10).map((r, i) => `  ${i + 1}. [${r.branch}] ${r.name} (${r.phone})`).join('\n');
         const extraCount = blastQueueArray.length > 10 ? `\n  ...dan ${blastQueueArray.length - 10} PIC lainnya` : '';
@@ -564,28 +569,44 @@ if (btnBlastRC) {
             showToastNotification('Blasting RC dibatalkan oleh pengguna.');
             return;
         }
+    } else {
+        console.log(`🤖 [AUTO ALERT] Mengirim chat otomatis ke ${blastQueueArray.length} PIC cabang area (${allowedBranches.join(', ')})...`);
+        showToastNotification(`🤖 [AUTO ALERT] Mengirim chat otomatis ke ${blastQueueArray.length} PIC cabang area Anda...`);
+    }
 
-        if (isJarvisOnline) {
-            // Sistem Bot WA Mode
-            await blastViaJarvis(blastQueueArray);
-        } else {
-            // Manual Fallback Mode
-            showToastNotification(`Menggunakan WhatsApp Web (Mode Manual) untuk ${blastQueueManual.length} cabang area Anda... Izinkan POPUP BROWSER!`);
-            let index = 0;
-            const blastInterval = setInterval(() => {
-                if (index >= blastQueueManual.length) {
-                    clearInterval(blastInterval);
-                    showToastNotification('WA Blast RC Area Selesai! Semua peringatan telah diproses.');
-                    return;
-                }
-                const item = blastQueueManual[index];
-                if (typeof window.sendWARC === 'function') {
-                    window.sendWARC(item.asc, item.count);
-                }
-                index++;
-            }, 10000); // 10 seconds delay
-        }
-    });
+    if (isJarvisOnline) {
+        // Sistem Bot WA Mode
+        await blastViaJarvis(blastQueueArray);
+    } else if (!isAuto) {
+        // Manual Fallback Mode
+        showToastNotification(`Menggunakan WhatsApp Web (Mode Manual) untuk ${blastQueueManual.length} cabang area Anda... Izinkan POPUP BROWSER!`);
+        let index = 0;
+        const blastInterval = setInterval(() => {
+            if (index >= blastQueueManual.length) {
+                clearInterval(blastInterval);
+                showToastNotification('WA Blast RC Area Selesai! Semua peringatan telah diproses.');
+                return;
+            }
+            const item = blastQueueManual[index];
+            if (typeof window.sendWARC === 'function') {
+                window.sendWARC(item.asc, item.count);
+            }
+            index++;
+        }, 10000); // 10 seconds delay
+    } else {
+        console.warn('⚠️ [AUTO ALERT] Bot WA lokal offline, pengiriman otomatis ditunda.');
+    }
+}
+
+// Event Listeners for Manual Blast Buttons
+const btnBlastShame = document.getElementById('btnBlastShame');
+if (btnBlastShame) {
+    btnBlastShame.addEventListener('click', () => executeAreaBlastShame(false));
+}
+
+const btnBlastRC = document.getElementById('btnBlastRC');
+if (btnBlastRC) {
+    btnBlastRC.addEventListener('click', () => executeAreaBlastRC(false));
 }
 
 // Event Listener for Share Dosa Cabang (> 7 Hari)
@@ -3446,12 +3467,57 @@ window.openAllProdModal = openAllProdModal;
 
 
 // ==========================================
-// AUTO ALERT SYSTEM (CRON JOB FRONTEND) - DISABLED
+// AUTO ALERT SYSTEM (CRON JOB FRONTEND - JADWAL AREA AKTIF)
 // ==========================================
-// [NONAKTIF PERMANEN DEMI KEAMANAN]
-// Auto-blast background dinonaktifkan total agar tidak memicu pengiriman otomatis tanpa konfirmasi pengguna.
-// Semua pengiriman WA Blast WAJIB dipicu secara manual oleh pengguna setelah meninjau daftar penerima dan konfirmasi area.
-const AUTO_ALERT_TIMES = [];
+const AUTO_ALERT_TIMES = ['09:10', '12:10', '15:10'];
+setInterval(() => {
+    const now = new Date();
+    const dateStr = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate(); 
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    let completedAlerts = JSON.parse(localStorage.getItem('bujm_completed_alerts') || '{}');
+
+    // Reset old dates to prevent localStorage from growing forever
+    if (completedAlerts.date !== dateStr) {
+        completedAlerts = { date: dateStr };
+    }
+
+    let needsSave = false;
+
+    AUTO_ALERT_TIMES.forEach(targetTime => {
+        const parts = targetTime.split(':');
+        const targetTotalMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        
+        const alertKey = targetTime;
+        
+        // Window is 45 minutes to account for throttled background tabs
+        if (currentMins >= targetTotalMins && currentMins < targetTotalMins + 45 && !completedAlerts[alertKey]) {
+            completedAlerts[alertKey] = true; 
+            needsSave = true;
+            console.log(`🤖 [AUTO ALERT ${targetTime}] Menjalankan jadwal kirim otomatis chat area...`);
+            
+            // Kirim chat Wall of Shame khusus area sendiri
+            setTimeout(() => {
+                if (typeof executeAreaBlastShame === 'function') {
+                    executeAreaBlastShame(true);
+                }
+            }, 2000); 
+            
+            // Khusus sesi pagi (09:10), kirim juga chat Pending Delivery (RC) khusus area sendiri
+            if (targetTime === '09:10') {
+                setTimeout(() => {
+                    if (typeof executeAreaBlastRC === 'function') {
+                        executeAreaBlastRC(true);
+                    }
+                }, 6000); 
+            }
+        }
+    });
+
+    if (needsSave) {
+        localStorage.setItem('bujm_completed_alerts', JSON.stringify(completedAlerts));
+    }
+}, 30000); // Cek setiap 30 detik
 
 
 

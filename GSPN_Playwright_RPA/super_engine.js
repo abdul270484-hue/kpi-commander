@@ -406,15 +406,15 @@ async function startRemoteListener() {
     });
 }
 
-// 4. Start Cron Schedulers (Setiap 15 menit dari jam 09:00 - 17:45 mengikuti jam lokal Windows/sistem)
+// 4. Start Cron Schedulers (Setiap 30 menit dari jam 09:00 - 17:30 mengikuti jam lokal Windows/sistem)
 const triggerCycle = () => {
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
     executeRpaCycle(timeStr);
 };
-// Mengikuti waktu lokal sistem Windows: Menjalankan RPA setiap 15 menit (:00, :15, :30, :45)
-cron.schedule('*/15 9-17 * * *', triggerCycle);
+// Mengikuti waktu lokal sistem Windows: Menjalankan RPA setiap 30 menit (:00, :30)
+cron.schedule('*/30 9-17 * * *', triggerCycle);
 
 signInAnonymously(auth).then(() => {
     console.log('ðŸ” Terautentikasi ke Firebase Service.');
