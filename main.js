@@ -325,6 +325,15 @@ setInterval(checkJarvisStatus, 5000);
 function getAllowedBranches() {
     let branches = window.currentUserBranches || [];
     if (!Array.isArray(branches) || branches.length === 0) {
+        try {
+            const cached = JSON.parse(localStorage.getItem('bujm_user_branches') || '[]');
+            if (Array.isArray(cached) && cached.length > 0) {
+                branches = cached;
+                window.currentUserBranches = branches;
+            }
+        } catch (e) {}
+    }
+    if (!Array.isArray(branches) || branches.length === 0) {
         const email = (window.currentUser && window.currentUser.email) || 
                       (window.firebase && window.firebase.auth().currentUser && window.firebase.auth().currentUser.email);
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -404,16 +413,16 @@ async function blastViaJarvis(blastQueueArray) {
 
 // Function for Blast Wall of Shame (HANYA AREA SENDIRI)
 async function executeAreaBlastShame(isAuto = false) {
-    // 1. Ambil daftar cabang yang diizinkan untuk user aktif
+    // 1. Ambil daftar cabang yang diizinkan untuk user aktif (Asmen)
     const allowedBranches = getAllowedBranches();
     if (!allowedBranches || allowedBranches.length === 0) {
         console.warn('⚠️ [BLAST SHAME] Ditolak: Tidak ada cabang area yang terdaftar!');
-        if (!isAuto) alert('🚨 AKSES DITOLAK!\n\nTidak ada cabang area yang terdaftar untuk akun Anda.\nBlasting DIBATALKAN demi keamanan untuk mencegah pesan terkirim ke cabang lain!');
+        showToastNotification('⚠️ WA Blast dibatalkan: Akun Anda tidak memiliki cabang area yang terdaftar.');
         return;
     }
 
     if (!window.shameData || window.shameData.length === 0) {
-        if (!isAuto) showToastNotification('Tidak ada data Wall of Shame yang tersedia.');
+        showToastNotification('Tidak ada data Wall of Shame yang tersedia.');
         return;
     }
 
@@ -423,7 +432,7 @@ async function executeAreaBlastShame(isAuto = false) {
     });
 
     if (areaShameData.length === 0) {
-        if (!isAuto) showToastNotification(`Tidak ada teknisi Wall of Shame di cabang area Anda (${allowedBranches.join(', ')}).`);
+        showToastNotification(`Tidak ada teknisi Wall of Shame di cabang area Anda (${allowedBranches.join(', ')}).`);
         return;
     }
 
@@ -447,34 +456,14 @@ async function executeAreaBlastShame(isAuto = false) {
     });
     
     if (blastQueueArray.length === 0) {
-        if (!isAuto) showToastNotification('Semua teknisi di area Anda pada Wall of Shame belum memiliki nomor WA di kontak!');
+        showToastNotification('Semua teknisi di area Anda pada Wall of Shame belum memiliki nomor WA di kontak!');
         return;
     }
 
-    // 4. Modal Konfirmasi Transparan & Wajib Setuju (Hanya saat klik Manual)
-    if (!isAuto) {
-        const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
-        const sampleRecipients = blastQueueArray.slice(0, 10).map((r, i) => `  ${i + 1}. [${r.branch}] ${r.name} (${r.phone})`).join('\n');
-        const extraCount = blastQueueArray.length > 10 ? `\n  ...dan ${blastQueueArray.length - 10} teknisi lainnya` : '';
-        
-        const confirmMsg = 
-            `⚠️ KONFIRMASI BLAST WA - AREA SENDIRI\n\n` +
-            `📌 Cabang Area Anda: ${allowedBranches.join(', ')}\n` +
-            `🏢 Cabang Target Terdeteksi (${targetBranches.length}): ${targetBranches.join(', ')}\n` +
-            `👥 Total Penerima: ${blastQueueArray.length} teknisi\n\n` +
-            `Daftar Penerima:\n${sampleRecipients}${extraCount}\n\n` +
-            `🔒 KEAMANAN AKTIF: Pesan HANYA akan dikirim ke cabang di area Anda di atas.\n` +
-            `Cabang di luar area Anda TIDAK AKAN dikirimi pesan.\n\n` +
-            `Apakah Anda yakin ingin mengirim BLAST WA ke teknisi di area Anda?`;
-
-        if (!confirm(confirmMsg)) {
-            showToastNotification('Blasting dibatalkan oleh pengguna.');
-            return;
-        }
-    } else {
-        console.log(`🤖 [AUTO ALERT] Mengirim chat otomatis ke ${blastQueueArray.length} teknisi area (${allowedBranches.join(', ')})...`);
-        showToastNotification(`🤖 [AUTO ALERT] Mengirim chat otomatis ke ${blastQueueArray.length} teknisi area Anda...`);
-    }
+    // 4. Langsung jalankan pengiriman (Non-blocking tanpa modal popup)
+    const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
+    console.log(`🚀 [BLAST WA SHAME] Mengirim chat ke ${blastQueueArray.length} teknisi di area (${targetBranches.join(', ')})...`);
+    showToastNotification(`🚀 Mengirim WA Blast ke ${blastQueueArray.length} teknisi di area Anda (${targetBranches.join(', ')})...`);
 
     if (isJarvisOnline) {
         // Sistem Bot WA Mode
@@ -502,16 +491,16 @@ async function executeAreaBlastShame(isAuto = false) {
 
 // Function for Blast Pending Delivery (HANYA AREA SENDIRI)
 async function executeAreaBlastRC(isAuto = false) {
-    // 1. Ambil daftar cabang yang diizinkan untuk user aktif
+    // 1. Ambil daftar cabang yang diizinkan untuk user aktif (Asmen)
     const allowedBranches = getAllowedBranches();
     if (!allowedBranches || allowedBranches.length === 0) {
         console.warn('⚠️ [BLAST RC] Ditolak: Tidak ada cabang area yang terdaftar!');
-        if (!isAuto) alert('🚨 AKSES DITOLAK!\n\nTidak ada cabang area yang terdaftar untuk akun Anda.\nBlasting DIBATALKAN demi keamanan untuk mencegah pesan terkirim ke cabang lain!');
+        showToastNotification('⚠️ WA Blast RC dibatalkan: Akun Anda tidak memiliki cabang area yang terdaftar.');
         return;
     }
 
     if (!window.rcData || Object.keys(window.rcData).length === 0) {
-        if (!isAuto) showToastNotification('Tidak ada data Pending Delivery yang tersedia.');
+        showToastNotification('Tidak ada data Pending Delivery yang tersedia.');
         return;
     }
 
@@ -521,7 +510,7 @@ async function executeAreaBlastRC(isAuto = false) {
     });
 
     if (areaAscList.length === 0) {
-        if (!isAuto) showToastNotification(`Tidak ada data Pending Delivery di cabang area Anda (${allowedBranches.join(', ')}).`);
+        showToastNotification(`Tidak ada data Pending Delivery di cabang area Anda (${allowedBranches.join(', ')}).`);
         return;
     }
 
@@ -545,34 +534,14 @@ async function executeAreaBlastRC(isAuto = false) {
     });
     
     if (blastQueueArray.length === 0) {
-        if (!isAuto) showToastNotification('PIC cabang di area Anda belum memiliki nomor kontak WA terdaftar!');
+        showToastNotification('PIC cabang di area Anda belum memiliki nomor kontak WA terdaftar!');
         return;
     }
 
-    // 3. Modal Konfirmasi Transparan & Wajib Setuju (Hanya saat klik manual)
-    if (!isAuto) {
-        const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
-        const sampleRecipients = blastQueueArray.slice(0, 10).map((r, i) => `  ${i + 1}. [${r.branch}] ${r.name} (${r.phone})`).join('\n');
-        const extraCount = blastQueueArray.length > 10 ? `\n  ...dan ${blastQueueArray.length - 10} PIC lainnya` : '';
-
-        const confirmMsg = 
-            `⚠️ KONFIRMASI BLAST PENDING DELIVERY (RC) - AREA SENDIRI\n\n` +
-            `📌 Cabang Area Anda: ${allowedBranches.join(', ')}\n` +
-            `🏢 Cabang Target Terdeteksi (${targetBranches.length}): ${targetBranches.join(', ')}\n` +
-            `👥 Total PIC Penerima: ${blastQueueArray.length} orang\n\n` +
-            `Daftar Penerima:\n${sampleRecipients}${extraCount}\n\n` +
-            `🔒 KEAMANAN AKTIF: Pesan HANYA akan dikirim ke PIC di cabang area Anda di atas.\n` +
-            `Cabang di luar area Anda TIDAK AKAN disentuh sama sekali.\n\n` +
-            `Apakah Anda yakin ingin mengirim BLAST WA ke PIC cabang area Anda?`;
-
-        if (!confirm(confirmMsg)) {
-            showToastNotification('Blasting RC dibatalkan oleh pengguna.');
-            return;
-        }
-    } else {
-        console.log(`🤖 [AUTO ALERT] Mengirim chat otomatis ke ${blastQueueArray.length} PIC cabang area (${allowedBranches.join(', ')})...`);
-        showToastNotification(`🤖 [AUTO ALERT] Mengirim chat otomatis ke ${blastQueueArray.length} PIC cabang area Anda...`);
-    }
+    // 3. Langsung jalankan pengiriman (Non-blocking tanpa modal popup)
+    const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
+    console.log(`🚀 [BLAST WA RC] Mengirim chat ke ${blastQueueArray.length} PIC cabang area (${targetBranches.join(', ')})...`);
+    showToastNotification(`🚀 Mengirim WA Blast ke ${blastQueueArray.length} PIC cabang area Anda (${targetBranches.join(', ')})...`);
 
     if (isJarvisOnline) {
         // Sistem Bot WA Mode
@@ -3430,7 +3399,8 @@ window.renderGdDailyTable = function(gdDailyData) {
     for (let day = 1; day <= maxDay; day++) {
         headerHtml += `<th style="padding: 10px 6px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); min-width: 36px; text-align: center;">${day}</th>`;
     }
-    headerHtml += `<th style="padding: 10px 14px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center;">TOTAL</th></tr>`;
+    headerHtml += `<th style="padding: 10px 14px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center;">TOTAL</th>`;
+    headerHtml += `<th style="padding: 10px 14px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center; white-space: nowrap;">ESTIMASI GD</th></tr>`;
     thead.innerHTML = headerHtml;
 
     // Rows
@@ -3438,22 +3408,53 @@ window.renderGdDailyTable = function(gdDailyData) {
     const dayTotals = new Array(maxDay + 1).fill(0);
     let grandTotal = 0;
 
+    // Perhitungan Kalender Bulan Berjalan
+    const now = new Date();
+    const currentDay = now.getDate();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    // Hari terakhir dalam bulan ini sesuai kalender (misal 31 untuk Okt, 30 untuk Nov)
+    const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const yesterday = currentDay - 1;
+
     activeBranches.forEach((branch) => {
         const branchDays = gdDailyData[branch] || {};
         let branchTotal = 0;
+        let sumYesterday = 0;
         let rowHtml = `<tr><td style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); padding: 8px 14px; border: 1px solid var(--border-glass); text-align: left; white-space: nowrap;">${branch}</td>`;
         
         for (let day = 1; day <= maxDay; day++) {
-            const val = branchDays[day] || 0;
+            const val = parseInt(branchDays[day]) || 0;
             branchTotal += val;
             dayTotals[day] += val;
+
+            if (day <= yesterday) {
+                sumYesterday += val;
+            }
+
             const displayVal = val > 0 ? val : '-';
             const textStyle = val > 0 ? 'font-weight: 600; color: var(--text-main);' : 'color: var(--text-muted);';
             rowHtml += `<td style="font-size: 0.95rem; ${textStyle} padding: 8px 6px; border: 1px solid var(--border-glass); text-align: center;">${displayVal}</td>`;
         }
         
         grandTotal += branchTotal;
-        rowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); padding: 8px 14px; border: 1px solid var(--border-glass); text-align: center;">${branchTotal}</td></tr>`;
+        rowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); padding: 8px 14px; border: 1px solid var(--border-glass); text-align: center;">${branchTotal}</td>`;
+
+        // ESTIMASI GD: Prediksi total GD hingga tgl akhir bulan
+        // Cara hitung: Average GD dari tgl 1 s/d kemarin (bukan hari ini) dikali total hari kalender bulan ini
+        let estimasiVal = '-';
+        let tooltipText = '';
+        if (yesterday >= 1) {
+            const avgDaily = sumYesterday / yesterday;
+            const estimasiGd = Math.round(avgDaily * totalDaysInMonth);
+            estimasiVal = estimasiGd > 0 ? estimasiGd : 0;
+            tooltipText = `Estimasi GD: Rata-rata ${avgDaily.toFixed(1)} GD/hari (tgl 1 s/d ${yesterday}) x ${totalDaysInMonth} hari`;
+        } else if (branchTotal > 0) {
+            estimasiVal = Math.round((branchTotal / 1) * totalDaysInMonth);
+            tooltipText = `Estimasi GD tgl 1: ${branchTotal} x ${totalDaysInMonth} hari`;
+        }
+
+        rowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.08); padding: 8px 14px; border: 1px solid var(--border-glass); text-align: center;" title="${tooltipText}">${estimasiVal}</td></tr>`;
         tbody.innerHTML += rowHtml;
     });
 

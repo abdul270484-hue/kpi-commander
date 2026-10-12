@@ -105,6 +105,10 @@ export function initAuth(db) {
                     }
                     window.currentUserBranches = dbBranches;
                     currentUserBranches = window.currentUserBranches;
+                    try {
+                        localStorage.setItem('bujm_user_branches', JSON.stringify(dbBranches));
+                        localStorage.setItem('bujm_user_email', user.email);
+                    } catch (e) {}
                     if (typeof window.applyDashboardFilterAndRender === 'function') {
                         window.applyDashboardFilterAndRender();
                     }
