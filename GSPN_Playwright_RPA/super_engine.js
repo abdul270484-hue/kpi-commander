@@ -1,3 +1,4 @@
+const { exec } = require('child_process');
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
@@ -16,10 +17,10 @@ const { handleSmartAlerts } = require('./alerter');
 // GLOBAL ERROR HANDLER TO PREVENT CRASHES
 // ==========================================
 process.on('uncaughtException', (err) => {
-    console.error('🔥 [ANTI-CRASH] Uncaught Exception:', err.message);
+    console.error('[AUTH]¥ [ANTI-CRASH] Uncaught Exception:', err.message);
 });
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('🔥 [ANTI-CRASH] Unhandled Rejection:', reason);
+    console.error('[AUTH]¥ [ANTI-CRASH] Unhandled Rejection:', reason);
 });
 
 // ==========================================
@@ -48,6 +49,11 @@ if (!fs.existsSync(AUTH_DIR)) fs.mkdirSync(AUTH_DIR, { recursive: true });
 function cleanupStaleSessionLocks() {
     try {
         const { execSync } = require('child_process');
+        const myPid = process.pid;
+        // Terminate any other node instance running super_engine.js
+        const cmdOtherNode = `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name = 'node.exe'\\" | Where-Object { \\$_.CommandLine -like '*super_engine.js*' -and \\$_.ProcessId -ne ${myPid} } | ForEach-Object { Stop-Process -Id \\$_.ProcessId -Force -ErrorAction SilentlyContinue }"`;
+        execSync(cmdOtherNode, { stdio: 'ignore' });
+
         // Terminate any zombie chrome instance using .wwebjs_auth
         const cmd = `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name = 'chrome.exe'\\" | Where-Object { \\$_.CommandLine -like '*wwebjs*' } | ForEach-Object { Stop-Process -Id \\$_.ProcessId -Force -ErrorAction SilentlyContinue }"`;
         execSync(cmd, { stdio: 'ignore' });
@@ -63,22 +69,19 @@ function cleanupStaleSessionLocks() {
         }
 
         if (lastDate !== todayStr) {
-            console.log(`🌅 Hari baru terdeteksi (${todayStr}). Menjalankan Auto-Reset Sesi WhatsApp agar folder tetap ramping...`);
-            const sessionDir = path.join(AUTH_DIR, 'session');
-            if (fs.existsSync(sessionDir)) {
-                fs.rmSync(sessionDir, { recursive: true, force: true });
-                console.log('✨ Folder sesi WhatsApp lama berhasil dibersihkan (Storage di-reset ke 0 MB)!');
-            }
+            console.log('[INFO] Hari baru terdeteksi (' + todayStr + '). Mempertahankan sesi login WhatsApp aktif...');
             fs.writeFileSync(dateTrackerFile, todayStr, 'utf8');
         } else {
             const sessionLock = path.join(AUTH_DIR, 'session', 'lockfile');
             if (fs.existsSync(sessionLock)) {
-                fs.unlinkSync(sessionLock);
-                console.log('🧹 Cleaned up stale WhatsApp session lockfile.');
+                try {
+                    fs.unlinkSync(sessionLock);
+                    console.log('🧹 Cleaned up stale WhatsApp session lockfile.');
+                } catch (_) {}
             }
         }
     } catch (err) {
-        console.warn('⚠️ Warning saat auto-clean sesi:', err.message);
+        console.warn('[WARN]  Warning saat auto-clean sesi:', err.message);
     }
 }
 
@@ -114,7 +117,7 @@ const waClient = new Client({
 });
 
 waClient.on('qr', (qr) => {
-    console.log('📱 WhatsApp QR Code generated, saving to Firestore...');
+    console.log('ðŸ“± WhatsApp QR Code generated, saving to Firestore...');
     qrcode.toDataURL(qr, (err, url) => {
         if (!err) {
             qrData = url;
@@ -129,7 +132,9 @@ waClient.on('qr', (qr) => {
 });
 
 waClient.on('ready', () => {
-    console.log('✅ JARVIS WhatsApp Client is READY & ONLINE!');
+    console.log('[OK] PRIME WhatsApp Client is READY & ONLINE!');
+    const botNumber = waClient.info && waClient.info.wid ? waClient.info.wid.user : 'Unknown';
+    console.log('[PRIME] 📱 Akun WhatsApp Aktif: +' + botNumber);
     clientReady = true;
     qrData = null;
     // Update Firestore: WA is ready, clear QR
@@ -140,8 +145,10 @@ waClient.on('ready', () => {
     }, { merge: true }).catch(() => {});
 });
 
+
+
 waClient.on('disconnected', (reason) => {
-    console.log('⚠️ WhatsApp Client disconnected:', reason);
+    console.log('[WARN] WhatsApp Client disconnected:', reason);
     clientReady = false;
     qrData = null;
     setDoc(doc(db, 'rpa_commands', 'wa_status'), {
@@ -164,7 +171,7 @@ app.get('/api/status', (req, res) => {
 // API: Remote Trigger RPA directly from Web Dashboard
 app.post('/api/trigger-rpa', (req, res) => {
     const slot = (req.body && req.body.slot) ? req.body.slot : 'WEB_DASHBOARD';
-    console.log(`\nâš¡ [HTTP TRIGGER] Perintah tarik GSPN diterima via Localhost API (${slot})...`);
+    console.log(`\n[HTTP] [HTTP TRIGGER] Perintah tarik GSPN diterima via Localhost API (${slot})...`);
     executeRpaCycle(slot);
     res.json({ success: true, message: 'RPA Cycle Started' });
 });
@@ -214,7 +221,7 @@ async function processBlastQueue() {
 
             await waClient.sendMessage(chatId, uniqueMessage);
             blastProgress.sent++;
-            console.log(`ðŸ“¤ [BLAST ${blastProgress.sent}/${blastProgress.total}] Terkirim â†’ ${job.name} (${formattedPhone})`);
+            console.log(`[BLAST] [BLAST ${blastProgress.sent}/${blastProgress.total}] Terkirim Ã¢â€ â€™ ${job.name} (${formattedPhone})`);
             blastProgress.logs.unshift({ status: 'Sukses', phone: job.phone, name: job.name, reason: '-' });
         } catch (err) {
             blastProgress.failed++;
@@ -235,9 +242,9 @@ app.post('/api/blast', (req, res) => {
     const { data, template, allowedBranches } = req.body;
     if (!data || data.length === 0) return res.status(400).json({ error: 'Data kosong' });
 
-    console.log(`\n📢 [BLAST INCOMING] Permintaan blast untuk ${data.length} penerima.`);
+    console.log(`\nðŸ“¢ [BLAST INCOMING] Permintaan blast untuk ${data.length} penerima.`);
     if (allowedBranches && Array.isArray(allowedBranches)) {
-        console.log(`🔒 [BLAST AREA FILTER] Cabang Area Diizinkan: ${allowedBranches.join(', ')}`);
+        console.log(`[AUTH]’ [BLAST AREA FILTER] Cabang Area Diizinkan: ${allowedBranches.join(', ')}`);
     }
 
     if (!isBlasting) {
@@ -254,7 +261,7 @@ app.post('/api/blast', (req, res) => {
                 return b.includes(cleanA) || cleanA.includes(b);
             });
             if (!ok) {
-                console.warn(`⛔ [BLAST REJECTED] Item ${item.name} (${item.phone}) di cabang [${item.branch}] BUKAN bagian dari area yang diizinkan! Ditolak demi keamanan.`);
+                console.warn(`â›” [BLAST REJECTED] Item ${item.name} (${item.phone}) di cabang [${item.branch}] BUKAN bagian dari area yang diizinkan! Ditolak demi keamanan.`);
                 return;
             }
         }
@@ -284,8 +291,14 @@ app.get('/api/progress', (req, res) => {
     res.json({ isBlasting, progress: blastProgress });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`ðŸš€ JARVIS WA Engine aktif di http://localhost:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`>>> JARVIS WA Engine aktif di http://localhost:${PORT}`);
+});
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`[FATAL] Port ${PORT} sedang dipakai proses lain! Memuat ulang dalam 3 detik...`);
+        setTimeout(() => process.exit(1), 3000);
+    }
 });
 
 // ==========================================
@@ -301,7 +314,7 @@ async function executeRpaCycle(slotName = 'MANUAL') {
     const lockResult = await lockManager.acquireLock(triggerType, slotName);
     
     if (!lockResult.success) {
-        console.log(`⚠️ RPA cycle sedang berlangsung: ${lockResult.message}`);
+        console.log(`[WARN] RPA cycle sedang berlangsung: ${lockResult.message}`);
         return;
     }
 
@@ -310,13 +323,13 @@ async function executeRpaCycle(slotName = 'MANUAL') {
     let finalError = null;
 
     console.log('\n=============================================================');
-    console.log(`  🕒 [CYCLE START] SIKLUS RPA GSPN: ${slotName}`);
+    console.log(`  ðŸ•’ [CYCLE START] SIKLUS RPA GSPN: ${slotName}`);
     console.log(`  ID Eksekusi: ${lockResult.executionId}`);
     console.log(`  Waktu: ${lockResult.startedAt}`);
     console.log('=============================================================\n');
 
     try {
-        await lockManager.updateProgress('SCRAPE', '📡 Membuka GSPN dan mengunduh data...');
+        await lockManager.updateProgress('SCRAPE', '[LISTEN] Membuka GSPN dan mengunduh data...');
 
         // Progress callback
         let lastPushTime = 0;
@@ -334,14 +347,23 @@ async function executeRpaCycle(slotName = 'MANUAL') {
         // Robot Chrome berjalan di background (headless: true)
         const downloadedFiles = await scrapeAllBranches(true, false, onProgress);
 
-        await lockManager.updateProgress('SYNC', '🧠 Memproses Data & Intelijen AI (Validation, Sync)...');
+        await lockManager.updateProgress('SYNC', 'ðŸ§  Memproses Data & Intelijen AI (Validation, Sync)...');
         syncResult = await processAndSyncToFirebase(downloadedFiles, slotName);
 
-        await lockManager.updateProgress('NOTIFY', '🚀 Mengirim Alert / Notifikasi WA...');
+        // 4. Eksekusi Daily Ledger VOL IN (Cerdas & Cepat: 1 Hari Saja)
+        try {
+            await lockManager.updateProgress('VOL_IN', 'Memperbarui VOL IN MTD (Daily Ledger)...');
+            const { runDailyVolInLedger } = require('./vol_in_engine');
+            await runDailyVolInLedger(slotName);
+        } catch (volErr) {
+            console.warn('⚠️ [WARN] Daily Ledger VOL IN Warning:', volErr.message);
+        }
+
+        await lockManager.updateProgress('NOTIFY', '>>> Mengirim Alert / Notifikasi WA...');
         // [DISABLED] WA Blasting Backend dinonaktifkan total agar tidak menembak ke semua teknisi
         // await handleSmartAlerts(syncResult);
 
-        console.log(`\n✅ [CYCLE SUCCESS] SIKLUS ${slotName} BERHASIL!`);
+        console.log(`\n[OK] [CYCLE SUCCESS] SIKLUS ${slotName} BERHASIL!`);
         await lockManager.releaseLock('COMPLETED', {
             startedAt: lockResult.startedAt,
             triggerType,
@@ -356,7 +378,7 @@ async function executeRpaCycle(slotName = 'MANUAL') {
         await cleanupStorage();
     } catch (err) {
         finalError = err;
-        console.error(`\n❌ [CYCLE FAILED] Error:`, err);
+        console.error('\n[FAIL] [CYCLE FAILED] Error:', err);
         await lockManager.releaseLock('FAILED', {
             startedAt: lockResult.startedAt,
             triggerType,
@@ -372,8 +394,22 @@ async function executeRpaCycle(slotName = 'MANUAL') {
 const { getAuth, signInAnonymously } = require('firebase/auth');
 const auth = getAuth(firebaseApp);
 
+
+// ==================================================================
+// PRIME AUTONOMOUS AI TASK RUNNER (DELEGATED TO UNIVERSAL AGENT)
+// ==================================================================
+const { runUniversalTask } = require('./prime_universal_agent');
+
+async function executeAutonomousTask(instruction, userEmail) {
+    return await runUniversalTask(instruction, userEmail, lockManager, executeRpaCycle);
+}
+
+function cmdIs(actual, expected) {
+    return actual === expected;
+}
+
 async function startRemoteListener() {
-    console.log('ðŸ“¡ Mendengarkan perintah remote trigger dari Web Dashboard...');
+    console.log('[LISTEN] Mendengarkan perintah remote trigger dari Web Dashboard...');
     const triggerDocRef = doc(db, 'rpa_commands', 'trigger');
 
     // Auto-heal on engine boot: if stuck on RUNNING from previous aborted run, reset to IDLE
@@ -382,7 +418,7 @@ async function startRemoteListener() {
             status: 'IDLE',
             progress: ''
         }, { merge: true });
-        console.log('âœ¨ Status remote trigger di-reset ke IDLE (Siap digunakan).');
+        console.log('[IDLE] Status remote trigger di-reset ke IDLE (Siap digunakan).');
     } catch (e) {}
 
     onSnapshot(triggerDocRef, (snap) => {
@@ -390,41 +426,100 @@ async function startRemoteListener() {
             const data = snap.data();
             if (data.command === 'RUN_NOW' && data.status === 'PENDING') {
                 if (lockManager.currentExecutionId) {
-                    console.log(`⚠️ [REMOTE TRIGGER] Diabaikan: RPA sedang berjalan.`);
+                    console.log(`[WARN] [REMOTE TRIGGER] Diabaikan: RPA sedang berjalan.`);
                     setDoc(triggerDocRef, {
                         status: 'RUNNING',
                         progress: 'Sedang berjalan dalam proses aktif...'
                     }, { merge: true }).catch(() => {});
                     return;
                 }
-                console.log(`\n⚡ [REMOTE TRIGGER] Perintah dari Web Dashboard (${data.requestedBy || 'User'})...`);
+                console.log(`\n[HTTP] [REMOTE TRIGGER] Perintah dari Web Dashboard (${data.requestedBy || 'User'})...`);
                 executeRpaCycle(data.slot || 'WEB_DASHBOARD');
             }
         }
     }, (err) => {
         console.error('Snapshot Listener Warning:', err.message);
     });
+
+    // ------------------------------------------------------------------
+    // PRIME MOBILE APP REMOTE COMMANDS (from APK / PWA)
+    // ------------------------------------------------------------------
+    const primeRemoteDocRef = doc(db, 'rpa_commands', 'prime_remote');
+    onSnapshot(primeRemoteDocRef, async (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            if (data.status === 'PENDING') {
+                const cmd = data.command || data.text || '';
+                const user = data.userEmail || 'Commander';
+                console.log('\n[PRIME MOBILE] 📱 Tugas diterima (' + user + '): ' + cmd);
+                
+                const { feedback, detail } = await executeAutonomousTask(cmd, user);
+
+                setDoc(primeRemoteDocRef, {
+                    status: 'EXECUTED',
+                    feedback: feedback,
+                    detail: detail || null,
+                    executedAt: new Date().toISOString()
+                }, { merge: true }).catch(() => {});
+            }
+        }
+    }, (err) => {
+        console.warn('[PRIME MOBILE] Listener error:', err.message);
+    });
+
+    // Telemetry Heartbeat (update every 20 seconds)
+    const updateTelemetry = () => {
+        const memoryMB = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
+        setDoc(doc(db, 'rpa_commands', 'pc_telemetry'), {
+            online: true,
+            lastHeartbeat: new Date().toISOString(),
+            memoryUsage: memoryMB + ' MB',
+            hostName: process.env.COMPUTERNAME || 'LAPTOP-BUJM',
+            rpaStatus: lockManager.currentExecutionId ? 'RUNNING' : 'IDLE',
+            waReady: clientReady
+        }, { merge: true }).catch(() => {});
+    };
+    updateTelemetry();
+    setInterval(updateTelemetry, 20000);
+
 }
 
 // 4. Start Cron Schedulers (Setiap 30 menit dari jam 09:00 - 17:30 mengikuti jam lokal Windows/sistem)
+let lastTriggeredSlot = '';
 const triggerCycle = () => {
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const slotKey = `${now.toISOString().slice(0, 10)}_${timeStr}`;
+    if (lastTriggeredSlot === slotKey) return;
+    lastTriggeredSlot = slotKey;
     executeRpaCycle(timeStr);
 };
-// Mengikuti waktu lokal sistem Windows: Menjalankan RPA setiap 30 menit (:00, :30)
-cron.schedule('*/30 9-17 * * *', triggerCycle);
+// Mengikuti waktu lokal sistem: Menjalankan RPA setiap 30 menit (:00, :30)
+cron.schedule('0,30 9-17 * * *', triggerCycle, {
+    scheduled: true,
+    timezone: 'Asia/Jakarta'
+});
+
+// Watchdog interval cadangan (memastikan detik 00 yang terlewat tetap tereksekusi di menit 00 atau 30)
+setInterval(() => {
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    if (h >= 9 && h <= 17 && (m === 0 || m === 30)) {
+        triggerCycle();
+    }
+}, 15000);
 
 signInAnonymously(auth).then(() => {
-    console.log('ðŸ” Terautentikasi ke Firebase Service.');
+    console.log('[AUTH] Terautentikasi ke Firebase Service.');
     startRemoteListener();
 }).catch(() => {
     startRemoteListener();
 });
 
 console.log('\n=============================================================');
-console.log('  ðŸ‘‘ JARVIS SUPER ENGINE (WA BLASTER + PLAYWRIGHT RPA) AKTIF');
+console.log('  [SUPER] PRIME SUPER ENGINE (WA BLASTER + PLAYWRIGHT RPA) AKTIF');
 console.log('  Semua layanan terhubung & siap dikendalikan dari Web Dashboard!');
 console.log('=============================================================\n');
 
@@ -443,9 +538,9 @@ setInterval(async () => {
             const text = await res.text();
             if (!text.includes('Notice')) {
                 // Berhasil ping
-                console.log(`[${new Date().toLocaleTimeString()}] â™»ï¸ Session Keep-Alive: OK (Session diperpanjang)`);
+                console.log(`[${new Date().toLocaleTimeString()}] [REFRESH] Session Keep-Alive: OK (Session diperpanjang)`);
             } else {
-                console.log(`[${new Date().toLocaleTimeString()}] âš ï¸ Session Keep-Alive: Expired`);
+                console.log(`[${new Date().toLocaleTimeString()}] [WARN] Session Keep-Alive: Expired`);
             }
         }
     } catch (e) {
@@ -464,9 +559,9 @@ async function cleanupStorage() {
                     fs.unlinkSync(path.join(downloadDir, file));
                 } catch (e) {}
             }
-            console.log(`🧹 [STORAGE CLEANUP] Folder temp_downloads dibersihkan total (${files.length} file dihapus). Local disk tetap 100% aman!`);
+            console.log(`ðŸ§¹ [STORAGE CLEANUP] Folder temp_downloads dibersihkan total (${files.length} file dihapus). Local disk tetap 100% aman!`);
         }
     } catch (err) {
-        console.warn('⚠️ Warning cleanupStorage:', err.message);
+        console.warn('[WARN] Warning cleanupStorage:', err.message);
     }
 }

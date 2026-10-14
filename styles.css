@@ -443,9 +443,10 @@ th {
     color: white;
     background-color: var(--accent-blue);
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.80rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
+    padding: 8px 10px;
 }
 
 .table-responsive th {
@@ -458,12 +459,31 @@ th {
 }
 
 td {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
+    padding: 7px 10px;
+    vertical-align: middle;
+    line-height: 1.4;
 }
 
-#branch-table td, #mpu-table td, #ub-table td, #shame-table td, #rc-table td, #modal-table td, #dts-mx-table td, #dts-ih-table td, #dosa-cabang-table td, #queue-table td, #fame-table td, #custom-models-table td, #custom-reasons-table td, #custom-models-table th, #custom-reasons-table th {
-    padding: 8px 12px;
-    font-size: 0.85rem;
+/* Harmonized typography across ALL tables */
+table th, table.data-table th, .table-header-dark th,
+#branch-table th, #mpu-table th, #ub-table th, #shame-table th, #rc-table th, #modal-table th, 
+#dts-mx-table th, #dts-ih-table th, #dosa-cabang-table th, #queue-table th, #fame-table th,
+#vol-in-vs-gd-table th, #gd-daily-table th, #parts-sales-table th {
+    font-size: 0.80rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em;
+    padding: 8px 10px !important;
+    text-transform: uppercase;
+}
+
+table td, table.data-table td,
+#branch-table td, #mpu-table td, #ub-table td, #shame-table td, #rc-table td, #modal-table td, 
+#dts-mx-table td, #dts-ih-table td, #dosa-cabang-table td, #queue-table td, #fame-table td, 
+#vol-in-vs-gd-table td, #gd-daily-table td, #parts-sales-table td,
+#custom-models-table td, #custom-reasons-table td {
+    font-size: 0.85rem !important;
+    padding: 7px 10px !important;
     vertical-align: middle;
     line-height: 1.4;
 }
@@ -473,22 +493,6 @@ td {
 #dts-mx-table th:not(:last-child), #dts-mx-table td:not(:last-child),
 #dts-ih-table th:not(:last-child), #dts-ih-table td:not(:last-child) {
     border-right: 1px solid var(--border-glass);
-}
-
-#branch-table th, #mpu-table th, #ub-table th, #shame-table th, #rc-table th, #modal-table th, #dts-mx-table th, #dts-ih-table th, #dosa-cabang-table th {
-    padding: 6px 12px;
-    font-size: 0.75rem;
-}
-
-/* Wall of Fame gets slightly larger text to highlight top performers */
-#fame-table td {
-    padding: 8px 12px;
-    font-size: 0.95rem;
-}
-
-#fame-table th {
-    padding: 8px 12px;
-    font-size: 0.8rem;
 }
 
 .badge {
@@ -562,7 +566,7 @@ td {
 
 /* Clickable Numbers */
 .clickable-number {
-    color: var(--accent-blue);
+    color: inherit;
     text-decoration: underline;
     text-decoration-style: dotted;
     cursor: pointer;
@@ -661,10 +665,17 @@ td {
     width: 100%;
     border-collapse: collapse;
 }
-.modal-body th {
+.modal-body th, #modal-table th {
     position: sticky;
     top: 0;
-    background: var(--bg-dark);
+    background: #0f172a !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 0.80rem !important;
+    letter-spacing: 0.05em;
+    padding: 10px 12px !important;
+    border-bottom: 2px solid #2563eb !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
     z-index: 10;
 }
 

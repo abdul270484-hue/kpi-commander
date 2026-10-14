@@ -1,0 +1,22 @@
+{
+  "name": "PRIME AI Executive Console",
+  "short_name": "PRIME",
+  "start_url": "/prime.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090d16",
+  "theme_color": "#0f172a",
+  "description": "Autonomous AI PC Remote & Performance Telemetry Console",
+  "icons": [
+    {
+      "src": "/prime_icon_192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/prime_icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

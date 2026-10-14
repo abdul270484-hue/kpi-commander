@@ -68,3 +68,46 @@ node_modules/
 # dataconnect generated files
 .dataconnect
 JARVIS_WA_Blaster_Release/app/.wwebjs_auth/ 
+
+# Credentials & Secrets
+*serviceAccountKey*.json
+serviceAccountKey.json
+*.pem
+*.key
+
+# WhatsApp & Browser Sessions
+**/.wwebjs_auth/
+**/.wwebjs_cache/
+**/.auth/
+storageState.json
+contacts_cache.json
+
+# Temporary Downloads & Vol In
+**/temp_downloads/
+**/temp_vol_in/
+**/temp_vol_in_*/
+**/blast_logs/
+.aging_cache*
+
+# Large Archives & Binaries
+*.rar
+*.zip
+JARVIS_Portable_Cabang_Final/
+backup_stable_v1/
+
+# Backups & Debug
+*.bak*
+*.png
+*.jpg
+!prime_icon_*.png
+*.xlsx
+
+# Scratch scripts
+fix*.js
+enable_cron*.js
+create_autostart.js
+make_bat.js
+*debug*.html
+fast_popup.html
+recovered.html
+samsung-all_pending.py

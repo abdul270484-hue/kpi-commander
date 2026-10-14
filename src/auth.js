@@ -79,8 +79,11 @@ export function initAuth(db) {
     firebase.auth().onAuthStateChanged(async (user) => {
         if (user) {
             if (user.isAnonymous) {
-                console.log('Anonymous user detected, skipping DB profile creation.');
-                window.dispatchEvent(new Event('bujm_auth_ready'));
+                console.log('Anonymous user detected on main dashboard. Prompting Google Sign-In.');
+                currentUser = null;
+                isAdmin = false;
+                if (loginScreen) loginScreen.style.display = 'flex';
+                if (mainApp) mainApp.classList.add('hidden');
                 return;
             }
             try {

@@ -1239,11 +1239,23 @@ function analyzeData(data) {
         const jobNo = row['ASC Job No'] || row['Service Order No.'] || 'N/A';
         const repairCode = row['Repair Code'] || '';
         let engineer = row['Engineer Name'] ? row['Engineer Name'].toString().trim().toUpperCase() : 'UNKNOWN ENGINEER';
-        // --- MANUAL OVERRIDE TECHNICIANS ---
-        if (engineer === 'MOHHAMAT BAGAS DWI PRAYOGO') {
-            ascName = 'DENPASAR - PLANET GADGET';
-        } else if (engineer === 'SATRIA EKA ADITA' || engineer === 'SANI LASARO') {
-            ascName = 'DENPASAR - CELLULAR WORLD';
+        // --- MANUAL OVERRIDE TECHNICIANS (Khusus jika data tidak memiliki kolom Collection Center) ---
+        let hasCC = false;
+        if (row && typeof row === 'object') {
+            for (let k in row) {
+                let kl = k.toLowerCase().replace(/[^a-z]/g, '');
+                if (kl.includes('collectioncenter') || kl === 'ccname') {
+                    hasCC = true;
+                    break;
+                }
+            }
+        }
+        if (!hasCC) {
+            if (engineer === 'MOHHAMAT BAGAS DWI PRAYOGO') {
+                ascName = 'DENPASAR - PLANET GADGET';
+            } else if (engineer === 'SATRIA EKA ADITA' || engineer === 'SANI LASARO') {
+                ascName = 'DENPASAR - CELLULAR WORLD';
+            }
         }
         
         // Build global Engineer to Branch Map for Wall of Fame sync

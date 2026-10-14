@@ -1,0 +1,4 @@
+
+# Cache lokal aging_tracker
+.aging_cache.json
+.aging_cache.json.tmp

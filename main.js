@@ -1,11 +1,11 @@
 import { CONFIG } from './src/config.js?v=1790141904536';
 import { scanRedoImage, initTesseract } from './src/services/ocr.js?v=1790141904536';
-import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo, getWAPayloadShame, getWAPayloadRC } from './src/services/whatsapp.js?v=20261007_v9';
+import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo, getWAPayloadShame, getWAPayloadRC } from './src/services/whatsapp.js?v=20261012_v11';
 import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as configDeleteRule, initContactsListener, saveTechContacts } from './src/firebase/config.js?v=20261007_v8';
 import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser } from './src/firebase/users.js?v=1790141904536';
-import { initAuth, isAdmin, normalizePhone } from './src/auth.js?v=20261005_v5';
+import { initAuth, isAdmin, normalizePhone } from './src/auth.js?v=20261013_v10';
 import { handleFiles, handleProductivityFiles } from './src/parser.js?v=1790141904536';
-import { initFirebaseAutoSync } from './src/firebase_sync.js?v=20261003204';
+import { initFirebaseAutoSync } from './src/firebase_sync.js?v=20261013_v1';
 
 // Expose services to global scope for HTML inline onclick handlers
 window.sendWA = sendWA;
@@ -80,7 +80,7 @@ analyzerWorker.onmessage = function(e) {
 
         if (unknownReasons && unknownReasons.length > 0) {
             setTimeout(() => {
-                showToastNotification('<strong>âš ï¸ Unmapped Reason Detected!</strong><br>Found ' + unknownReasons.length + ' unmapped reasons.<br>Click <b>Rules Config</b> to configure them!');
+                showToastNotification('<strong>\u{26A0}\u{FE0F}  Unmapped Reason Detected!</strong><br>Found ' + unknownReasons.length + ' unmapped reasons.<br>Click <b>Rules Config</b> to configure them!');
             }, 4000); 
         }
         
@@ -103,6 +103,7 @@ analyzerWorker.onmessage = function(e) {
             if (typeof window.renderGdTrendChart === 'function') {
                 window.renderGdTrendChart(gdTrendData);
             }
+            if (payload.partsDailyData) window.partsDailyDataGlobal = payload.partsDailyData;
             if (typeof window.renderPartsSalesTable === 'function') { window.renderPartsSalesTable(payload.partsDailyData || {}); }
             if (typeof window.renderGdDailyTable === 'function') {
                 window.renderGdDailyTable(gdDailyData);
@@ -299,7 +300,7 @@ if (jarvisBadge) {
             if (qrModal) qrModal.classList.add('active');
         } else if (!isJarvisOnline) {
             if (window.showToastNotification) {
-                window.showToastNotification('âš ï¸ WA Bot Super Engine is starting on port 3001...');
+                window.showToastNotification('\u{26A0}\u{FE0F}  WA Bot Super Engine is starting on port 3001...');
             }
         }
     });
@@ -365,10 +366,10 @@ async function blastViaJarvis(blastQueueArray) {
         return false;
     }
 
-    // 🔒 DOUBLE CHECK AREA KEAMANAN
+    // [SECURITY] DOUBLE CHECK AREA KEAMANAN
     const allowed = getAllowedBranches();
     if (!allowed || allowed.length === 0) {
-        alert('🚨 KEAMANAN SISTEM:\nTidak ada cabang area yang terdaftar untuk akun Anda! Pengiriman dibatalkan.');
+        alert('\u{1F6A8} KEAMANAN SISTEM:\nTidak ada cabang area yang terdaftar untuk akun Anda! Pengiriman dibatalkan.');
         return false;
     }
     
@@ -378,7 +379,7 @@ async function blastViaJarvis(blastQueueArray) {
     });
 
     if (safeQueue.length === 0) {
-        alert('🚨 KEAMANAN SISTEM:\nSemua antrean pesan berada di luar area cabang Anda. Tidak ada pesan yang dikirim.');
+        alert('\u{1F6A8} KEAMANAN SISTEM:\nSemua antrean pesan berada di luar area cabang Anda. Tidak ada pesan yang dikirim.');
         return false;
     }
     
@@ -416,24 +417,41 @@ async function executeAreaBlastShame(isAuto = false) {
     // 1. Ambil daftar cabang yang diizinkan untuk user aktif (Asmen)
     const allowedBranches = getAllowedBranches();
     if (!allowedBranches || allowedBranches.length === 0) {
-        console.warn('⚠️ [BLAST SHAME] Ditolak: Tidak ada cabang area yang terdaftar!');
-        showToastNotification('⚠️ WA Blast dibatalkan: Akun Anda tidak memiliki cabang area yang terdaftar.');
-        return;
+        console.warn('\u{26A0}\u{FE0F}  [BLAST SHAME] Ditolak: Tidak ada cabang area yang terdaftar!');
+        showToastNotification('\u{26A0}\u{FE0F}  WA Blast dibatalkan: Akun Anda tidak memiliki cabang area yang terdaftar.');
+        return false;
     }
 
-    if (!window.shameData || window.shameData.length === 0) {
-        showToastNotification('Tidak ada data Wall of Shame yang tersedia.');
-        return;
+    // MULTI-PAGE ROBUST FALLBACK:
+    // Jika window.shameData belum siap (misal sedang di halaman GD & SALES), ambil dari rawDashboardData atau Firestore!
+    let sourceShame = (window.shameData && window.shameData.length > 0) ? window.shameData : null;
+    if (!sourceShame && window.rawDashboardData && Array.isArray(window.rawDashboardData.shameList) && window.rawDashboardData.shameList.length > 0) {
+        sourceShame = window.rawDashboardData.shameList;
+    }
+    if (!sourceShame && window.db) {
+        try {
+            const snap = await window.db.collection('dashboard_data').doc('latest').get();
+            if (snap.exists && snap.data().shameList) {
+                sourceShame = snap.data().shameList;
+                window.shameData = sourceShame;
+            }
+        } catch (_) {}
+    }
+
+    if (!sourceShame || sourceShame.length === 0) {
+        console.warn('\u{26A0}\u{FE0F}  [BLAST SHAME] Data Wall of Shame belum tersedia di memori.');
+        if (!isAuto) showToastNotification('Tidak ada data Wall of Shame yang tersedia.');
+        return false;
     }
 
     // 2. Filter STRICT HANYA cabang area sendiri
-    const areaShameData = window.shameData.filter(item => {
+    const areaShameData = sourceShame.filter(item => {
         return isBranchAllowed(item.asc, allowedBranches);
     });
 
     if (areaShameData.length === 0) {
-        showToastNotification(`Tidak ada teknisi Wall of Shame di cabang area Anda (${allowedBranches.join(', ')}).`);
-        return;
+        if (!isAuto) showToastNotification(`Tidak ada teknisi Wall of Shame di cabang area Anda (${allowedBranches.join(', ')}).`);
+        return true; // Tidak ada pelanggaran di area sendiri, dianggap beres
     }
 
     // 3. Kumpulkan payload Sistem Bot WA
@@ -456,21 +474,30 @@ async function executeAreaBlastShame(isAuto = false) {
     });
     
     if (blastQueueArray.length === 0) {
-        showToastNotification('Semua teknisi di area Anda pada Wall of Shame belum memiliki nomor WA di kontak!');
-        return;
+        if (!isAuto) showToastNotification('Semua teknisi di area Anda pada Wall of Shame belum memiliki nomor WA di kontak!');
+        return false;
     }
 
     // 4. Langsung jalankan pengiriman (Non-blocking tanpa modal popup)
     const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
-    console.log(`🚀 [BLAST WA SHAME] Mengirim chat ke ${blastQueueArray.length} teknisi di area (${targetBranches.join(', ')})...`);
-    showToastNotification(`🚀 Mengirim WA Blast ke ${blastQueueArray.length} teknisi di area Anda (${targetBranches.join(', ')})...`);
+    // Pastikan status WA dicek ulang TERLEBIH DAHULU sebelum memberi notifikasi
+    if (!isJarvisOnline) {
+        try {
+            const checkRes = await fetch('http://127.0.0.1:3001/api/status');
+            const checkData = await checkRes.json();
+            if (checkData.ready) isJarvisOnline = true;
+        } catch (_) {}
+    }
 
     if (isJarvisOnline) {
-        // Sistem Bot WA Mode
-        await blastViaJarvis(blastQueueArray);
+        // Sistem Bot WA Mode (Online)
+        console.log(`[BLAST WA SHAME] Mengirim chat ke ${blastQueueArray.length} teknisi di area (${targetBranches.join(', ')})...`);
+        showToastNotification(`\u{1F680} Mengirim WA Blast ke ${blastQueueArray.length} teknisi di area Anda (${targetBranches.join(', ')})...`);
+        const blastOk = await blastViaJarvis(blastQueueArray);
+        return blastOk;
     } else if (!isAuto) {
         // Manual Fallback Mode (Hanya saat manual klik di browser)
-        showToastNotification(`Menggunakan WhatsApp Web (Mode Manual) untuk ${blastQueueManual.length} teknisi area Anda... Izinkan POPUP BROWSER!`);
+        showToastNotification(`\u{26A0}\u{FE0F} Bot WA belum terhubung (Scan QR). Beralih ke WhatsApp Web Manual untuk ${blastQueueManual.length} teknisi area... Izinkan POPUP BROWSER!`);
         let index = 0;
         const blastInterval = setInterval(() => {
             if (index >= blastQueueManual.length) {
@@ -483,9 +510,11 @@ async function executeAreaBlastShame(isAuto = false) {
                 window.sendWA(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
             }
             index++;
-        }, 10000); // 10 seconds delay
+        }, 10000);
+        return true;
     } else {
-        console.warn('⚠️ [AUTO ALERT] Bot WA lokal offline, pengiriman otomatis ditunda.');
+        console.warn('\u{26A0}\u{FE0F}  [AUTO ALERT] Bot WA lokal offline di port 3001, pengiriman otomatis ditunda.');
+        return false;
     }
 }
 
@@ -494,24 +523,40 @@ async function executeAreaBlastRC(isAuto = false) {
     // 1. Ambil daftar cabang yang diizinkan untuk user aktif (Asmen)
     const allowedBranches = getAllowedBranches();
     if (!allowedBranches || allowedBranches.length === 0) {
-        console.warn('⚠️ [BLAST RC] Ditolak: Tidak ada cabang area yang terdaftar!');
-        showToastNotification('⚠️ WA Blast RC dibatalkan: Akun Anda tidak memiliki cabang area yang terdaftar.');
-        return;
+        console.warn('\u{26A0}\u{FE0F}  [BLAST RC] Ditolak: Tidak ada cabang area yang terdaftar!');
+        showToastNotification('\u{26A0}\u{FE0F}  WA Blast RC dibatalkan: Akun Anda tidak memiliki cabang area yang terdaftar.');
+        return false;
     }
 
-    if (!window.rcData || Object.keys(window.rcData).length === 0) {
-        showToastNotification('Tidak ada data Pending Delivery yang tersedia.');
-        return;
+    // MULTI-PAGE ROBUST FALLBACK
+    let sourceRC = (window.rcData && Object.keys(window.rcData).length > 0) ? window.rcData : null;
+    if (!sourceRC && window.rawDashboardData && window.rawDashboardData.rcStats) {
+        sourceRC = window.rawDashboardData.rcStats;
+        window.rcData = sourceRC;
+    }
+    if (!sourceRC && window.db) {
+        try {
+            const snap = await window.db.collection('dashboard_data').doc('latest_eng').get();
+            if (snap.exists && snap.data().rcStats) {
+                sourceRC = snap.data().rcStats;
+                window.rcData = sourceRC;
+            }
+        } catch (_) {}
+    }
+
+    if (!sourceRC || Object.keys(sourceRC).length === 0) {
+        if (!isAuto) showToastNotification('Tidak ada data Pending Delivery yang tersedia.');
+        return false;
     }
 
     // 2. Filter STRICT HANYA cabang area sendiri
-    const areaAscList = Object.keys(window.rcData).filter(asc => {
+    const areaAscList = Object.keys(sourceRC).filter(asc => {
         return isBranchAllowed(asc, allowedBranches);
     });
 
     if (areaAscList.length === 0) {
-        showToastNotification(`Tidak ada data Pending Delivery di cabang area Anda (${allowedBranches.join(', ')}).`);
-        return;
+        if (!isAuto) showToastNotification(`Tidak ada data Pending Delivery di cabang area Anda (${allowedBranches.join(', ')}).`);
+        return true;
     }
 
     const blastQueueArray = [];
@@ -519,7 +564,7 @@ async function executeAreaBlastRC(isAuto = false) {
 
     areaAscList.forEach(asc => {
         if (window.getWAPayloadRC) {
-            const count = window.rcData[asc].count;
+            const count = sourceRC[asc].count;
             const payload = window.getWAPayloadRC(asc, count);
             if (payload) {
                 blastQueueArray.push({
@@ -534,21 +579,30 @@ async function executeAreaBlastRC(isAuto = false) {
     });
     
     if (blastQueueArray.length === 0) {
-        showToastNotification('PIC cabang di area Anda belum memiliki nomor kontak WA terdaftar!');
-        return;
+        if (!isAuto) showToastNotification('PIC cabang di area Anda belum memiliki nomor kontak WA terdaftar!');
+        return false;
     }
 
     // 3. Langsung jalankan pengiriman (Non-blocking tanpa modal popup)
     const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
-    console.log(`🚀 [BLAST WA RC] Mengirim chat ke ${blastQueueArray.length} PIC cabang area (${targetBranches.join(', ')})...`);
-    showToastNotification(`🚀 Mengirim WA Blast ke ${blastQueueArray.length} PIC cabang area Anda (${targetBranches.join(', ')})...`);
+    // Pastikan status WA dicek ulang TERLEBIH DAHULU sebelum memberi notifikasi
+    if (!isJarvisOnline) {
+        try {
+            const checkRes = await fetch('http://127.0.0.1:3001/api/status');
+            const checkData = await checkRes.json();
+            if (checkData.ready) isJarvisOnline = true;
+        } catch (_) {}
+    }
 
     if (isJarvisOnline) {
-        // Sistem Bot WA Mode
-        await blastViaJarvis(blastQueueArray);
+        // Sistem Bot WA Mode (Online)
+        console.log(`[BLAST WA RC] Mengirim chat ke ${blastQueueArray.length} PIC cabang area (${targetBranches.join(', ')})...`);
+        showToastNotification(`\u{1F680} Mengirim WA Blast ke ${blastQueueArray.length} PIC cabang area Anda (${targetBranches.join(', ')})...`);
+        const blastOk = await blastViaJarvis(blastQueueArray);
+        return blastOk;
     } else if (!isAuto) {
         // Manual Fallback Mode
-        showToastNotification(`Menggunakan WhatsApp Web (Mode Manual) untuk ${blastQueueManual.length} cabang area Anda... Izinkan POPUP BROWSER!`);
+        showToastNotification(`\u{26A0}\u{FE0F} Bot WA belum terhubung (Scan QR). Beralih ke WhatsApp Web Manual untuk ${blastQueueManual.length} cabang area... Izinkan POPUP BROWSER!`);
         let index = 0;
         const blastInterval = setInterval(() => {
             if (index >= blastQueueManual.length) {
@@ -561,11 +615,16 @@ async function executeAreaBlastRC(isAuto = false) {
                 window.sendWARC(item.asc, item.count);
             }
             index++;
-        }, 10000); // 10 seconds delay
+        }, 10000);
+        return true;
     } else {
-        console.warn('⚠️ [AUTO ALERT] Bot WA lokal offline, pengiriman otomatis ditunda.');
+        console.warn('\u{26A0}\u{FE0F}  [AUTO ALERT] Bot WA lokal offline di port 3001, pengiriman otomatis ditunda.');
+        return false;
     }
 }
+
+window.executeAreaBlastShame = executeAreaBlastShame;
+window.executeAreaBlastRC = executeAreaBlastRC;
 
 // Event Listeners for Manual Blast Buttons
 const btnBlastShame = document.getElementById('btnBlastShame');
@@ -608,7 +667,7 @@ if (btnShareDosaCabang) {
             text += `\n`;
         });
         
-        text += `Branch Heads / PIC please follow up on the above pending units today! Thank you. ðŸ™`;
+        text += `Branch Heads / PIC please follow up on the above pending units today! Thank you. \u{1F64F}`;
         
         navigator.clipboard.writeText(text).then(() => {
             showToastNotification('Branch Defect list > 7 days copied! Please paste into your WA group.');
@@ -637,37 +696,42 @@ if (btnShareFame) {
         if (hour >= 11 && hour < 15) greeting = 'Selamat siang';
         else if (hour >= 15 && hour < 18) greeting = 'Selamat sore';
         else if (hour >= 18 || hour < 4) greeting = 'Selamat malam';
-        
-        let text = `*WALL OF FAME (TOP PERFORMERS)* ðŸ†\n` +
+
+        let text = `*WALL OF FAME (TOP PERFORMERS)* \u{1F3C6}\n` +
                    `Update: ${dateStr}\n\n` +
                    `${greeting} Tim, mari berikan apresiasi kepada Teknisi dengan produktivitas GD tertinggi (Bulan Berjalan):\n\n`;
-        
-        window.fameData.forEach((eng, idx) => {
+
+        const seenEng = new Set();
+        let rankIdx = 0;
+        window.fameData.forEach((eng) => {
+            const engKey = (eng.engineer || '').trim().toUpperCase();
+            if (seenEng.has(engKey)) return;
+            seenEng.add(engKey);
+
             let medali = '';
-            if (idx === 0) medali = 'ðŸ¥‡';
-            else if (idx === 1) medali = 'ðŸ¥ˆ';
-            else if (idx === 2) medali = 'ðŸ¥‰';
-            else medali = 'ðŸŽ–ï¸';
+            if (rankIdx === 0) medali = '\u{1F947}';
+            else if (rankIdx === 1) medali = '\u{1F948}';
+            else if (rankIdx === 2) medali = '\u{1F949}';
+            else medali = '\u{1F396}\u{FE0F}';
             
-            text += `${medali} *${eng.engineer}* (${eng.resolvedBranch})\n` +
-                    `   Total GD : ${eng.gdCount}\n` +
-                    `   Repair   : ${eng.gdRepair}\n` +
-                    `   Cancel   : ${eng.gdCancel}\n\n`;
+            text += `${medali} *${eng.engineer}* (${eng.resolvedBranch || eng.asc || '-'})` +
+                    `\n   Total GD : ${eng.gdCount}` +
+                    `\n   Repair   : ${eng.gdRepair}` +
+                    `\n   Cancel   : ${eng.gdCancel}\n\n`;
+            rankIdx++;
         });
         
-        text += `Terus tingkatkan produktivitas dan pertahankan performa luar biasa ini! ðŸ”¥ðŸ‘`;
-        
-        
+        text += `Terus tingkatkan produktivitas dan pertahankan performa luar biasa ini! \u{1F525}\u{1F44D}`;
         
         navigator.clipboard.writeText(text).then(() => {
             showToastNotification('Daftar Wall of Fame berhasil disalin! Silakan paste di Grup WA.');
         }).catch(err => {
             console.error('Failed to copy text: ', err);
-            showToastNotification('Failed to copy text. Pastikan browser mengizinkan akses Clipboard.');
+            showToastNotification('Failed to copy text.');
         });
-
     });
 }
+
 
 // Event Listener for Share Wall of Shame
 const btnShareShame = document.getElementById('btnShareShame');
@@ -1125,6 +1189,16 @@ function isDateToday(dateVal) {
 // Productivity Core Analytics Engine
 
 function renderFameTable(fameList) {
+    const uniqueFame = [];
+    const seen = new Set();
+    (fameList || []).forEach(f => {
+        const k = (f.engineer || '').trim().toUpperCase();
+        if (!seen.has(k)) {
+            seen.add(k);
+            uniqueFame.push(f);
+        }
+    });
+    fameList = uniqueFame;
     window.fameData = fameList;
     const tbodyFame = document.querySelector('#fame-table tbody');
     tbodyFame.innerHTML = '';
@@ -1141,12 +1215,12 @@ function renderFameTable(fameList) {
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td style="font-size: 0.85rem; font-weight: 500;">${item.resolvedBranch}</td>
-                <td style="font-size: 0.85rem; font-weight: 500;">${item.engineer}</td>
-                <td style="text-align:center;"><span style="color:var(--accent-blue); font-size:1rem; font-weight: 700;">${gdCountText}</span></td>
-                <td style="text-align:center; font-weight:700; font-size:1rem;">${avgGdText}</td>
-                <td style="color:var(--accent-green); font-weight:700; font-size: 1rem; text-align:center;">${repairText}</td>
-                <td style="color:var(--accent-red); font-weight:700; font-size: 1rem; text-align:center;">${cancelText}</td>
+                <td style="font-size: 0.85rem; font-weight: 600;">${item.resolvedBranch}</td>
+                <td style="font-size: 0.85rem; font-weight: 600;">${item.engineer}</td>
+                <td style="text-align:center;"><span style="color:var(--accent-blue); font-size:0.85rem; font-weight: 700;">${gdCountText}</span></td>
+                <td style="text-align:center; font-weight:700; font-size:0.85rem;">${avgGdText}</td>
+                <td style="color:var(--accent-green); font-weight:700; font-size: 0.85rem; text-align:center;">${repairText}</td>
+                <td style="color:var(--accent-red); font-weight:700; font-size: 0.85rem; text-align:center;">${cancelText}</td>
             `;
             tbodyFame.appendChild(tr);
         });
@@ -1192,7 +1266,9 @@ function showToastNotification(msg) {
 
 // Update DOM and Charts
 function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
-    
+    if (stats) window.dashboardSummary = stats;
+    if (branchStats) window.branchData = branchStats;
+    if (rcStats) window.rcData = rcStats;
 
     // Render KPI Scoreboard
     const kpiContainer = document.getElementById('kpi-cards-container');
@@ -1222,19 +1298,19 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         const calcPct = (count, total) => total > 0 ? (count / total) * 100 : 0;
         
         // Ex-LTP is a subset of pending that passed the LTP timeline, so total LTP includes Ex-LTP.
-        const mxLtp = stats.breakdownLtp.MX + stats.breakdownExLtp.MX;
-        const vdLtp = stats.breakdownLtp.VD + stats.breakdownExLtp.VD;
-        const daLtp = stats.breakdownLtp.DA + stats.breakdownExLtp.DA;
+        const mxLtp = (stats.breakdownLtp?.MX || 0) + (stats.breakdownExLtp?.MX || 0);
+        const vdLtp = (stats.breakdownLtp?.VD || 0) + (stats.breakdownExLtp?.VD || 0);
+        const daLtp = (stats.breakdownLtp?.DA || 0) + (stats.breakdownExLtp?.DA || 0);
 
         // Targets based on 2026 KPI Image
-        kpiContainer.innerHTML += renderKPIBox('MX LTP (> 3d)', 5.8, calcPct(mxLtp, stats.totalCat.MX));
-        kpiContainer.innerHTML += renderKPIBox('VD LTP (> 7d)', 7.6, calcPct(vdLtp, stats.totalCat.VD));
-        kpiContainer.innerHTML += renderKPIBox('DA LTP (> 5d)', 5.3, calcPct(daLtp, stats.totalCat.DA));
+        kpiContainer.innerHTML += renderKPIBox('MX LTP (> 3d)', 5.8, calcPct(mxLtp, stats.totalCat?.MX || 0));
+        kpiContainer.innerHTML += renderKPIBox('VD LTP (> 7d)', 7.6, calcPct(vdLtp, stats.totalCat?.VD || 0));
+        kpiContainer.innerHTML += renderKPIBox('DA LTP (> 5d)', 5.3, calcPct(daLtp, stats.totalCat?.DA || 0));
         
         // Ex-LTP Targets based on 2026 KPI Image
-        kpiContainer.innerHTML += renderKPIBox('MX EX-LTP (> 7d)', 1.23, calcPct(stats.breakdownExLtp.MX, stats.totalCat.MX));
-        kpiContainer.innerHTML += renderKPIBox('VD EX-LTP (> 14d)', 0.88, calcPct(stats.breakdownExLtp.VD, stats.totalCat.VD));
-        kpiContainer.innerHTML += renderKPIBox('DA EX-LTP (> 14d)', 0.88, calcPct(stats.breakdownExLtp.DA, stats.totalCat.DA));
+        kpiContainer.innerHTML += renderKPIBox('MX EX-LTP (> 7d)', 1.23, calcPct(stats.breakdownExLtp?.MX || 0, stats.totalCat?.MX || 0));
+        kpiContainer.innerHTML += renderKPIBox('VD EX-LTP (> 14d)', 0.88, calcPct(stats.breakdownExLtp?.VD || 0, stats.totalCat?.VD || 0));
+        kpiContainer.innerHTML += renderKPIBox('DA EX-LTP (> 14d)', 0.88, calcPct(stats.breakdownExLtp?.DA || 0, stats.totalCat?.DA || 0));
         
         kpiScoreboard.style.display = 'block';
     }
@@ -1260,7 +1336,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             labels: ['MX (Mobile)', 'VD (TV)', 'DA (Appliances)'],
             datasets: [{
                 label: 'Pending LTP/Ex-LTP',
-                data: [stats.breakdownLtp.MX, stats.breakdownLtp.VD, stats.breakdownLtp.DA],
+                data: [stats.breakdownLtp?.MX || 0, stats.breakdownLtp?.VD || 0, stats.breakdownLtp?.DA || 0],
                 backgroundColor: [
                     'rgba(37, 99, 235, 0.85)',
                     'rgba(139, 92, 246, 0.85)',
@@ -1333,7 +1409,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             data: {
                 labels: ['AGING (Branch Fault)', 'SEIN (Samsung Fault)', 'OTHER'],
                 datasets: [{
-                    data: [stats.breakdownResp.aging, stats.breakdownResp.sein, stats.breakdownResp.other],
+                    data: [(stats.responsibility?.AGING ?? stats.breakdownResp?.aging ?? 0), (stats.responsibility?.SEIN ?? stats.breakdownResp?.sein ?? 0), (stats.responsibility?.OTHER ?? stats.breakdownResp?.other ?? 0)],
                     backgroundColor: [gradRed, gradGreen, gradBlue],
                     borderColor: ['#f87171', '#34d399', '#60a5fa'],
                     borderWidth: 2,
@@ -1370,7 +1446,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                 const tr = document.createElement('tr');
                 const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed');
                 const jobColor = isRC ? 'var(--accent-red)' : 'var(--text-main)';
-                const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">âš ï¸ TELANJUR RC</span>' : '';
+                const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">\u{26A0}\u{FE0F}  TELANJUR RC</span>' : '';
                 
                 tr.innerHTML = `
                     <td><strong>${item.asc}</strong></td>
@@ -1406,7 +1482,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
                 const tr = document.createElement('tr');
                 const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed');
                 const jobColor = isRC ? 'var(--accent-red)' : 'var(--text-main)';
-                const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">âš ï¸ TELANJUR RC</span>' : '';
+                const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">\u{26A0}\u{FE0F}  TELANJUR RC</span>' : '';
 
                 tr.innerHTML = `
                     <td><strong>${item.asc}</strong></td>
@@ -1582,7 +1658,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
         sortedShame.forEach(item => {
             const hasPhone = !!(window.techContacts || {})[item.engineer];
             const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
-            const warningTag = isRC ? '<br><span style=\"background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;\">âš ï¸ TELANJUR RC</span>' : '';
+            const warningTag = isRC ? '<br><span style=\"background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;\">\u{26A0}\u{FE0F}  TELANJUR RC</span>' : '';
             const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
             
             const tr = document.createElement('tr');
@@ -1702,7 +1778,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     });
 
     if (sortedBranches.length === 0) {
-        tbodyBranch.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted); font-size: 0.95rem;">ðŸŽ‰ Awesome! No branches currently have violations or penalties.</td></tr>`;
+        tbodyBranch.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted); font-size: 0.95rem;">\u{1F389} Awesome! No branches currently have violations or penalties.</td></tr>`;
     } else {
         sortedBranches.forEach(branch => {
             const bs = branchStats[branch];
@@ -1795,7 +1871,7 @@ function renderRedoTable() {
     sortedRedo.forEach(item => {
         const tr = document.createElement('tr');
         const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed' || item.status === 'REDO');
-        const warningTag = `<br><span style="background:var(--accent-orange); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">âš ï¸ REDO</span>`;
+        const warningTag = `<br><span style="background:var(--accent-orange); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">\u{26A0}\u{FE0F}  REDO</span>`;
 
         tr.innerHTML = `
             <td><strong>${item.asc}</strong></td>
@@ -2038,7 +2114,7 @@ if(btnRequestAccessWa) {
         const nama = prompt("Masukkan nama Anda:");
         if (!nama || nama.trim() === '') return;
         
-        const pesan = `ðŸ”‘ *REQUEST AKSES RULES CONFIG*\n\nHalo Ndan,\nSaya *${nama.trim()}* ingin meminta izin akses ke menu *Rules Config* di Dashboard BUJM.\n\nMohon diberikan password-nya ya Ndan. Terima kasih! ðŸ™`;
+        const pesan = `\u{1F511} *REQUEST AKSES RULES CONFIG*\n\nHalo Ndan,\nSaya *${nama.trim()}* ingin meminta izin akses ke menu *Rules Config* di Dashboard BUJM.\n\nMohon diberikan password-nya ya Ndan. Terima kasih! \u{1F64F}`;
         
         const url = `https://wa.me/${ADMIN_WA_NUMBER}?text=${encodeURIComponent(pesan)}`;
         window.open(url, '_blank');
@@ -2324,6 +2400,16 @@ const btnSaveContacts = document.getElementById('btn-save-contacts');
 const contactsTableBody = document.getElementById('contacts-table-body');
 
 btnContacts.addEventListener('click', () => {
+    // Populate HOM fields
+    const homPhoneInput = document.getElementById('hom-phone-input');
+    const homNameInput = document.getElementById('hom-name-input');
+    if (homPhoneInput) {
+        homPhoneInput.value = (window.techContacts && window.techContacts['HEAD_OPERASIONAL_MANAGER']) || '';
+    }
+    if (homNameInput) {
+        homNameInput.value = (window.techNames && window.techNames['HEAD_OPERASIONAL_MANAGER']) || '';
+    }
+
     renderContactsTable();
     contactsModal.classList.remove('hidden');
 });
@@ -2336,6 +2422,20 @@ btnSaveContacts.addEventListener('click', () => {
     // Get working copy from global state to avoid overwriting un-rendered contacts
     let currentPhones = { ...(window.techContacts || {}) };
     let currentNames = { ...(window.techNames || {}) };
+
+    // Save HOM contact
+    const homPhoneInput = document.getElementById('hom-phone-input');
+    const homNameInput = document.getElementById('hom-name-input');
+    if (homPhoneInput) {
+        const hp = homPhoneInput.value.trim();
+        if (hp) currentPhones['HEAD_OPERASIONAL_MANAGER'] = hp;
+        else delete currentPhones['HEAD_OPERASIONAL_MANAGER'];
+    }
+    if (homNameInput) {
+        const hn = homNameInput.value.trim();
+        if (hn) currentNames['HEAD_OPERASIONAL_MANAGER'] = hn;
+        else delete currentNames['HEAD_OPERASIONAL_MANAGER'];
+    }
 
     const inputs = contactsTableBody.querySelectorAll('.tech-phone');
     inputs.forEach(input => {
@@ -2355,7 +2455,7 @@ btnSaveContacts.addEventListener('click', () => {
     });
     
     saveTechContacts(currentPhones, currentNames, () => {
-        showToastNotification('WhatsApp Contacts Database saved to Cloud!');
+        showToastNotification('WhatsApp Contacts Database (termasuk Kontak HOM) tersimpan ke Cloud!');
         contactsModal.classList.add('hidden');
         
         if (window.engineerData) {
@@ -2500,52 +2600,188 @@ window.openDosaModal = function(asc) {
 
 // Modal Handling Functions
 window.openModal = function(branch, metric) {
-    if (!window.branchData || !window.branchData[branch] || !window.branchData[branch].bills[metric] || window.branchData[branch].bills[metric].length === 0) {
-        return; // Do nothing if no data
+    let bills = [];
+    
+    // 1. Direct from branchData
+    if (window.branchData && window.branchData[branch] && window.branchData[branch].bills && Array.isArray(window.branchData[branch].bills[metric]) && window.branchData[branch].bills[metric].length > 0) {
+        bills = window.branchData[branch].bills[metric];
     }
     
-    document.getElementById('modal-extra-info').innerHTML = ''; // Reset extra info
-    const thead = document.getElementById('modal-thead');
-    thead.style.display = ''; // Show thead
-    thead.innerHTML = `
-        <tr>
-            <th>Job No / S.O.</th>
-            <th>Customer Name</th>
-            <th>Model</th>
-            <th>Reason</th>
-            <th>Pending Days</th>
-        </tr>
-    `;
+    // 1b. Direct from rcData for 'rc'
+    if (bills.length === 0 && metric === 'rc') {
+        if (window.rcData && window.rcData[branch] && Array.isArray(window.rcData[branch].bills)) {
+            bills = window.rcData[branch].bills;
+        }
+    }
     
-    const bills = window.branchData[branch].bills[metric];
+    // 2. Fallbacks for 'total' (Total S/O)
+    if (bills.length === 0 && metric === 'total') {
+        if (window.soBillsByBranchGlobal && Array.isArray(window.soBillsByBranchGlobal[branch]) && window.soBillsByBranchGlobal[branch].length > 0) {
+            bills = window.soBillsByBranchGlobal[branch];
+        } else if (window.rawDashboardData && window.rawDashboardData.soBillsByBranch && Array.isArray(window.rawDashboardData.soBillsByBranch[branch])) {
+            bills = window.rawDashboardData.soBillsByBranch[branch];
+        }
+    }
+    
+    // 3. Fallback from fuzzy branch matching
+    if (bills.length === 0 && metric === 'total') {
+        const soSources = [window.soBillsByBranchGlobal, (window.rawDashboardData && window.rawDashboardData.soBillsByBranch)];
+        for (const src of soSources) {
+            if (!src) continue;
+            for (const k in src) {
+                if (k.toUpperCase() === branch.toUpperCase() || k.toUpperCase().replace(/\s*-\s*/g, ' ') === branch.toUpperCase().replace(/\s*-\s*/g, ' ')) {
+                    if (Array.isArray(src[k]) && src[k].length > 0) {
+                        bills = src[k];
+                        break;
+                    }
+                }
+            }
+            if (bills.length > 0) break;
+        }
+    }
+
+    // 4. Secondary fallback for total: aggregate all known bills for this branch
+    if (bills.length === 0 && metric === 'total') {
+        const fallbackMap = new Map();
+        const addBills = (list) => {
+            if (!Array.isArray(list)) return;
+            list.forEach(b => {
+                const bBranch = (b.asc || b.branch || '').toUpperCase();
+                const targetBranch = branch.toUpperCase();
+                if (bBranch === targetBranch || bBranch.includes(targetBranch) || targetBranch.includes(bBranch)) {
+                    const id = b.jobNo || b['Job No'] || b['Service Order No.'];
+                    if (id && id !== 'N/A' && !fallbackMap.has(id)) {
+                        fallbackMap.set(id, {
+                            jobNo: id,
+                            customer: b.customer || b['Customer Name'] || '-',
+                            model: b.model || b['Model'] || '-',
+                            reason: b.reason || b['Reason For Pending / Transfer'] || '-',
+                            pendingDays: parseInt(b.pendingDays || b['Pending Days']) || 0,
+                            status: b.status || b['Status'] || '-',
+                            engineer: b.engineer || '-'
+                        });
+                    }
+                }
+            });
+        };
+        if (window.branchData && window.branchData[branch] && window.branchData[branch].bills) {
+            Object.keys(window.branchData[branch].bills).forEach(k => {
+                if (k !== 'total') addBills(window.branchData[branch].bills[k]);
+            });
+        }
+        if (window.dosaCabangData) addBills(window.dosaCabangData);
+        if (window.rcData && window.rcData[branch] && window.rcData[branch].bills) addBills(window.rcData[branch].bills);
+        if (window.mpuData) addBills(window.mpuData);
+        if (window.ubData) addBills(window.ubData);
+        bills = Array.from(fallbackMap.values());
+    }
+
+    if (!bills || bills.length === 0) {
+        if (typeof showToastNotification === 'function') {
+            showToastNotification(`Data ${metric === 'total' ? 'Total S/O' : metric} untuk ${branch} sedang disinkronkan...`);
+        }
+        return;
+    }
+    
+    const extraInfo = document.getElementById('modal-extra-info');
+    if (extraInfo) {
+        extraInfo.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; flex-wrap:wrap;">
+                <div style="position:relative; flex:1; min-width:240px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:0.85rem;"></i>
+                    <input type="text" id="modal-search-input" placeholder="🔍 Cari Job No, Model, Customer, Teknisi, Reason..." style="width:100%; padding:8px 12px 8px 36px; border-radius:8px; border:1px solid var(--border-glass); background:rgba(0,0,0,0.25); color:#fff; font-size:0.85rem; outline:none;">
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span id="modal-count-badge" style="font-size:0.82rem; font-weight:700; color:var(--accent-blue); background:rgba(37,99,235,0.15); padding:6px 14px; border-radius:20px; border:1px solid rgba(59,130,246,0.3); white-space:nowrap;">${bills.length} Units</span>
+                </div>
+            </div>
+        `;
+    }
+
+    const thead = document.getElementById('modal-thead');
+    thead.style.display = '';
+    
+    if (metric === 'total') {
+        thead.innerHTML = `
+            <tr>
+                <th style="width: 17%;">Job No / S.O.</th>
+                <th style="width: 22%;">Customer Name</th>
+                <th style="width: 17%;">Model</th>
+                <th style="width: 16%;">Technician</th>
+                <th style="width: 18%;">Reason</th>
+                <th style="width: 10%; text-align: center;">Aging</th>
+            </tr>
+        `;
+    } else {
+        thead.innerHTML = `
+            <tr>
+                <th>Job No / S.O.</th>
+                <th>Customer Name</th>
+                <th>Model</th>
+                <th>Reason</th>
+                <th>Pending Days</th>
+            </tr>
+        `;
+    }
     
     const metricNames = {
-        total: 'Total S/O',
+        total: 'Total S/O (Active Units)',
         ltp: 'LTP (Aging)',
         exLtp: 'Ex-LTP',
         mpu: 'MPU Violations',
+        ub: 'UB Violations',
         x09: 'X09 Violations'
     };
     
-    document.getElementById('modal-title').innerText = `${branch} - ${metricNames[metric]} Details (${bills.length} units)`;
+    document.getElementById('modal-title').innerText = `${branch} - ${metricNames[metric] || metric} Details (${bills.length} units)`;
     
     const tbody = document.querySelector('#modal-table tbody');
     tbody.innerHTML = '';
     
     // Urutkan bills Z-A berdasarkan pendingDays (Terlama di atas)
-    bills.sort((a, b) => b.pendingDays - a.pendingDays);
+    bills.sort((a, b) => (parseInt(b.pendingDays) || 0) - (parseInt(a.pendingDays) || 0));
     
     bills.forEach(b => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${b.jobNo}</strong></td>
-            <td>${b.customer}</td>
-            <td>${b.model}</td>
-            <td style="font-size:0.8rem; color:var(--text-muted);">${b.reason}</td>
-            <td style="color:var(--accent-red); font-weight:bold;">${b.pendingDays} days</td>
-        `;
+        const days = parseInt(b.pendingDays) || 0;
+        if (metric === 'total') {
+            const dayColor = days > 7 ? '#ef4444' : (days > 3 ? '#f59e0b' : 'var(--text-main)');
+            tr.innerHTML = `
+                <td><strong style="color:var(--accent-blue); font-family:monospace; font-size:0.9rem;">${b.jobNo}</strong></td>
+                <td>${b.customer || '-'}</td>
+                <td><span style="background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; font-size:0.82rem;">${b.model || '-'}</span></td>
+                <td style="color:#60a5fa; font-weight:600; font-size:0.85rem;">${b.engineer || '-'}</td>
+                <td style="font-size:0.82rem; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${b.reason || '-'}">${b.reason || '-'}</td>
+                <td style="color:${dayColor}; font-weight:bold; text-align:center;">${days}d</td>
+            `;
+        } else {
+            tr.innerHTML = `
+                <td><strong>${b.jobNo}</strong></td>
+                <td>${b.customer || '-'}</td>
+                <td>${b.model || '-'}</td>
+                <td style="font-size:0.8rem; color:var(--text-muted);">${b.reason || '-'}</td>
+                <td style="color:var(--accent-red); font-weight:bold; text-align:center;">${days} days</td>
+            `;
+        }
         tbody.appendChild(tr);
     });
+
+    // Wire live search in modal
+    const searchInput = document.getElementById('modal-search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            const rows = tbody.querySelectorAll('tr');
+            let visibleCount = 0;
+            rows.forEach(r => {
+                const match = !q || r.innerText.toLowerCase().includes(q);
+                r.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+            const badge = document.getElementById('modal-count-badge');
+            if (badge) badge.innerText = `${visibleCount} / ${bills.length} Units`;
+        });
+    }
     
     document.getElementById('detail-modal').classList.remove('hidden');
     document.getElementById('detail-modal').classList.add('active');
@@ -2793,7 +3029,7 @@ async function handleRedoImage(file) {
     
     if (!result.uniqueJobs || result.uniqueJobs.length === 0) {
         console.log('No Service Order No found in image!');
-        showToastNotification('âš ï¸ No Service Order Number (10-digit Job No) detected in this image.');
+        showToastNotification('\u{26A0}\u{FE0F}  No Service Order Number (10-digit Job No) detected in this image.');
         return;
     }
 
@@ -3145,7 +3381,7 @@ function renderRedoTable() {
     window.redoList.forEach(item => {
         const hasPhone = !!(window.techContacts || {})[item.engineer];
         const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
-        const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">âš ï¸ TELANJUR RC</span>' : '';
+        const warningTag = isRC ? '<br><span style="background:var(--accent-red); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">\u{26A0}\u{FE0F}  TELANJUR RC</span>' : '';
         const waColor = hasPhone ? '#25D366' : 'var(--text-muted)';
         
         let branchDisplay = item.asc || 'UNKNOWN';
@@ -3213,7 +3449,7 @@ window.sendWARedo = function(engName, jobNo, model) {
     
     let displayName = (window.techNames || {})[engName] || engName;
     
-    let text = `ðŸš¨ *PERINGATAN REDO (BOUNCING)!*\n\nHalo ${displayName},\nKami mendeteksi adanya servis berulang (REDO) untuk Job No: *${jobNo}* (${model}).\n\nTolong segera tindak lanjuti unit ini dengan perbaikan maksimal agar tidak bounce untuk yang ketiga kalinya!\n\nTerima kasih.`;
+    let text = `\u{1F6A8} *PERINGATAN REDO (BOUNCING)!*\n\nHalo ${displayName},\nKami mendeteksi adanya servis berulang (REDO) untuk Job No: *${jobNo}* (${model}).\n\nTolong segera tindak lanjuti unit ini dengan perbaikan maksimal agar tidak bounce untuk yang ketiga kalinya!\n\nTerima kasih.`;
     
     const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
@@ -3232,7 +3468,7 @@ if (btnShareRedo) {
         
         window.redoList.forEach((item, idx) => {
             const isRC = item.status && (item.status === 'Repair Completed' || item.status.includes('Completed'));
-            const rcWarning = isRC ? ' [âš ï¸ TELANJUR RC]' : '';
+            const rcWarning = isRC ? ' [\u{26A0}\u{FE0F}  TELANJUR RC]' : '';
             
             text += `${idx + 1}. *${item.asc}* | ${item.engineer} | Job: ${item.jobNo} (${item.model})${rcWarning}\n`;
         });
@@ -3395,12 +3631,12 @@ window.renderGdDailyTable = function(gdDailyData) {
     if (maxDay === 0) maxDay = 31;
 
     // Header (Warna Biru standar sesuai header kolom tabel dashboard)
-    let headerHtml = `<tr style="position: sticky; top: 0; background: var(--accent-blue); z-index: 2;"><th style="padding: 10px 14px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: left;">BRANCH</th>`;
+    let headerHtml = `<tr style="position: sticky; top: 0; background: var(--accent-blue); z-index: 2;"><th style="padding: 8px 10px; background: var(--accent-blue); color: #ffffff; font-size: 0.80rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: left;">BRANCH</th>`;
     for (let day = 1; day <= maxDay; day++) {
-        headerHtml += `<th style="padding: 10px 6px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); min-width: 36px; text-align: center;">${day}</th>`;
+        headerHtml += `<th style="padding: 8px 6px; background: var(--accent-blue); color: #ffffff; font-size: 0.80rem; font-weight: 700; border: 1px solid var(--border-glass); min-width: 36px; text-align: center;">${day}</th>`;
     }
-    headerHtml += `<th style="padding: 10px 14px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center;">TOTAL</th>`;
-    headerHtml += `<th style="padding: 10px 14px; background: var(--accent-blue); color: #ffffff; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center; white-space: nowrap;">ESTIMASI GD</th></tr>`;
+    headerHtml += `<th style="padding: 8px 10px; background: var(--accent-blue); color: #ffffff; font-size: 0.80rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center;">TOTAL</th>`;
+    headerHtml += `<th style="padding: 8px 10px; background: var(--accent-blue); color: #ffffff; font-size: 0.80rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center; white-space: nowrap;">ESTIMASI GD</th></tr>`;
     thead.innerHTML = headerHtml;
 
     // Rows
@@ -3421,7 +3657,7 @@ window.renderGdDailyTable = function(gdDailyData) {
         const branchDays = gdDailyData[branch] || {};
         let branchTotal = 0;
         let sumYesterday = 0;
-        let rowHtml = `<tr><td style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); padding: 8px 14px; border: 1px solid var(--border-glass); text-align: left; white-space: nowrap;">${branch}</td>`;
+        let rowHtml = `<tr><td style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); padding: 7px 10px; border: 1px solid var(--border-glass); text-align: left; white-space: nowrap;">${branch}</td>`;
         
         for (let day = 1; day <= maxDay; day++) {
             const val = parseInt(branchDays[day]) || 0;
@@ -3434,11 +3670,11 @@ window.renderGdDailyTable = function(gdDailyData) {
 
             const displayVal = val > 0 ? val : '-';
             const textStyle = val > 0 ? 'font-weight: 600; color: var(--text-main);' : 'color: var(--text-muted);';
-            rowHtml += `<td style="font-size: 0.95rem; ${textStyle} padding: 8px 6px; border: 1px solid var(--border-glass); text-align: center;">${displayVal}</td>`;
+            rowHtml += `<td style="font-size: 0.85rem; ${textStyle} padding: 7px 6px; border: 1px solid var(--border-glass); text-align: center;">${displayVal}</td>`;
         }
         
         grandTotal += branchTotal;
-        rowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); padding: 8px 14px; border: 1px solid var(--border-glass); text-align: center;">${branchTotal}</td>`;
+        rowHtml += `<td style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${branchTotal}</td>`;
 
         // ESTIMASI GD: Prediksi total GD hingga tgl akhir bulan
         // Cara hitung: Average GD dari tgl 1 s/d kemarin (bukan hari ini) dikali total hari kalender bulan ini
@@ -3454,12 +3690,749 @@ window.renderGdDailyTable = function(gdDailyData) {
             tooltipText = `Estimasi GD tgl 1: ${branchTotal} x ${totalDaysInMonth} hari`;
         }
 
-        rowHtml += `<td style="font-size: 0.95rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.08); padding: 8px 14px; border: 1px solid var(--border-glass); text-align: center;" title="${tooltipText}">${estimasiVal}</td></tr>`;
+        rowHtml += `<td style="font-size: 0.85rem; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.08); padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;" title="${tooltipText}">${estimasiVal}</td></tr>`;
         tbody.innerHTML += rowHtml;
     });
 
     
 };
+
+window.renderVolInVsGdTable = function(volInTrendData, gdTrendData) {
+    const table = document.getElementById('vol-in-vs-gd-table');
+    if (!table) return;
+
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    if (!thead || !tbody) return;
+
+    // Dynamic 4 months in English: 3 past months + current month MTD
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const monthNames = [
+        'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+        'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+    ];
+
+    const monthsConfig = [];
+    for (let i = 3; i >= 0; i--) {
+        const d = new Date(currentYear, currentMonth - i, 1);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const padM = String(m + 1).padStart(2, '0');
+        const key = `${y}-${padM}`;
+        const name = monthNames[m];
+        const isCurrent = (i === 0);
+        monthsConfig.push({
+            key: key,
+            label: isCurrent ? `${name} ${y} (MTD)` : `${name} ${y}`,
+            sub: '(VOL IN | GD | %)',
+            isCurrent: isCurrent
+        });
+    }
+
+    volInTrendData = volInTrendData || {};
+    gdTrendData = gdTrendData || {};
+    window.volInTrendDataGlobal = volInTrendData;
+    window.gdTrendDataGlobal = gdTrendData;
+
+    const branchSet = new Set();
+
+    monthsConfig.forEach(m => {
+        if (volInTrendData[m.key]) {
+            Object.keys(volInTrendData[m.key]).forEach(b => {
+                if (b && b.trim()) branchSet.add(b.trim());
+            });
+        }
+        if (gdTrendData[m.key]) {
+            Object.keys(gdTrendData[m.key]).forEach(b => {
+                if (b && b.trim()) branchSet.add(b.trim());
+            });
+        }
+    });
+
+    const preferredOrder = [
+        'DENPASAR',
+        'DENPASAR - CELLULAR WORLD',
+        'DENPASAR - PLANET GADGET'
+    ];
+    const branches = Array.from(branchSet).sort((a, b) => {
+        const idxA = preferredOrder.indexOf(a);
+        const idxB = preferredOrder.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+    });
+
+    // 1. Table Header (English & styled to match dashboard theme)
+    let headerHtml = '<tr style="position: sticky; top: 0; z-index: 3; background: var(--accent-blue);">';
+    headerHtml += '<th style="padding: 8px 10px; background: var(--accent-blue); color: #ffffff; font-size: 0.80rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center; width: 45px;">NO</th>';
+    headerHtml += '<th style="padding: 8px 10px; background: var(--accent-blue); color: #ffffff; font-size: 0.80rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: left; min-width: 170px;">BRANCH (ASC)</th>';
+
+    monthsConfig.forEach(m => {
+        headerHtml += `<th style="padding: 8px 10px; background: var(--accent-blue); color: #ffffff; font-size: 0.80rem; font-weight: 700; border: 1px solid var(--border-glass); text-align: center; min-width: 175px; line-height: 1.35;">
+            ${m.label}<br>
+            <span style="font-size: 0.72rem; font-weight: 600; opacity: 0.95; color: #bae6fd;">(VOL IN | GD | %)</span>
+        </th>`;
+    });
+
+    // Kolom paling kanan: Average 3 Months (Eksklusif MTD)
+    headerHtml += `<th style="padding: 8px 10px; background: #1d4ed8; color: #ffffff; font-size: 0.80rem; font-weight: 800; border: 1px solid var(--border-glass); text-align: center; min-width: 180px; line-height: 1.35;" title="Rata-rata 3 Bulan Terakhir (Bulan Berjalan MTD Tidak Dihitung)">
+        AVG 3 MONTHS<br>
+        <span style="font-size: 0.72rem; font-weight: 600; opacity: 0.95; color: #bae6fd;">(VOL IN | GD | %)</span>
+    </th>`;
+
+    headerHtml += '</tr>';
+    thead.innerHTML = headerHtml;
+
+    // 2. Data Rows
+    tbody.innerHTML = '';
+    const colTotals = {};
+    monthsConfig.forEach(m => {
+        colTotals[m.key] = { volIn: 0, gd: 0 };
+    });
+
+    const pastMonthsCount = monthsConfig.filter(m => !m.isCurrent).length || 3;
+
+    branches.forEach((branch, idx) => {
+        let rowHtml = '<tr>';
+        rowHtml += `<td style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${idx + 1}</td>`;
+        rowHtml += `<td style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); padding: 7px 10px; border: 1px solid var(--border-glass); text-align: left; white-space: nowrap;">${branch}</td>`;
+
+        let past3VInSum = 0;
+        let past3GdSum = 0;
+
+        monthsConfig.forEach(m => {
+            const vIn = (volInTrendData[m.key] && parseInt(volInTrendData[m.key][branch])) || 0;
+            const gd = (gdTrendData[m.key] && parseInt(gdTrendData[m.key][branch])) || 0;
+            const rate = vIn > 0 ? ((gd / vIn) * 100).toFixed(1) + '%' : (gd > 0 ? '100%' : '-');
+
+            colTotals[m.key].volIn += vIn;
+            colTotals[m.key].gd += gd;
+
+            if (!m.isCurrent) {
+                past3VInSum += vIn;
+                past3GdSum += gd;
+            }
+
+            let cellContent = '<span style="color: var(--text-muted);">-</span>';
+            if (vIn > 0 || gd > 0) {
+                const vInStr = vIn > 0 ? vIn.toLocaleString('id-ID') : '0';
+                const gdStr = gd > 0 ? gd.toLocaleString('id-ID') : '0';
+                cellContent = `<span style="font-weight: 700; color: #0f172a;">${vInStr}</span> <span style="color: #64748b; margin: 0 4px; font-weight: 700;">|</span> <span style="font-weight: 700; color: #059669;">${gdStr}</span> <span style="color: #64748b; margin: 0 4px; font-weight: 700;">|</span> <span style="font-weight: 700; color: #d97706;">${rate}</span>`;
+            }
+
+            rowHtml += `<td style="font-size: 0.85rem; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center; white-space: nowrap;">${cellContent}</td>`;
+        });
+
+        // Kolom paling kanan: Average 3 months (bulan berjalan tidak dihitung)
+        const avgVIn = Math.round(past3VInSum / pastMonthsCount);
+        const avgGd = Math.round(past3GdSum / pastMonthsCount);
+        const avgRate = avgVIn > 0 ? ((avgGd / avgVIn) * 100).toFixed(1) + '%' : (avgGd > 0 ? '100%' : '-');
+
+        let avgCellContent = '<span style="color: var(--text-muted);">-</span>';
+        if (avgVIn > 0 || avgGd > 0) {
+            const avgVInStr = avgVIn > 0 ? avgVIn.toLocaleString('id-ID') : '0';
+            const avgGdStr = avgGd > 0 ? avgGd.toLocaleString('id-ID') : '0';
+            avgCellContent = `<span style="font-weight: 700; color: #0f172a;">${avgVInStr}</span> <span style="color: #64748b; margin: 0 4px; font-weight: 700;">|</span> <span style="font-weight: 700; color: #059669;">${avgGdStr}</span> <span style="color: #64748b; margin: 0 4px; font-weight: 700;">|</span> <span style="font-weight: 700; color: #d97706;">${avgRate}</span>`;
+        }
+
+        rowHtml += `<td style="font-size: 0.85rem; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center; white-space: nowrap; background: rgba(37, 99, 235, 0.04);">${avgCellContent}</td>`;
+
+        rowHtml += '</tr>';
+        tbody.innerHTML += rowHtml;
+    });
+
+    // 3. Total Area / All Row (Mockup Style)
+    let footHtml = '<tr style="background: rgba(15, 23, 42, 0.9); border-top: 2px solid var(--accent-blue); font-weight: 700;">';
+    footHtml += '<td style="padding: 8px 10px; color: #38bdf8; border: 1px solid var(--border-glass); text-align: center; font-size: 0.95rem; font-weight: 800;">&Sigma;</td>';
+    footHtml += '<td style="padding: 8px 10px; color: #f8fafc; border: 1px solid var(--border-glass); text-align: left; font-size: 0.88rem; font-weight: 800; white-space: nowrap;">TOTAL AREA / ALL</td>';
+
+    let totalPast3VIn = 0;
+    let totalPast3Gd = 0;
+
+    monthsConfig.forEach(m => {
+        const tVIn = colTotals[m.key].volIn;
+        const tGd = colTotals[m.key].gd;
+        const tRate = tVIn > 0 ? ((tGd / tVIn) * 100).toFixed(1) + '%' : '-';
+
+        if (!m.isCurrent) {
+            totalPast3VIn += tVIn;
+            totalPast3Gd += tGd;
+        }
+
+        let cellContent = '-';
+        if (tVIn > 0 || tGd > 0) {
+            cellContent = `<span style="font-weight: 800; color: #ffffff;">${tVIn.toLocaleString('id-ID')}</span> <span style="color: rgba(255,255,255,0.45); margin: 0 4px; font-weight: 700;">|</span> <span style="font-weight: 800; color: #34d399;">${tGd.toLocaleString('id-ID')}</span> <span style="color: rgba(255,255,255,0.45); margin: 0 4px; font-weight: 700;">|</span> <span style="font-weight: 800; color: #fbbf24;">${tRate}</span>`;
+        }
+
+        footHtml += `<td style="padding: 8px 10px; border: 1px solid var(--border-glass); text-align: center; white-space: nowrap; font-size: 0.88rem;">${cellContent}</td>`;
+    });
+
+    // Footer Avg 3 months (paling kanan)
+    const totAvgVIn = Math.round(totalPast3VIn / pastMonthsCount);
+    const totAvgGd = Math.round(totalPast3Gd / pastMonthsCount);
+    const totAvgRate = totAvgVIn > 0 ? ((totAvgGd / totAvgVIn) * 100).toFixed(1) + '%' : '-';
+
+    let totAvgCellContent = '-';
+    if (totAvgVIn > 0 || totAvgGd > 0) {
+        totAvgCellContent = `<span style="font-weight: 800; color: #ffffff;">${totAvgVIn.toLocaleString('id-ID')}</span> <span style="color: rgba(255,255,255,0.45); margin: 0 4px; font-weight: 700;">|</span> <span style="font-weight: 800; color: #34d399;">${totAvgGd.toLocaleString('id-ID')}</span> <span style="color: rgba(255,255,255,0.45); margin: 0 4px; font-weight: 700;">|</span> <span style="font-weight: 800; color: #fbbf24;">${totAvgRate}</span>`;
+    }
+
+    footHtml += `<td style="padding: 8px 10px; border: 1px solid var(--border-glass); text-align: center; white-space: nowrap; font-size: 0.88rem; background: rgba(37, 99, 235, 0.25);">${totAvgCellContent}</td>`;
+
+    footHtml += '</tr>';
+    tbody.innerHTML += footHtml;
+
+    if (typeof window.renderExecutiveSummaryTable === 'function') {
+        window.renderExecutiveSummaryTable();
+    }
+};
+
+// ==========================================
+// EXECUTIVE DAILY SUMMARY TABLE & REPORT ENGINE
+// ==========================================
+window.renderExecutiveSummaryTable = function() {
+    const table = document.getElementById('exec-summary-table');
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const padMonth = String(currentMonth + 1).padStart(2, '0');
+    const currentKey = `${currentYear}-${padMonth}`;
+
+    const volData = window.volInTrendDataGlobal || {};
+    const gdData = window.gdTrendDataGlobal || {};
+    const branchStats = window.branchData || {};
+    const rcData = window.rcData || {};
+    const dosaList = window.dosaCabangData || [];
+    const redoList = window.redoList || [];
+    const mpuList = window.mpuData || [];
+    const ubList = window.ubData || [];
+    const partsDaily = window.partsDailyDataGlobal || (window.rawDashboardData && window.rawDashboardData.partsDailyData) || {};
+    const partsList = window.partsSalesListGlobal || (window.rawDashboardData && window.rawDashboardData.partsSalesList) || [];
+
+    const branchSet = new Set();
+    Object.keys(volData[currentKey] || {}).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+    Object.keys(gdData[currentKey] || {}).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+    Object.keys(branchStats).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+    if (branchSet.size === 0) {
+        ['DENPASAR', 'DENPASAR - CELLULAR WORLD', 'DENPASAR - PLANET GADGET'].forEach(b => branchSet.add(b));
+    }
+
+    const preferredOrder = [
+        'DENPASAR',
+        'DENPASAR - CELLULAR WORLD',
+        'DENPASAR - PLANET GADGET'
+    ];
+    const branches = Array.from(branchSet).sort((a, b) => {
+        const idxA = preferredOrder.indexOf(a);
+        const idxB = preferredOrder.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+    });
+
+    tbody.innerHTML = '';
+
+    let totVIn = 0;
+    let totGd = 0;
+    let totParts = 0;
+    let totUnitAktif = 0;
+    let totLtp = 0;
+    let totAging7 = 0;
+    let totRC = 0;
+    let totRedo = 0;
+    let totPenalties = 0;
+
+    function matchBranchParts(branch, rowKey) {
+        const bUpper = branch.toUpperCase().trim();
+        const rUpper = rowKey.toUpperCase().trim();
+        if (bUpper.includes('CELLULAR WORLD')) return rUpper.includes('CELLULAR WORLD');
+        if (bUpper.includes('PLANET GADGET')) return rUpper.includes('PLANET GADGET');
+        if (bUpper === 'DENPASAR') return rUpper.startsWith('DENPASAR') && !rUpper.includes('CELLULAR WORLD') && !rUpper.includes('PLANET GADGET');
+        return rUpper.includes(bUpper);
+    }
+
+    branches.forEach((b, idx) => {
+        // 1. Pencapaian GD & Volume
+        const vIn = (volData[currentKey] && parseInt(volData[currentKey][b])) || 0;
+        const gd = (gdData[currentKey] && parseInt(gdData[currentKey][b])) || 0;
+        const rate = vIn > 0 ? ((gd / vIn) * 100).toFixed(1) + '%' : (gd > 0 ? '100%' : '-');
+
+        // 2. Aksesoris (Qty pcs terjual)
+        let bParts = 0;
+        Object.keys(partsDaily).forEach(rowKey => {
+            if (matchBranchParts(b, rowKey)) {
+                const days = partsDaily[rowKey] || {};
+                const sum = Object.keys(days).filter(k => k !== "partNos").reduce((acc, k) => acc + (parseInt(days[k]) || 0), 0);
+                bParts += sum;
+            }
+        });
+        if (bParts === 0 && Array.isArray(partsList)) {
+            partsList.forEach(item => {
+                if (matchBranchParts(b, item.branch || item.asc || '')) {
+                    bParts += (parseInt(item.qty) || 0);
+                }
+            });
+        }
+
+        // 3. Kontrol TAT & Aging: Unit Aktif, LTP, Aging > 7D, RC
+        const bs = (branchStats && branchStats[b]) || {};
+        const unitAktif = bs.total || 0;
+        const ltp = bs.ltp || 0;
+
+        let aging7 = 0;
+        if (window.dosaCabangStatsGlobal && window.dosaCabangStatsGlobal[b] && window.dosaCabangStatsGlobal[b].bills) {
+            aging7 = window.dosaCabangStatsGlobal[b].bills.length;
+        } else if (dosaList && dosaList.length > 0) {
+            aging7 = dosaList.filter(d => (d.asc || '').toUpperCase() === b.toUpperCase()).length;
+        } else {
+            aging7 = bs.exLtp || 0;
+        }
+
+        const rc = (rcData[b] && (parseInt(rcData[b].total) || parseInt(rcData[b].count))) || 0;
+
+        // 4. Quality & Compliance: Redo, Penalti MPU/UB/X09
+        const bRedo = redoList.filter(r => (r.asc || '').toUpperCase() === b.toUpperCase()).length;
+        const bMpu = mpuList.filter(m => (m.asc || '').toUpperCase() === b.toUpperCase()).length || (bs.mpu || 0);
+        const bUb = ubList.filter(u => (u.asc || '').toUpperCase() === b.toUpperCase()).length || (bs.ub || 0);
+        const bX09 = bs.x09 || 0;
+        const penalties = bMpu + bUb + bX09;
+
+        totVIn += vIn;
+        totGd += gd;
+        totParts += bParts;
+        totUnitAktif += unitAktif;
+        totLtp += ltp;
+        totAging7 += aging7;
+        totRC += rc;
+        totRedo += bRedo;
+        totPenalties += penalties;
+
+        let rowHtml = '<tr>';
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${idx + 1}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); padding: 7px 10px; border: 1px solid var(--border-glass); text-align: left; white-space: nowrap;">${b}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: #0f172a; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${vIn > 0 ? vIn.toLocaleString('id-ID') : '-'}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: #059669; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${gd > 0 ? gd.toLocaleString('id-ID') : '-'}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: #d97706; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${rate}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: ${bParts > 0 ? '#0284c7' : 'var(--text-muted)'}; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${bParts > 0 ? bParts.toLocaleString('id-ID') + ' pcs' : '-'}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: ${unitAktif > 0 ? 'var(--accent-blue)' : 'var(--text-muted)'}; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${unitAktif > 0 ? `<span class="clickable-number" style="cursor:pointer;" onclick="openModal('${b}', 'total')">${unitAktif.toLocaleString('id-ID')} Unit</span>` : '-'}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: ${ltp > 0 ? '#f59e0b' : 'var(--text-muted)'}; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${ltp > 0 ? `<span class="clickable-number" style="cursor:pointer;" onclick="openModal('${b}', 'ltp')">${ltp} Unit</span>` : '-'}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: ${aging7 > 0 ? '#ef4444' : 'var(--text-muted)'}; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${aging7 > 0 ? `<span class="clickable-number" style="cursor:pointer;" onclick="openModal('${b}', 'exLtp')">${aging7} Unit</span>` : '-'}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: ${rc > 0 ? '#0284c7' : 'var(--text-muted)'}; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${rc > 0 ? `<span class="clickable-number" style="cursor:pointer;" onclick="openModal('${b}', 'rc')">${rc} Unit</span>` : '-'}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: ${bRedo > 0 ? '#dc2626' : 'var(--text-muted)'}; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${bRedo > 0 ? bRedo + ' Unit' : '-'}</td>`;
+        rowHtml += `<td style="font-size: 0.82rem; font-weight: 700; color: ${penalties > 0 ? '#f43f5e' : 'var(--text-muted)'}; padding: 7px 10px; border: 1px solid var(--border-glass); text-align: center;">${penalties > 0 ? penalties + ' Kasus' : '0'}</td>`;
+        rowHtml += '</tr>';
+
+        tbody.innerHTML += rowHtml;
+    });
+
+    // Total Row
+    const totRate = totVIn > 0 ? ((totGd / totVIn) * 100).toFixed(1) + '%' : '-';
+
+    // Summary fallbacks if branchStats was empty
+    const summary = window.dashboardSummary || {};
+    if (totUnitAktif === 0 && (summary.total || summary.totalSO)) totUnitAktif = summary.total || summary.totalSO || 0;
+    if (totLtp === 0 && (summary.ltp || summary.totalLTP)) totLtp = summary.ltp || summary.totalLTP || 0;
+    if (totAging7 === 0 && (summary.exLtp || summary.totalExLTP)) totAging7 = summary.exLtp || summary.totalExLTP || 0;
+
+    let footHtml = '<tr style="background: rgba(15, 23, 42, 0.92); border-top: 2px solid #38bdf8; font-weight: 700;">';
+    footHtml += '<td style="padding: 9px 10px; color: #38bdf8; border: 1px solid var(--border-glass); text-align: center; font-size: 0.90rem; font-weight: 800;">&Sigma;</td>';
+    footHtml += '<td style="padding: 9px 10px; color: #ffffff; border: 1px solid var(--border-glass); text-align: left; font-size: 0.85rem; font-weight: 800; white-space: nowrap;">TOTAL AREA / ALL</td>';
+    footHtml += `<td style="padding: 9px 10px; color: #ffffff; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totVIn > 0 ? totVIn.toLocaleString('id-ID') : '0'}</td>`;
+    footHtml += `<td style="padding: 9px 10px; color: #34d399; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totGd > 0 ? totGd.toLocaleString('id-ID') : '0'}</td>`;
+    footHtml += `<td style="padding: 9px 10px; color: #fbbf24; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totRate}</td>`;
+    footHtml += `<td style="padding: 9px 10px; color: #38bdf8; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totParts > 0 ? totParts.toLocaleString('id-ID') + ' pcs' : '0 pcs'}</td>`;
+    footHtml += `<td style="padding: 9px 10px; color: #94a3b8; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totUnitAktif > 0 ? totUnitAktif.toLocaleString('id-ID') + ' Unit' : '0 Unit'}</td>`;
+    footHtml += `<td style="padding: 9px 10px; color: #fbbf24; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totLtp > 0 ? totLtp + ' Unit' : '0 Unit'}</td>`;
+    footHtml += `<td style="padding: 9px 10px; color: #f87171; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totAging7 > 0 ? totAging7 + ' Unit' : '0 Unit'}</td>`;
+    footHtml += `<td style="padding: 9px 10px; color: #38bdf8; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totRC > 0 ? totRC + ' Unit' : '0 Unit'}</td>`;
+    footHtml += `<td style="padding: 9px 10px; color: #f87171; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totRedo > 0 ? totRedo + ' Unit' : '0 Unit'}</td>`;
+    footHtml += `<td style="padding: 9px 10px; color: #fb7185; border: 1px solid var(--border-glass); text-align: center; font-size: 0.85rem; font-weight: 800;">${totPenalties > 0 ? totPenalties + ' Kasus' : '0 Kasus'}</td>`;
+    footHtml += '</tr>';
+
+    tbody.innerHTML += footHtml;
+};
+
+window.generateExecutiveReportText = function() {
+    const now = new Date();
+    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const indMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const fullIndMonthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+    
+    const dayStr = dayNames[now.getDay()];
+    const dateStr = `${dayStr}, ${now.getDate()} ${indMonthNames[now.getMonth()]} ${now.getFullYear()}`;
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WITA`;
+    const currentMonthName = fullIndMonthNames[now.getMonth()];
+
+    // Dynamic greeting based on current local hour
+    const hours = now.getHours();
+    let timeGreeting = 'pagi';
+    if (hours >= 11 && hours < 15) {
+        timeGreeting = 'siang';
+    } else if (hours >= 15 && hours < 18) {
+        timeGreeting = 'sore';
+    } else if (hours >= 18 || hours < 5) {
+        timeGreeting = 'malam';
+    }
+
+    // HOM recipient name
+    let rawHom = (window.techNames && window.techNames['HEAD_OPERASIONAL_MANAGER']) || '';
+    let homCleanName = rawHom.trim();
+    if (!homCleanName) {
+        homCleanName = 'HENDRI';
+    } else {
+        homCleanName = homCleanName.replace(/^(Pak|Bpk|Bapak)\s+/i, '');
+    }
+
+    // Months Config
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const monthsConfig = [];
+    for (let i = 3; i >= 0; i--) {
+        const d = new Date(currentYear, currentMonth - i, 1);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const padM = String(m + 1).padStart(2, '0');
+        monthsConfig.push({
+            key: `${y}-${padM}`,
+            isCurrent: (i === 0)
+        });
+    }
+    const currentKey = monthsConfig[3].key;
+
+    const volData = window.volInTrendDataGlobal || (window.rawDashboardData && window.rawDashboardData.volInTrendData) || {};
+    const gdData = window.gdTrendDataGlobal || (window.rawDashboardData && window.rawDashboardData.gdTrendData) || {};
+
+    const cleanBranchName = (b) => {
+        let bName = b.replace(/^DENPASAR\s*-\s*/i, '').trim();
+        bName = bName.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        if (bName.toLowerCase() === 'denpasar') bName = 'Denpasar';
+        return bName;
+    };
+
+    const cleanTechName = (t) => {
+        if (!t || t === '-') return '-';
+        return t.trim().toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    };
+
+    const matchBranch = (b, raw) => {
+        const bUpper = b.toUpperCase();
+        const rUpper = (raw || '').toUpperCase();
+        if (bUpper.includes('CELLULAR WORLD')) return rUpper.includes('CELLULAR WORLD');
+        if (bUpper.includes('PLANET GADGET')) return rUpper.includes('PLANET GADGET');
+        return rUpper.startsWith('DENPASAR') && !rUpper.includes('CELLULAR WORLD') && !rUpper.includes('PLANET GADGET');
+    };
+
+    const preferredOrder = ['DENPASAR', 'DENPASAR - CELLULAR WORLD', 'DENPASAR - PLANET GADGET'];
+    const branches = preferredOrder.filter(b => {
+        if (window.currentUserBranches && window.currentUserBranches.length > 0) {
+            return window.currentUserBranches.some(ab => b.toUpperCase().includes(ab.toUpperCase()));
+        }
+        return true;
+    });
+
+    let totVolIn = 0;
+    let totGd = 0;
+    const branchGdList = [];
+    const volInBreakdown = [];
+    const gdBreakdown = [];
+    const gdRateBreakdown = [];
+
+    branches.forEach(b => {
+        const v = (volData[currentKey] && parseInt(volData[currentKey][b])) || 0;
+        const g = (gdData[currentKey] && parseInt(gdData[currentKey][b])) || 0;
+        totVolIn += v;
+        totGd += g;
+        const rate = v > 0 ? ((g / v) * 100).toFixed(1) + '%' : (g > 0 ? '100%' : '0%');
+        const bLabel = cleanBranchName(b);
+        volInBreakdown.push(`${bLabel}: ${v.toLocaleString('id-ID')}`);
+        gdBreakdown.push(`${bLabel}: ${g.toLocaleString('id-ID')}`);
+        gdRateBreakdown.push(`${bLabel}: ${rate}`);
+        branchGdList.push({ branch: b, gd: g });
+    });
+
+    const totRate = totVolIn > 0 ? ((totGd / totVolIn) * 100).toFixed(1) + '%' : (totGd > 0 ? '100%' : '0%');
+
+    // Top branches list
+    branchGdList.sort((a, b) => b.gd - a.gd);
+    let topBranchesText = '';
+    branchGdList.forEach((item, idx) => {
+        topBranchesText += `${idx + 1}. ${cleanBranchName(item.branch)}: ${item.gd.toLocaleString('id-ID')} unit GD\n`;
+    });
+
+    // Accessories Sales (omit branches with 0)
+    let totalPartsQty = 0;
+    const partsBreakdown = [];
+    const partsDaily = window.partsDailyDataGlobal || (window.rawDashboardData && window.rawDashboardData.partsDailyData) || {};
+    const partsList = window.partsSalesListGlobal || (window.rawDashboardData && window.rawDashboardData.partsSalesList) || [];
+
+    branches.forEach(b => {
+        let sum = 0;
+        Object.keys(partsDaily).forEach(rowKey => {
+            if (matchBranch(b, rowKey)) {
+                const days = partsDaily[rowKey] || {};
+                sum += Object.keys(days).filter(k => k !== "partNos").reduce((acc, k) => acc + (parseInt(days[k]) || 0), 0);
+            }
+        });
+        if (sum === 0 && Array.isArray(partsList)) {
+            partsList.forEach(item => {
+                if (matchBranch(b, item.asc || item.branch)) {
+                    sum += (parseInt(item.qty) || 0);
+                }
+            });
+        }
+        totalPartsQty += sum;
+        if (sum > 0) {
+            partsBreakdown.push(`${cleanBranchName(b)}: ${sum.toLocaleString('id-ID')}`);
+        }
+    });
+
+    // Health of Aging & TAT
+    const branchStats = window.branchData || (window.rawDashboardData && window.rawDashboardData.branchStats) || {};
+    const rcData = window.rcData || (window.rawDashboardData && window.rawDashboardData.rcStats) || {};
+    const dosaList = window.dosaCabangData || (window.rawDashboardData && window.rawDashboardData.dosaCabangOver7) || [];
+    const dosaStats = window.dosaCabangStatsGlobal || (window.rawDashboardData && window.rawDashboardData.dosaCabangStats) || {};
+
+    let totalSO = 0;
+    let totalLTP = 0;
+    let totalExLTP = 0;
+    let totalRC = 0;
+
+    const soBreakdown = [];
+    const ltpBreakdown = [];
+    const exLtpBreakdown = [];
+    const rcBreakdown = [];
+
+    branches.forEach(b => {
+        const bs = branchStats[b] || {};
+        const bSO = bs.total || 0;
+        totalSO += bSO;
+        soBreakdown.push(`${cleanBranchName(b)}: ${bSO.toLocaleString('id-ID')}`);
+
+        // LTP (omit 0)
+        const bLtpBills = (bs.bills && bs.bills.ltp) || [];
+        const bLtp = bs.ltp !== undefined ? bs.ltp : bLtpBills.length;
+        totalLTP += bLtp;
+        if (bLtpBills.length === 1) {
+            ltpBreakdown.push(`${cleanBranchName(b)}: ${bLtpBills[0].jobNo || bLtpBills[0]['Job No']} [${cleanTechName(bLtpBills[0].engineer)}]`);
+        } else if (bLtpBills.length > 1) {
+            const listStr = bLtpBills.map(x => `${x.jobNo || x['Job No']} [${cleanTechName(x.engineer)}]`).join(', ');
+            ltpBreakdown.push(`${cleanBranchName(b)}: ${bLtpBills.length} unit (${listStr})`);
+        }
+
+        // Critical Aging (> 7 hari / Ex-LTP) - detail all bills without "dll"
+        let bExBills = [];
+        if (dosaStats[b] && Array.isArray(dosaStats[b].bills)) {
+            bExBills = dosaStats[b].bills;
+        } else if (dosaList && dosaList.length > 0) {
+            bExBills = dosaList.filter(d => matchBranch(b, d.asc || d.branch));
+        } else if (bs.bills && Array.isArray(bs.bills.exLtp)) {
+            bExBills = bs.bills.exLtp;
+        }
+
+        const bAging7 = bExBills.length || bs.exLtp || 0;
+        totalExLTP += bAging7;
+
+        if (bAging7 === 1) {
+            const bill = bExBills[0];
+            const jNo = bill ? (bill.jobNo || bill['Job No']) : '-';
+            const eng = bill ? (bill.engineer || bill.Engineer) : '-';
+            exLtpBreakdown.push(`${cleanBranchName(b)}: ${jNo} [${cleanTechName(eng)}]`);
+        } else if (bAging7 > 1) {
+            const listStr = bExBills.map(x => `${x.jobNo || x['Job No']} [${cleanTechName(x.engineer || x.Engineer)}]`).join(', ');
+            exLtpBreakdown.push(`${cleanBranchName(b)}: ${bAging7} unit (${listStr})`);
+        }
+
+        // RC (Pending Delivery)
+        const rc = (rcData[b] && (parseInt(rcData[b].count) || (rcData[b].bills && rcData[b].bills.length))) || 0;
+        totalRC += rc;
+        rcBreakdown.push(`${cleanBranchName(b)}: ${rc.toLocaleString('id-ID')}`);
+    });
+
+    // Quality & Compliance - Redo (detail all bills without "dll", omit 0)
+    let totalRedo = 0;
+    const redoBreakdown = [];
+    const redoList = window.redoList || (window.rawDashboardData && (window.rawDashboardData.redoList || window.rawDashboardData.redoItems)) || [];
+
+    branches.forEach(b => {
+        const bRedoBills = redoList.filter(r => matchBranch(b, r.asc || r.branch));
+        const bRedo = bRedoBills.length;
+        totalRedo += bRedo;
+        if (bRedo === 1) {
+            redoBreakdown.push(`${cleanBranchName(b)}: ${bRedoBills[0].jobNo || bRedoBills[0]['Job No']} [${cleanTechName(bRedoBills[0].engineer)}]`);
+        } else if (bRedo > 1) {
+            const listStr = bRedoBills.map(x => `${x.jobNo || x['Job No']} [${cleanTechName(x.engineer)}]`).join(', ');
+            redoBreakdown.push(`${cleanBranchName(b)}: ${bRedo} unit (${listStr})`);
+        }
+    });
+
+    // Quality & Compliance - Penalties MPU / UB / X09 (detail all bills without "dll", omit 0)
+    let totalViolations = 0;
+    const penaltyBreakdown = [];
+    const mpuList = window.mpuData || (window.rawDashboardData && window.rawDashboardData.mpuList) || [];
+    const ubList = window.ubData || (window.rawDashboardData && window.rawDashboardData.ubList) || [];
+
+    branches.forEach(b => {
+        const bs = branchStats[b] || {};
+        const bMpuBills = mpuList.filter(m => matchBranch(b, m.asc || m.branch));
+        const bUbBills = ubList.filter(u => matchBranch(b, u.asc || u.branch));
+        const bX09Bills = (bs.bills && bs.bills.x09) || [];
+
+        const bMpu = bMpuBills.length;
+        const bUb = bUbBills.length;
+        const bX09 = bX09Bills.length || bs.x09 || 0;
+        const bTotalPenalties = bMpu + bUb + bX09;
+        totalViolations += bTotalPenalties;
+
+        if (bTotalPenalties > 0) {
+            const allBills = [
+                ...bMpuBills.map(x => ({ jobNo: x.jobNo || x['Job No'], eng: x.engineer, type: 'MPU' })),
+                ...bUbBills.map(x => ({ jobNo: x.jobNo || x['Job No'], eng: x.engineer, type: 'UB' })),
+                ...bX09Bills.map(x => ({ jobNo: x.jobNo || x['Job No'], eng: x.engineer, type: 'X09' }))
+            ];
+            const typeCounts = [];
+            if (bMpu > 0) typeCounts.push(`${bMpu} MPU`);
+            if (bUb > 0) typeCounts.push(`${bUb} UB`);
+            if (bX09 > 0) typeCounts.push(`${bX09} X09`);
+            const typeStr = typeCounts.join(', ');
+
+            if (bTotalPenalties === 1) {
+                const b0 = allBills[0];
+                penaltyBreakdown.push(`${cleanBranchName(b)}: ${b0.jobNo} [${cleanTechName(b0.eng)} - ${b0.type}]`);
+            } else {
+                const listStr = allBills.map(x => `${x.jobNo} [${cleanTechName(x.eng)}]`).join(', ');
+                penaltyBreakdown.push(`${cleanBranchName(b)}: ${bTotalPenalties} kasus (${typeStr} | ${listStr})`);
+            }
+        }
+    });
+
+    let text = `Selamat ${timeGreeting} Pak ${homCleanName},\n`;
+    text += `Izin menyampaikan *Daily Operational Report Area Saya* per hari ini, [${dateStr} | ${timeStr}]:\n\n`;
+    text += `📊 *PENCAPAIAN GD & VOLUME*\n`;
+    text += `• Total VOL IN: ${totVolIn.toLocaleString('id-ID')} unit \n(${volInBreakdown.join(', ')})\n`;
+    text += `• Total GD: ${totGd.toLocaleString('id-ID')} unit \n(${gdBreakdown.join(', ')})\n`;
+    text += `• Delivery Rate (GD%): ${totRate} \n(${gdRateBreakdown.join(', ')})\n\n`;
+    text += `🏆 *Top Branch GD ${currentMonthName}:*\n`;
+    text += topBranchesText + `\n`;
+    text += `💰 *PENJUALAN AKSESORIS*\n`;
+    text += `• Total Qty Terjual: ${totalPartsQty.toLocaleString('id-ID')} pcs\n(${partsBreakdown.length > 0 ? partsBreakdown.join(', ') : 'Nihil'})\n\n`;
+    text += `⏳ *KONTROL TAT & AGING*\n`;
+    text += `• Total Unit Aktif: ${totalSO.toLocaleString('id-ID')} unit \n(${soBreakdown.join(', ')})\n`;
+    text += `• Pending Aging (LTP): ${totalLTP.toLocaleString('id-ID')} unit \n(${ltpBreakdown.length > 0 ? ltpBreakdown.join(', ') : 'Nihil'})\n`;
+    text += `• Critical Aging (> 7 Hari / Ex-LTP): ${totalExLTP.toLocaleString('id-ID')} unit\n(${exLtpBreakdown.length > 0 ? exLtpBreakdown.join(', ') : 'Nihil'})\n`;
+    text += `• Total RC: ${totalRC.toLocaleString('id-ID')} unit\n(${rcBreakdown.join(', ')})\n\n`;
+    text += `🛡️ *QUALITY & COMPLIANCE*\n`;
+    text += `• Kasus Redo: ${totalRedo} unit \n(${redoBreakdown.length > 0 ? redoBreakdown.join(', ') : 'Nihil'})\n`;
+    text += `• Penalti MPU / UB / X09: ${totalViolations} kasus\n(${penaltyBreakdown.length > 0 ? penaltyBreakdown.join(', ') : 'Nihil'})\n\n`;
+    text += `📌 *ACTION TAKEN AREA HARI INI:*\n`;
+    text += `1. Sistem Auto-Alert WA pengingat aging berjalan terjadwal (09:15, 12:15, 15:15) langsung ke teknisi.\n`;
+    text += `2. Unit Pending Delivery (RC) terus di-blast ke customer agar target GD harian tercapai optimal.\n\n`;
+    text += `Data lengkap real-time dapat dipantau di:\n`;
+    text += `👉 https://management-bujm-dashboard.web.app\n`;
+
+    return text;
+};
+
+// Wire Event Listeners for Executive Summary buttons
+const btnShareSummary = document.getElementById('btnShareSummary');
+if (btnShareSummary) {
+    btnShareSummary.addEventListener('click', () => {
+        const text = window.generateExecutiveReportText();
+        let homPhone = (window.techContacts && window.techContacts['HEAD_OPERASIONAL_MANAGER']) || '';
+        
+        navigator.clipboard.writeText(text).then(() => {
+            if (homPhone) {
+                let norm = homPhone.replace(/[^0-9]/g, '');
+                if (norm.startsWith('0')) norm = '62' + norm.substring(1);
+                showToastNotification('Laporan Eksekutif disalin ke clipboard! Membuka WhatsApp HOM...');
+                window.open(`https://wa.me/${norm}?text=${encodeURIComponent(text)}`, '_blank');
+            } else {
+                showToastNotification('Laporan Eksekutif disalin ke clipboard! Masukkan nomor WA HOM di menu Technician Contacts untuk kirim langsung.');
+            }
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            if (homPhone) {
+                let norm = homPhone.replace(/[^0-9]/g, '');
+                if (norm.startsWith('0')) norm = '62' + norm.substring(1);
+                window.open(`https://wa.me/${norm}?text=${encodeURIComponent(text)}`, '_blank');
+            }
+        });
+    });
+}
+
+async function executeAreaBlastHOM(isAuto = false) {
+    if (typeof window.generateExecutiveReportText !== 'function') {
+        console.warn('⚠️ [BLAST HOM] generateExecutiveReportText belum siap.');
+        return false;
+    }
+    const text = window.generateExecutiveReportText();
+    const contacts = window.techContacts || {};
+    const recipients = [];
+
+    // Target KHUSUS & HANYA: HEAD OPERASIONAL MANAGER
+    const homPhone = contacts['HEAD_OPERASIONAL_MANAGER'];
+    if (homPhone) {
+        recipients.push({
+            name: (window.techNames && window.techNames['HEAD_OPERASIONAL_MANAGER']) || 'Head Operational Manager',
+            phone: homPhone
+        });
+    }
+
+    if (recipients.length === 0) {
+        if (!isAuto) showToastNotification('Belum ada nomor WA HOM di menu Technician Contacts!');
+        console.warn('⚠️ [BLAST HOM] Belum ada nomor kontak HEAD_OPERASIONAL_MANAGER.');
+        return false;
+    }
+
+    let isJarvisUp = false;
+    try {
+        const checkRes = await fetch('http://127.0.0.1:3001/api/status');
+        const checkData = await checkRes.json();
+        if (checkData.ready) isJarvisUp = true;
+    } catch (_) {}
+
+    if (isJarvisUp && typeof blastViaJarvis === 'function') {
+        const blastQueue = recipients.map(r => {
+            let norm = r.phone.replace(/[^0-9]/g, '');
+            if (norm.startsWith('0')) norm = '62' + norm.substring(1);
+            return {
+                phone: norm,
+                name: r.name,
+                PesanUtama: text
+            };
+        });
+        console.log(`[BLAST HOM] Mengirim Laporan Eksekutif khusus ke HOM via Bot WA...`);
+        if (!isAuto) showToastNotification(`🚀 Mengirim Laporan Eksekutif khusus ke HOM via Bot WA...`);
+        const blastOk = await blastViaJarvis(blastQueue);
+        if (!isAuto && blastOk) showToastNotification('✅ Blast Laporan Eksekutif ke HOM selesai diproses!');
+        return blastOk;
+    } else if (!isAuto) {
+        // Manual Fallback: Copy to clipboard and open HOM WhatsApp
+        navigator.clipboard.writeText(text);
+        let firstRecipient = recipients[0];
+        let norm = firstRecipient.phone.replace(/[^0-9]/g, '');
+        if (norm.startsWith('0')) norm = '62' + norm.substring(1);
+        showToastNotification(`Bot WA offline. Teks disalin ke clipboard! Membuka chat WA ke ${firstRecipient.name}...`);
+        window.open(`https://wa.me/${norm}?text=${encodeURIComponent(text)}`, '_blank');
+        return true;
+    } else {
+        console.warn('⚠️ [AUTO ALERT HOM] Bot WA lokal offline di port 3001, pengiriman Laporan Eksekutif ke HOM ditunda.');
+        return false;
+    }
+}
+window.executeAreaBlastHOM = executeAreaBlastHOM;
+
+const btnBlastSummary = document.getElementById('btnBlastSummary');
+if (btnBlastSummary) {
+    btnBlastSummary.addEventListener('click', () => executeAreaBlastHOM(false));
+}
 
 window.showToastNotification = showToastNotification;
 window.openAllProdModal = openAllProdModal;
@@ -3470,59 +4443,77 @@ window.openAllProdModal = openAllProdModal;
 // ==========================================
 // AUTO ALERT SYSTEM (CRON JOB FRONTEND - JADWAL AREA AKTIF)
 // ==========================================
-const AUTO_ALERT_TIMES = ['09:10', '12:10', '15:10'];
-setInterval(() => {
+const AUTO_ALERT_TIMES = ['09:15', '12:15', '15:15'];
+let isAutoAlertRunning = false;
+
+async function checkAutoAlerts() {
+    if (isAutoAlertRunning) return;
+    
     const now = new Date();
-    const dateStr = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate(); 
+    const dateStr = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
     const currentMins = now.getHours() * 60 + now.getMinutes();
 
     let completedAlerts = JSON.parse(localStorage.getItem('bujm_completed_alerts') || '{}');
-
-    // Reset old dates to prevent localStorage from growing forever
     if (completedAlerts.date !== dateStr) {
         completedAlerts = { date: dateStr };
-    }
-
-    let needsSave = false;
-
-    AUTO_ALERT_TIMES.forEach(targetTime => {
-        const parts = targetTime.split(':');
-        const targetTotalMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-        
-        const alertKey = targetTime;
-        
-        // Window is 45 minutes to account for throttled background tabs
-        if (currentMins >= targetTotalMins && currentMins < targetTotalMins + 45 && !completedAlerts[alertKey]) {
-            completedAlerts[alertKey] = true; 
-            needsSave = true;
-            console.log(`🤖 [AUTO ALERT ${targetTime}] Menjalankan jadwal kirim otomatis chat area...`);
-            
-            // Kirim chat Wall of Shame khusus area sendiri
-            setTimeout(() => {
-                if (typeof executeAreaBlastShame === 'function') {
-                    executeAreaBlastShame(true);
-                }
-            }, 2000); 
-            
-            // Khusus sesi pagi (09:10), kirim juga chat Pending Delivery (RC) khusus area sendiri
-            if (targetTime === '09:10') {
-                setTimeout(() => {
-                    if (typeof executeAreaBlastRC === 'function') {
-                        executeAreaBlastRC(true);
-                    }
-                }, 6000); 
-            }
-        }
-    });
-
-    if (needsSave) {
         localStorage.setItem('bujm_completed_alerts', JSON.stringify(completedAlerts));
     }
-}, 30000); // Cek setiap 30 detik
+
+    for (const targetTime of AUTO_ALERT_TIMES) {
+        const parts = targetTime.split(':');
+        const targetTotalMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        const alertKey = targetTime;
+
+        // Window toleransi 45 menit (contoh: 15:15 s/d 16:00 waktu setempat)
+        if (currentMins >= targetTotalMins && currentMins < targetTotalMins + 45 && !completedAlerts[alertKey]) {
+            isAutoAlertRunning = true;
+            console.log(`[AUTO ALERT ${targetTime}] Memeriksa & menjalankan jadwal kirim otomatis (Waktu Setempat)...`);
+
+            try {
+                let successShame = false;
+                if (typeof executeAreaBlastShame === 'function') {
+                    successShame = await executeAreaBlastShame(true);
+                }
+
+                if (targetTime === '09:15') {
+                    // Jeda sejenak sebelum RC
+                    await new Promise(r => setTimeout(r, 4000));
+                    if (typeof executeAreaBlastRC === 'function') {
+                        await executeAreaBlastRC(true);
+                    }
+
+                    // Jeda sejenak sebelum kirim Laporan Eksekutif khusus HOM (HANYA jam 09:15)
+                    await new Promise(r => setTimeout(r, 4000));
+                    if (typeof executeAreaBlastHOM === 'function') {
+                        await executeAreaBlastHOM(true);
+                    }
+                }
+
+                // HANYA tandai selesai jika pengiriman berhasil diproses!
+                if (successShame) {
+                    completedAlerts = JSON.parse(localStorage.getItem('bujm_completed_alerts') || '{}');
+                    if (completedAlerts.date !== dateStr) completedAlerts = { date: dateStr };
+                    completedAlerts[alertKey] = true;
+                    localStorage.setItem('bujm_completed_alerts', JSON.stringify(completedAlerts));
+                    console.log(`[OK] [AUTO ALERT ${targetTime}] Selesai diproses & dicatat di storage.`);
+                } else {
+                    console.warn(`⚠️   [AUTO ALERT ${targetTime}] Belum berhasil (data belum siap / bot sibuk). Akan dicoba ulang otomatis.`);
+                }
+            } catch (err) {
+                console.error('[FAIL] [AUTO ALERT] Error:', err);
+            } finally {
+                isAutoAlertRunning = false;
+            }
+            break; // Satu jadwal per siklus interval
+        }
+    }
+}
+setInterval(checkAutoAlerts, 20000); // Evaluasi setiap 20 detik
 
 
 
 window.renderPartsSalesTable = function(partsDailyData) {
+    if (partsDailyData) window.partsDailyDataGlobal = partsDailyData;
     const table = document.getElementById('parts-sales-table');
     if (!table) return;
     
@@ -3620,7 +4611,7 @@ window.renderPartsSalesTable = function(partsDailyData) {
             
             // GRAND TOTAL cell with rowspan for the branch
             if (index === 0) {
-                tds += `<td rowspan="${items.length}" style="text-align:center; font-weight:800; font-size:1.05rem; background: rgba(37, 99, 235, 0.12); color: var(--accent-blue); vertical-align: middle; border-left: 2px solid rgba(56, 189, 248, 0.3);">${grandTotal}</td>`;
+                tds += `<td rowspan="${items.length}" style="text-align:center; font-weight:800; font-size:0.90rem; background: rgba(37, 99, 235, 0.12); color: var(--accent-blue); vertical-align: middle; border-left: 2px solid rgba(56, 189, 248, 0.3);">${grandTotal}</td>`;
             }
             
             const tr = document.createElement('tr');
@@ -3701,7 +4692,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     text += "- " + it.item + ": " + it.total + "\n";
                 });
                 if (branchMap[b].grandTotal) {
-                    text += "👉 *GRAND TOTAL: " + branchMap[b].grandTotal + "*\n";
+                    text += "\u{1F449} *GRAND TOTAL: " + branchMap[b].grandTotal + "*\n";
                 }
                 text += "\n";
             });

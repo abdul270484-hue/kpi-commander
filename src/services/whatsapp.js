@@ -57,39 +57,122 @@ export function getWAPayloadShame(engName, asc, count, detail) {
     
     const displayName = getTechName(engName);
     
-const now = new Date();
+    const now = new Date();
     const hours = now.getHours();
-    let greeting = 'Pagi';
-    if (hours >= 11 && hours < 15) greeting = 'Siang';
-    else if (hours >= 15 && hours < 18) greeting = 'Sore';
-    else if (hours >= 18) greeting = 'Malam';
+    const minutes = now.getMinutes();
+    const totalMinutes = hours * 60 + minutes;
     const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const tzOffset = now.getTimezoneOffset();
+    let tzLabel = 'WIB';
+    if (tzOffset <= -540) tzLabel = 'WIT';
+    else if (tzOffset <= -480) tzLabel = 'WITA';
 
-    let text = `🚨 *Peringatan AGING! [Update: ${timeStr} WIB]*\n\nSelamat ${greeting} ${displayName}, Awas, *${count} unit pendingmu* terutama yg paling lama. Segera eksekusi sebelum aging makin rusak:\n`;
-    
-    // Bills sekarang disimpan di shameData (bukan engineerData lagi untuk menghemat payload)
+    // Daftar 11 Reason Kritis yang dipertegas saat Siang & Sore
+    const CRITICAL_TARGET_REASONS = [
+        'MONITORING/AGING OR NOT REPRODUCED',
+        'RE-SCHEDULING BY ENG\'R OR ASC',
+        'NEED TO SET APPOINTMENT DATE',
+        'WAITING FOR WARRANTY DOCUMENTS',
+        'CHECKING CUSTOMER INFO',
+        'ASSIGN TO ENG\'R AFTER PARTS RECEIVED',
+        'WAITING FOR CONFIRMATION FROM CUSTOMER',
+        'REPAIR IN PROGRESS',
+        'REPAIR IN PROGRESS AFTER PARTS RECEIVED',
+        'PARTS ARRIVED BUT NO G/R YET(ASC)',
+        'REQUEST TECH SUPPORT (TECHNICAL PROBLEM)'
+    ];
+
+    const isTargetReason = (reasonText) => {
+        if (!reasonText) return false;
+        const norm = reasonText.toUpperCase().trim();
+        return CRITICAL_TARGET_REASONS.some(target => norm.includes(target) || target.includes(norm));
+    };
+
+    // Ambil daftar bills teknisi
     let bills = [];
-    if (window.shameData && Array.isArray(window.shameData)) {
-        const found = window.shameData.find(s => normalizeName(s.engineer) === normalizeName(engName));
-        if (found && Array.isArray(found.bills)) {
-            bills = [...found.bills];
+    const shameListSource = (window.shameData && Array.isArray(window.shameData)) 
+        ? window.shameData 
+        : (window.rawDashboardData && Array.isArray(window.rawDashboardData.shameList) ? window.rawDashboardData.shameList : []);
+    
+    const found = shameListSource.find(s => normalizeName(s.engineer) === normalizeName(engName));
+    if (found && Array.isArray(found.bills)) {
+        bills = [...found.bills];
+    }
+    bills.sort((a, b) => (b.pendingDays || 0) - (a.pendingDays || 0));
+
+    // Pisahkan bills yang masuk 11 reason kritis dan bills lainnya
+    const criticalBills = bills.filter(b => isTargetReason(b.reason));
+    const otherBills = bills.filter(b => !isTargetReason(b.reason));
+
+    let text = '';
+
+    // GRADASI 1: SESI SORE (>= 14:30 WIB) — Closing Escalation & Final Push
+    if (totalMinutes >= 14 * 60 + 30) {
+        text = `🚨 *CRITICAL ALERT [Update: ${timeStr} ${tzLabel}]*\n\n`;
+        text += `Perhatian *${displayName}*,\n`;
+        text += `Jam operasional segera berakhir! Unit berikut tercatat *BELUM ADA PROGRES SEJAK PAGI* dan berada di ambang batas toleransi:\n\n`;
+        
+        if (criticalBills.length > 0) {
+            text += `⛔ *DEADLINE CLOSING HARI INI:*\n`;
+            criticalBills.forEach((b, idx) => {
+                text += `\n${idx + 1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n👤 ${b.customer}\n📱 ${b.model}\n🚨 Stagnant Reason: *${b.reason}*\n⚡ *Instruksi:* WAJIB DISELESAIKAN ATAU DI-UPDATE SEKARANG! Jangan sampai unit ini masuk ke laporan evaluasi manajemen malam ini!\n`;
+            });
         }
+
+        if (otherBills.length > 0) {
+            text += `\n_(Daftar unit pending lainnya tetap wajib diselesaikan:)_\n`;
+            otherBills.forEach((b, idx) => {
+                text += `${idx + 1}. *${b.jobNo}* (*${b.pendingDays} Hari*) — ${b.reason}\n`;
+            });
+        }
+
+        text += `\nPenyelesaian unit ini sangat krusial bagi penilaian performa teknisi dan grading cabang hari ini.`;
+
+    // GRADASI 2: SESI SIANG (>= 11:30 s/d < 14:30 WIB) — Midday Follow-Up & Escalation
+    } else if (totalMinutes >= 11 * 60 + 30) {
+        text = `⚠️ *AGING WARNING [Update: ${timeStr} ${tzLabel}]*\n\n`;
+        text += `*${displayName}*,\n`;
+        text += `Bill belum ada update\n\n`;
+
+        if (criticalBills.length > 0) {
+            text += `🔴 *UNIT BUTUH TINDAKAN SEGERA DARI PAGI GA ADA PERUBAHAN:*\n`;
+            criticalBills.forEach((b, idx) => {
+                text += `\n${idx + 1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n👤 ${b.customer}\n📱 ${b.model}\n⚠️ Status: *${b.reason}*\n💬 Action: Mohon segera dieksekusi / hubungi user / update status di GSPN sebelum tarikan sore jam 15:00!\n`;
+            });
+        }
+
+        if (otherBills.length > 0) {
+            text += `\n_(Daftar unit pending lainnya tetap wajib diselesaikan:)_\n`;
+            otherBills.forEach((b, idx) => {
+                text += `${idx + 1}. *${b.jobNo}* (*${b.pendingDays} Hari*) — ${b.reason}\n`;
+            });
+        }
+
+        text += `\nJangan biarkan unit menginap lebih lama dan memicu penalty KPI!`;
+
+    // GRADASI 3: SESI PAGI (< 11:30 WIB) — Morning Operational Briefing
+    } else {
+        text = `🚨 *AGING WARNING [Update: ${timeStr} ${tzLabel}]*\n\n`;
+        text += `Selamat Pagi *${displayName}*,\n`;
+        text += `Saat ini tercatat Anda memiliki *${count} unit pending*.\n`;
+        text += `Mohon utamakan pengerjaan unit dengan aging tertinggi agar KPI cabang tetap aman:\n`;
+
+        if (bills.length > 0) {
+            bills.forEach((b, index) => {
+                text += `\n${index + 1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n👤 ${b.customer}\n📱 ${b.model}\n📌 Reason: *${b.reason}*\n`;
+            });
+        }
+
+        text += `\nMari tuntaskan sebelum evaluasi siang hari. Semangat bertugas!`;
     }
-    
-    if (bills.length > 0) {
-        bills.sort((a, b) => (b.pendingDays || 0) - (a.pendingDays || 0));
-        bills.forEach((b, index) => {
-            text += `\n${index+1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n👤 ${b.customer}\n📱 ${b.model}\n📌 ${b.reason}\n`;
-        });
-    }
-    
+
     return { phone: waNumber, name: displayName, text: text };
 }
 
 export function sendWA(engName, asc, count, detail) {
     const payload = getWAPayloadShame(engName, asc, count, detail);
     if (!payload) {
-        if (window.showToastNotification) window.showToastNotification('Nomor WA belum disetting! Buka menu "Kontak Teknisi" di atas dulu.');
+        if (window.showToastNotification) window.showToastNotification('WhatsApp number is not configured! Please open "Technician Contacts" menu above first.');
         return;
     }
     
@@ -128,25 +211,29 @@ const now = new Date();
     else if (hours >= 18) greeting = 'Malam';
     const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-    let text = `🚨 *WARNING PENDING DELIVERY (RC) - CABANG ${asc} [Update: ${timeStr} WIB]*\n\nSelamat ${greeting} ${displayName},\nBerikut ada *${count} unit* Pending Delivery (Repair Completed). Mohon segera di-follow up ke kurir / customer (tawarkan D2D):\n`;
+    let text = `🚨 *WARNING PENDING DELIVERY (RC) - BRANCH ${asc} [Update: ${timeStr} WIB]*\n\nSelamat ${greeting} ${displayName},\nHere are *${count} units* in Pending Delivery (Repair Completed). Please follow up immediately with courier / customer (offer D2D delivery):\n`;
     
-    if (window.rcData && window.rcData[asc]) {
-        const bills = window.rcData[asc].bills;
-        bills.sort((a, b) => b.pendingDays - a.pendingDays);
+    const rcSource = (window.rcData && Object.keys(window.rcData).length > 0)
+        ? window.rcData
+        : (window.rawDashboardData && window.rawDashboardData.rcStats ? window.rawDashboardData.rcStats : null);
+
+    if (rcSource && rcSource[asc]) {
+        const bills = rcSource[asc].bills || [];
+        const sortedBills = [...bills].sort((a, b) => b.pendingDays - a.pendingDays);
         
-        bills.forEach((j, index) => {
+        sortedBills.forEach((j, index) => {
             text += `\n${index+1}. *${j.jobNo}* (*${j.pendingDays} Hari*)\n   👤 ${j.customer}\n   📱 ${j.model}\n   ⚠️ ${j.reason}\n`;
         });
     }
     
-    text += `\nMohon segera diproses agar tidak merusak performa aging cabang. Terima kasih.`;
+    text += `\nPlease process immediately to maintain branch aging performance. Thank you.`;
     return { phone: waNumber, name: displayName, text: text };
 }
 
 export function sendWARC(asc, count) {
     const payload = getWAPayloadRC(asc, count);
     if (!payload) {
-        if (window.showToastNotification) window.showToastNotification(`Nomor WA belum disetting untuk PIC/Kacab ${asc}!`);
+        if (window.showToastNotification) window.showToastNotification(`WhatsApp number is not configured for PIC/Branch Head ${asc}!`);
         return;
     }
     
@@ -159,7 +246,7 @@ export function sendWADosaSingleBranch(asc) {
     let phone = getTechPhone(engName);
     
     if (!phone) {
-        if (window.showToastNotification) window.showToastNotification(`Nomor WA belum disetting untuk PIC ${asc}! Buka menu "Kontak Teknisi" di atas dulu.`);
+        if (window.showToastNotification) window.showToastNotification(`WhatsApp number is not configured for PIC ${asc}! Please open "Technician Contacts" menu above first.`);
         return;
     }
     
@@ -177,7 +264,7 @@ export function sendWADosaSingleBranch(asc) {
     if (!window.dosaCabangStatsGlobal || !window.dosaCabangStatsGlobal[asc]) return;
     const bills = window.dosaCabangStatsGlobal[asc].bills;
     
-    let text = `🚨 *Peringatan AGING DOSA CABANG (> 7 Hari)*\n\nHalo ${displayName},\nBerikut daftar bill pending murni kesalahan cabang Anda dengan aging di atas 7 hari (tidak termasuk kendala SEIN/Part):\n`;
+    let text = `🚨 *Branch Defect Aging Warning (> 7 Days)*\n\nHello ${displayName},\nHere is the list of pending bills originating from branch internal delays exceeding 7 days (excluding SEIN/Part constraints):\n`;
     
     bills.sort((a, b) => b.pendingDays - a.pendingDays);
     
@@ -185,7 +272,7 @@ export function sendWADosaSingleBranch(asc) {
         text += `\n${index+1}. *${b.jobNo}* (*${b.pendingDays} Hari*)\n   👤 ${b.customer}\n   📱 ${b.model}\n   ⚠️ ${b.reason || '-'}\n`;
     });
     
-    text += `\nSegera tindak lanjuti pendingan di atas hari ini juga agar tidak merusak aging cabang. Terima kasih. 🙏`;
+    text += `\nPlease follow up on the above pending units today to prevent branch aging degradation. Thank you. 🙏`;
     
     const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
@@ -209,7 +296,7 @@ export function sendWARedo(engName, jobNo, model) {
     
     const displayName = getTechName(engName);
     
-    const text = `🚨 *PERINGATAN REDO (Repair Gagal)*\n\nHalo ${displayName},\nMohon segera dicek kembali unit berikut karena terindikasi *REDO* (Unit kembali rusak / dikomplain user):\n\nNo Job: *${jobNo}*\nModel: *${model}*\n\n_Harap segera ditarik atau difollow up sebelum mempengaruhi metrik performa._`;
+    const text = `🚨 *WARNING REDO (Repair Violation)*\n\nHalo ${displayName},\nPlease inspect the following unit immediately as it has been flagged as *REDO* (Repeated repair / customer complaint):\n\nNo Job: *${jobNo}*\nModel: *${model}*\n\n_Please retrieve or follow up immediately before it impacts performance grading._`;
     const url = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
 }

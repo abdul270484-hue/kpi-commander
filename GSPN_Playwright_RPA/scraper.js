@@ -1,4 +1,4 @@
-﻿const { chromium } = require('playwright');
+const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
@@ -36,11 +36,11 @@ async function downloadAscData(page2, asc, downloadDir, savePrefix = 'SO', attem
         // 5. Tunggu dropdown Ship-to-Branch
         await rightContentsFrame.locator('#asc_code option:not([value=""])').first().waitFor({ state: 'attached', timeout: 8000 });
 
-        // 6. Pilih Status ALL & Pilih ASC Code
+        // 6. Pilih Status ALL & Pilih ASC Code (Opsi 4: Dipangkas dari 2500ms menjadi 700ms)
         await rightContentsFrame.locator('#status1').selectOption('ALL');
-        await delay(500);
+        await delay(200);
         await rightContentsFrame.locator('#asc_code').selectOption(ascValue);
-        await delay(2000);
+        await delay(500);
 
         // 7. Klik Search & tangkap download
         const downloadPromise = page2.waitForEvent('download', { timeout: 40000 });
@@ -67,7 +67,7 @@ async function downloadAscData(page2, asc, downloadDir, savePrefix = 'SO', attem
 
 async function scrapeRedoOrders(mainPage, businessBtn, branchList, downloadedFiles) {
     console.log('\n==============================================');
-    console.log('  ðŸ” MEMULAI PENCARIAN REDO ORDERS (SERVICE ORDER MANAGEMENT LIGHT)');
+    console.log('  [===] MEMULAI PENCARIAN REDO ORDERS (SERVICE ORDER MANAGEMENT LIGHT)');
     console.log('==============================================');
 
     let page2 = null;
@@ -95,7 +95,7 @@ async function scrapeRedoOrders(mainPage, businessBtn, branchList, downloadedFil
         // Loop per branch
         for (let i = 0; i < branchList.length; i++) {
             const asc = branchList[i];
-            console.log(`\nðŸ¢ [REDO ${i + 1}/${branchList.length}] Cabang: ${asc.short} (${asc.code})`);
+            console.log(`\n[REDO ${i + 1}/${branchList.length}]] Cabang: ${asc.short} (${asc.code})`);
 
             // TIP DARI USER: Jika SO kosong, skip REDO
             const soFile = downloadedFiles.soFiles.find(f => f.code === asc.code);
@@ -104,7 +104,7 @@ async function scrapeRedoOrders(mainPage, businessBtn, branchList, downloadedFil
                     const html = require('fs').readFileSync(soFile.path, 'utf8');
                     const trCount = (html.match(/<tr/gi) || []).length;
                     if (trCount <= 3) { 
-                        console.log('  â© Skip pencarian REDO karena data SO cabang ini kosong.');
+                        console.log('  [-] Skip pencarian REDO karena data SO cabang ini kosong.');
                         continue;
                     }
                 } catch(e) {}
@@ -228,7 +228,7 @@ async function scrapeRedoOrders(mainPage, businessBtn, branchList, downloadedFil
                         }, { branchInfo: asc, statusName: st.text }).catch(() => []);
 
                         if (extractedRows && extractedRows.length > 0) {
-                            console.log(`âœ… ${extractedRows.length} REDO orders ditemukan!`);
+                            console.log(`[OK] ${extractedRows.length} REDO orders ditemukan!`);
                             extractedRows.forEach(r => {
                                 if (!allRedoItems.find(x => x.jobNo === r.jobNo)) {
                                     allRedoItems.push(r);
@@ -238,19 +238,19 @@ async function scrapeRedoOrders(mainPage, businessBtn, branchList, downloadedFil
                             console.log(`0`);
                         }
                     } catch (errStatus) {
-                        console.log(`âš ï¸ Skip status: ${errStatus.message.substring(0, 30)}`);
+                        console.log(`[WARN] Skip status: ${errStatus.message.substring(0, 30)}`);
                     }
 
                     await delay(50);
                 }
             } catch (errBranch) {
-                console.log(`âš ï¸ Skip Cabang: ${errBranch.message.substring(0, 35)}`);
+                console.log(`[WARN] Skip Cabang: ${errBranch.message.substring(0, 35)}`);
             }
 
             await delay(50);
         }
     } catch (err) {
-        console.warn('  âš ï¸ REDO Scrape Error:', err.message);
+        console.warn('  [WARN] REDO Scrape Error:', err.message);
     } finally {
         if (page2 && !page2.isClosed()) {
             await page2.close().catch(() => {});
@@ -262,14 +262,14 @@ async function scrapeRedoOrders(mainPage, businessBtn, branchList, downloadedFil
 
 async function scrapeAllBranches(headless = false, sampleOnly = false, onProgress = null) {
     console.log('==============================================');
-    console.log(`  ðŸš€ GSPN PLAYWRIGHT RPA - ${sampleOnly ? 'SAMPLE TEST (3 CABANG)' : 'ULTRA FAST NATIONAL SCRAPER'}`);
+    console.log(`  >>> GSPN PLAYWRIGHT RPA - ${sampleOnly ? 'SAMPLE TEST (3 CABANG)' : 'ULTRA FAST NATIONAL SCRAPER'}`);
     console.log(`  Waktu: ${new Date().toLocaleString('id-ID')}`);
     console.log('==============================================');
 
     ensureDir(config.DOWNLOAD_DIR);
 
     if (!fs.existsSync(config.STORAGE_STATE_PATH)) {
-        console.log('âš ï¸ Sesi login belum tersimpan. Menjalankan proses login awal...');
+        console.log('[WARN] Sesi login belum tersimpan. Menjalankan proses login awal...');
         await loginAndSaveSession();
     }
 
@@ -291,7 +291,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
             acceptDownloads: true
         });
     } catch (e) {
-        console.log('âš ï¸ Sesi kedaluwarsa atau korup. Memperbarui sesi...');
+        console.log('[WARN] Sesi kedaluwarsa atau korup. Memperbarui sesi...');
         await browser.close();
         await loginAndSaveSession();
         return await scrapeAllBranches(headless);
@@ -316,7 +316,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
         }
     }
     if (hasLogin || mainPage.url().includes('login') || mainPage.url().includes('Login')) {
-        console.log('âš ï¸ Sesi GSPN telah habis. Melakukan login ulang...');
+        console.log('[WARN] Sesi GSPN telah habis. Melakukan login ulang...');
         await browser.close();
         await loginAndSaveSession();
         return await scrapeAllBranches(headless);
@@ -374,7 +374,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
             }
         }
     } catch (e) {
-        console.warn('âš ï¸ Gagal membaca options #asc_code secara dinamis:', e.message);
+        console.warn('[WARN] Gagal membaca options #asc_code secara dinamis:', e.message);
     } finally {
         if (initTab && !initTab.isClosed()) await initTab.close().catch(() => {});
     }
@@ -390,7 +390,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
     }
 
     if (sampleOnly) {
-        console.log('âš¡ Mode SAMPLE AKTIF: Hanya mengambil 3 cabang target (DENPASAR, KUPANG, SINGARAJA)...');
+        console.log('[INFO] Mode SAMPLE AKTIF: Hanya mengambil 3 cabang target (DENPASAR, KUPANG, SINGARAJA)...');
         const targetCodes = ['0004924441', '0004925234', '0004925270'];
         const filtered = branchList.filter(b => targetCodes.includes(b.code));
         if (filtered.length > 0) {
@@ -400,8 +400,8 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
         }
     }
 
-    console.log(`\nâœ… Berhasil menetapkan ${branchList.length} cabang (${branchList.map(b => b.short).join(', ')}).`);
-    console.log(`âš¡ Memulai fast-download untuk ${branchList.length} cabang...`);
+    console.log(`\n[OK] Berhasil menetapkan ${branchList.length} cabang (${branchList.map(b => b.short).join(', ')}).`);
+    console.log(`>>> Memulai fast-download untuk ${branchList.length} cabang...`);
 
     const downloadedFiles = {
         soFiles: [],
@@ -413,7 +413,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
     // 3. FAST LOOP SERVICE ORDER DOWNLOAD PER CABANG (PERSIS PYTHON SCRIPT)
     // ==========================================
     console.log('\n==============================================');
-    console.log(`  ðŸ“¥ PROSES FAST-DOWNLOAD SERVICE ORDER (${branchList.length} CABANG)`);
+    console.log(`  >>> PROSES FAST-DOWNLOAD SERVICE ORDER (${branchList.length} CABANG)`);
     console.log('==============================================');
 
     let failedBranches = [];
@@ -436,11 +436,11 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
             const soPath = await downloadAscData(page2, asc, config.DOWNLOAD_DIR, 'SO', 1);
             if (soPath) {
                 downloadedFiles.soFiles.push({ branch: asc.short, name: asc.name, code: asc.code, path: soPath });
-                console.log(`âœ… SO OK`);
+                console.log(`[OK] SO OK`);
             }
             if (onProgress) onProgress({ phase: 'SO', current: i + 1, total: branchList.length, branch: asc.short, ok: !!soPath });
         } catch (err) {
-            console.log(`âš ï¸ Gagal (${err.message.substring(0, 45)}), masuk antrean retry.`);
+            console.log(`[WARN] Gagal (${err.message.substring(0, 45)}), masuk antrean retry.`);
             failedBranches.push(asc);
         } finally {
             if (page2 && !page2.isClosed()) {
@@ -453,7 +453,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
 
     // RETRY QUEUE UNTUK CABANG YANG TIMEOUT
     if (failedBranches.length > 0) {
-        console.log(`\nðŸ”„ Memulai RETRY untuk ${failedBranches.length} cabang yang gagal...`);
+        console.log(`\n>>> Memulai RETRY untuk ${failedBranches.length} cabang yang gagal...`);
         const retryList = [...failedBranches];
         failedBranches = [];
 
@@ -475,10 +475,10 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
                 const soPath = await downloadAscData(page2, asc, config.DOWNLOAD_DIR, 'SO', 2);
                 if (soPath) {
                     downloadedFiles.soFiles.push({ branch: asc.short, name: asc.name, code: asc.code, path: soPath });
-                    console.log(`âœ… OK`);
+                    console.log(`[OK]`);
                 }
             } catch (err) {
-                console.log(`âŒ Tetap gagal: ${err.message.substring(0, 45)}`);
+                console.log(`[FAIL] Tetap gagal: ${err.message.substring(0, 45)}`);
             } finally {
                 if (page2 && !page2.isClosed()) {
                     await page2.close().catch(() => {});
@@ -488,7 +488,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
     }
 
     console.log('\n==============================================');
-    console.log('  ðŸŽ‰ PROSES SERVICE ORDER SELESAI!');
+    console.log('  [SELESAI] PROSES SERVICE ORDER SELESAI!');
     console.log(`  Total File Berhasil : ${downloadedFiles.soFiles.length} / ${branchList.length}`);
     console.log('==============================================\n');
 
@@ -605,14 +605,14 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
         const redoResults = await scrapeRedoOrders(mainPage, businessBtn, branchList, downloadedFiles);
         downloadedFiles.redoItems = redoResults || [];
     } catch (err) {
-        console.warn('  âš ï¸ Scrape Redo Orders warning:', err.message);
+        console.warn('  [WARN] Scrape Redo Orders warning:', err.message);
     }
 
             // ==========================================
     // PARALLEL GD (PRODUCTIVITY) SCRAPE
     // ==========================================
     console.log('\n==============================================');
-    console.log(`  ðŸ“¥ PROSES BATCH PARALLEL GD (${branchList.length} CABANG, 5 TAB)`);
+    console.log(`  >>> PROSES BATCH PARALLEL GD (${branchList.length} CABANG, 5 TAB)`);
     console.log('==============================================');
     
     if (onProgress) onProgress({ phase: 'GD BATCH', current: 0, total: branchList.length, branch: 'Memulai...', ok: true });
@@ -668,19 +668,52 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
             const asc = gdQueue.shift();
             try {
                 if (!pageData) pageData = await openGdTabForBatch();
-                const { p2, rightFrame } = pageData;
+                const { p2 } = pageData;
                 
-                await rightFrame.evaluate(val => {
-                    const sel = document.querySelector('#Partner');
-                    if (sel) { sel.value = val; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+                let currentRightFrame = p2.frames().find(f => f.name() === 'rightContents');
+                if (!currentRightFrame) {
+                    for (let attempt = 0; attempt < 15; attempt++) {
+                        await delay(1000);
+                        currentRightFrame = p2.frames().find(f => f.name() === 'rightContents');
+                        if (currentRightFrame) break;
+                    }
+                }
+                if (!currentRightFrame) throw new Error("rightContents frame not found");
+
+                await currentRightFrame.evaluate(val => {
+                    const selects = Array.from(document.querySelectorAll('select'));
+                    const branchSel = selects.find(s => s.id.toLowerCase().includes('branch') || s.name.toLowerCase().includes('branch') || s.id === 'asc_code');
+                    const partnerSel = document.querySelector('#Partner') || selects.find(s => s.id.toLowerCase().includes('partner') || s.name.toLowerCase().includes('partner'));
+
+                    if (branchSel) {
+                        for (let i = 0; i < branchSel.options.length; i++) {
+                            if (branchSel.options[i].value === val || branchSel.options[i].text.includes(val)) {
+                                branchSel.selectedIndex = i;
+                                branchSel.dispatchEvent(new Event('change', { bubbles: true }));
+                                break;
+                            }
+                        }
+                    }
+                    if (partnerSel) {
+                        for (let i = 0; i < partnerSel.options.length; i++) {
+                            if (partnerSel.options[i].value === val || partnerSel.options[i].text.includes(val)) {
+                                partnerSel.selectedIndex = i;
+                                partnerSel.dispatchEvent(new Event('change', { bubbles: true }));
+                                break;
+                            }
+                        }
+                    }
                 }, asc.code);
                 
+                await delay(2500); // Tunggu AJAX partner dropdown settle
+
                 const now = new Date();
                 const pad = n => String(n).padStart(2, '0');
                 const firstDay = `01.${pad(now.getMonth() + 1)}.${now.getFullYear()}`;
                 const today    = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()}`;
                 
-                await rightFrame.evaluate(({ from, to }) => {
+                currentRightFrame = p2.frames().find(f => f.name() === 'rightContents') || currentRightFrame;
+                await currentRightFrame.evaluate(({ from, to }) => {
                     const fi = document.querySelector('#FromDate');
                     const ti = document.querySelector('#ToDate');
                     if (fi) fi.value = from;
@@ -692,10 +725,11 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
                     }
                 }, { from: firstDay, to: today }).catch(()=>{});
                 
-                await delay(2000);
+                await delay(4000); // Tunggu query server selesai
                 
-                const downloadPromise = p2.waitForEvent('download', { timeout: 15000 }).catch(() => null);
-                await rightFrame.evaluate(() => {
+                currentRightFrame = p2.frames().find(f => f.name() === 'rightContents') || currentRightFrame;
+                const downloadPromise = p2.waitForEvent('download', { timeout: 30000 }).catch(() => null);
+                await currentRightFrame.evaluate(() => {
                     if (typeof downloadList === 'function') downloadList();
                     else {
                         const dlBtn = Array.from(document.querySelectorAll('a')).find(a => a.innerText.trim() === 'Download');
@@ -708,12 +742,12 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
                     const gdPath = path.join(config.DOWNLOAD_DIR, `GD_${asc.short}_${Date.now()}.xls`);
                     await download.saveAs(gdPath);
                     downloadedFiles.gdFiles.push({ branch: asc.short, name: asc.name, code: asc.code, path: gdPath });
-                    console.log(`  [W${workerId}] ðŸ“Š GD OK: ${asc.short}`);
+                    console.log(`  [W${workerId}] [OK] GD OK: ${asc.short}`);
                 } else {
-                    console.log(`  [W${workerId}] â„¹ï¸ GD kosong: ${asc.short}`);
+                    console.log(`  [W${workerId}] [-] GD kosong: ${asc.short}`);
                 }
             } catch (err) {
-                console.log(`  [W${workerId}] âš ï¸ GD Error (${asc.short}): ${err.message.substring(0, 40)}`);
+                console.log(`  [W${workerId}] [WARN] GD Error (${asc.short}): ${err.message.substring(0, 40)}`);
                 if (pageData && pageData.p2) await pageData.p2.close().catch(()=>{});
                 pageData = null;
             }
@@ -730,7 +764,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
         await delay(4000); // stagger 4 detik agar tidak tabrakan navigasi
     }
     await Promise.all(workers);
-    console.log('  ðŸŽ‰ PROSES PARALLEL GD SELESAI!');
+    console.log('  [SELESAI] PROSES PARALLEL GD SELESAI!');
 
     // ==========================================
     
@@ -741,7 +775,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
     // PARALLEL PARTS SALES SCRAPE
     // ==========================================
     console.log('\n==============================================');
-    console.log('  ðŸ“¥ PROSES BATCH PARALLEL PARTS SALES (' + branchList.length + ' CABANG)');
+    console.log('  >>> PROSES BATCH PARALLEL PARTS SALES (' + branchList.length + ' CABANG)');
     console.log('==============================================');
     
     if (onProgress) onProgress({ phase: 'PARTS BATCH', current: 0, total: branchList.length, branch: 'Memulai...', ok: true });
@@ -800,21 +834,52 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
             const asc = partsQueue.shift();
             try {
                 if (!pageData) pageData = await openPartsTabForBatch();
-                const { p2, rightFrame } = pageData;
-                
-                await rightFrame.evaluate(val => {
-                    const sel = document.querySelector('#Partner');
-                    if (sel) { sel.value = val; sel.dispatchEvent(new Event('change', { bubbles: true })); }
-                }, asc.code);
-                
-                const now = new Date();
-                const pad = n => String(n).padStart(2, '0');
-                const fromDateObj = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                
-                const fromStr = '01.' + pad(fromDateObj.getMonth()+1) + '.' + fromDateObj.getFullYear();
-                const toStr = pad(now.getDate()) + '.' + pad(now.getMonth()+1) + '.' + now.getFullYear();
+                const { p2 } = pageData;
                 
                 let currentRightFrame = p2.frames().find(f => f.name() === 'rightContents');
+                if (!currentRightFrame) {
+                    for (let attempt = 0; attempt < 15; attempt++) {
+                        await delay(1000);
+                        currentRightFrame = p2.frames().find(f => f.name() === 'rightContents');
+                        if (currentRightFrame) break;
+                    }
+                }
+                if (!currentRightFrame) throw new Error("rightContents frame not found");
+
+                await currentRightFrame.evaluate(val => {
+                    const selects = Array.from(document.querySelectorAll('select'));
+                    const branchSel = selects.find(s => s.id.toLowerCase().includes('branch') || s.name.toLowerCase().includes('branch') || s.id === 'asc_code');
+                    const partnerSel = document.querySelector('#Partner') || selects.find(s => s.id.toLowerCase().includes('partner') || s.name.toLowerCase().includes('partner'));
+
+                    if (branchSel) {
+                        for (let i = 0; i < branchSel.options.length; i++) {
+                            if (branchSel.options[i].value === val || branchSel.options[i].text.includes(val)) {
+                                branchSel.selectedIndex = i;
+                                branchSel.dispatchEvent(new Event('change', { bubbles: true }));
+                                break;
+                            }
+                        }
+                    }
+                    if (partnerSel) {
+                        for (let i = 0; i < partnerSel.options.length; i++) {
+                            if (partnerSel.options[i].value === val || partnerSel.options[i].text.includes(val)) {
+                                partnerSel.selectedIndex = i;
+                                partnerSel.dispatchEvent(new Event('change', { bubbles: true }));
+                                break;
+                            }
+                        }
+                    }
+                }, asc.code);
+                
+                await delay(2500); // Tunggu AJAX partner dropdown settle
+
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                // Sesuai filter bulan berjalan di GSPN: 01.MM.YYYY s/d DD.MM.YYYY
+                const fromStr = '01.' + pad(now.getMonth() + 1) + '.' + now.getFullYear();
+                const toStr = pad(now.getDate()) + '.' + pad(now.getMonth() + 1) + '.' + now.getFullYear();
+                
+                currentRightFrame = p2.frames().find(f => f.name() === 'rightContents') || currentRightFrame;
                 await currentRightFrame.evaluate(({ from, to }) => {
                     const fi = document.querySelector('#FromDate');
                     const ti = document.querySelector('#ToDate');
@@ -825,10 +890,10 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
                     if (btn) btn.click();
                 }, { from: fromStr, to: toStr }).catch(()=>{});
                 
-                await delay(5000); 
+                await delay(5000); // Tunggu query server selesai
                 
-                currentRightFrame = p2.frames().find(f => f.name() === 'rightContents');
-                const downloadPromise = p2.waitForEvent('download', { timeout: 15000 }).catch(() => null);
+                currentRightFrame = p2.frames().find(f => f.name() === 'rightContents') || currentRightFrame;
+                const downloadPromise = p2.waitForEvent('download', { timeout: 30000 }).catch(() => null);
                 
                 await currentRightFrame.evaluate(() => {
                     const dlBtn = Array.from(document.querySelectorAll('a')).find(a => a.innerText.trim() === 'Download' || a.innerText.trim() === 'Excel Download' || a.innerText.trim() === 'Excel');
@@ -840,12 +905,12 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
                     const partsPath = require('path').join(config.DOWNLOAD_DIR, 'PARTS_SALES_' + asc.short + '_' + Date.now() + '.xls');
                     await download.saveAs(partsPath);
                     downloadedFiles.partsFiles.push({ branch: asc.short, name: asc.name, code: asc.code, path: partsPath });
-                    console.log('  [W' + workerId + '] âœ… Parts OK: ' + asc.short);
+                    console.log('  [W' + workerId + '] [OK] Parts OK: ' + asc.short);
                 } else {
-                    console.log('  [W' + workerId + '] âŒ Parts kosong: ' + asc.short);
+                    console.log('  [W' + workerId + '] [-] Parts kosong: ' + asc.short);
                 }
             } catch (err) {
-                console.log('  [W' + workerId + '] âš ï¸ Parts Error (' + asc.short + '): ' + err.message.substring(0, 40));
+                console.log('  [W' + workerId + '] [WARN] Parts Error (' + asc.short + '): ' + err.message.substring(0, 40));
                 if (pageData && pageData.p2) await pageData.p2.close().catch(()=>{});
                 pageData = null;
             }
@@ -862,7 +927,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
         await delay(3000);
     }
     await Promise.all(partsWorkers);
-    console.log('  ðŸŽ‰ PROSES PARALLEL PARTS SALES SELESAI!');
+    console.log('  [SELESAI] PROSES PARALLEL PARTS SALES SELESAI!');
 
 
     await browser.close().catch(() => {});

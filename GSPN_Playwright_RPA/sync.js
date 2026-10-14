@@ -131,12 +131,14 @@ const AGING_REASONS = [
 function shortenASC(ascName, row = null, engineerName = null) {
     if (!ascName && !row) return 'Unknown ASC';
 
+    let hasCCColumn = false;
     // 1. Check Collection Center Name if row is provided (for splitting Cellular World & Planet Gadget from Denpasar)
     if (row && typeof row === 'object' && !Array.isArray(row)) {
         let ccName = '';
         for (let key in row) {
             let k = key.toLowerCase().replace(/[^a-z]/g, '');
             if (k.includes('collectioncenter') || k === 'ccname' || k === 'collectioncentername') {
+                hasCCColumn = true;
                 if (k.includes('name') || k === 'collectioncenter' || k === 'ccname') {
                     ccName = String(row[key] || '').toUpperCase().trim();
                     if (ccName && ccName !== 'NONE') break;
@@ -167,8 +169,10 @@ function shortenASC(ascName, row = null, engineerName = null) {
     else if (u.includes('KUPANG')) result = 'KUPANG';
     else if (u.includes('SINGARAJA')) result = 'SINGARAJA';
 
-    // 2. HARDCODE MAPPING: Override based on Engineer Name or Code (because GD data lacks CC info)
-    if (result === 'DENPASAR') {
+    // 2. HARDCODE MAPPING KHUSUS GD: Override berdasarkan Engineer Name / Code
+    // Rules GD: di tarikan GD tidak ada kolom Collection Center, sehingga pemetaan cabang WAJIB berdasar nama teknisi.
+    // Untuk data selain GD (yang memiliki kolom Collection Center), jika CC kosong/induk maka tetap DENPASAR (tidak dioverride teknisi).
+    if (result === 'DENPASAR' && !hasCCColumn) {
         const eng = String(engineerName || '').toUpperCase();
         let rowStr = '';
         if (row) {
@@ -860,6 +864,8 @@ function calculateAnalytics(baseData, customModels = [], customReasons = []) {
         const billInfo = { jobNo, model, customer: customerName, pendingDays: agingDays, reason, category, engineer, status, asc: ascName };
 
         branchStats[ascName].total++;
+        if (!branchStats[ascName].bills.total) branchStats[ascName].bills.total = [];
+        branchStats[ascName].bills.total.push(billInfo);
 
         if (status === 'Repair Completed' || status.includes('Completed')) {
             let rcPendingDays = agingDays;
@@ -1289,31 +1295,41 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
     let partsSalesMap = {}; // key: branch + '_' + partNo
     let partsSalesList = [];
     let partsDailyData = {};
+    let processedPartsRows = new Set(); // Mencegah duplikasi baris transaksi jika file ter-download multi-cabang
+
     (downloadedFiles.partsFiles || []).forEach(f => {
         try {
             const rows = parseExcelFile(f.path);
             if (!rows || rows.length === 0) return;
             rows.forEach(r => {
-                let colBranch = Object.keys(r).find(k => k.toLowerCase().includes('partner') || k.toLowerCase().includes('asc') || k.toLowerCase().includes('branch'));
+                // Lewati baris Total
+                if (r['Branch'] === 'Total' || r['Name'] === 'Total' || !r['S/O Date']) return;
+
+                // 1. Tentukan Cabang dari data baris tabel GSPN (r['Name'] atau r['Branch']) agar tidak tertukar/tercampur
+                let rawBranch = r['Name'] || r['Branch'] || f.branch;
+                if (!rawBranch || /^\d+$/.test(rawBranch)) rawBranch = f.branch;
+                let branch = shortenASC(rawBranch);
+                if (!branch || branch === 'Unknown ASC') branch = f.branch.replace(/_/g, ' ');
+
                 let colPart = Object.keys(r).find(k => k.toLowerCase().includes('material code') || k.toLowerCase().includes('parts no') || k.toLowerCase().includes('part') || k.toLowerCase().includes('item'));
                 let colDesc = Object.keys(r).find(k => k.toLowerCase().includes('description') || k.toLowerCase().includes('desc'));
                 let colQty = Object.keys(r).find(k => k.toLowerCase() === 'qty' || k.toLowerCase().includes('quantity') || k.toLowerCase().includes('sale qty') || k.toLowerCase().includes('amt'));
-                let branch = f.branch.replace(/_/g, ' ');
-                let partNo = colPart ? r[colPart] : '';
-                let desc = colDesc ? r[colDesc] : '';
+                
+                let partNo = colPart ? String(r[colPart] || '').trim() : '';
+                let desc = colDesc ? String(r[colDesc] || '').trim() : '';
                 let qtyStr = colQty ? r[colQty] : '0';
                 let qty = parseInt(String(qtyStr).replace(/,/g, '')) || 0;
-                if (!partNo) return;
-                branch = String(branch).replace(/PT.?s*BINTANGs+UTAMAs+JAYAs+MAKMURs*/gi, '').replace(/^-?s*/, '').trim();
-                if (branch === f.branch && branch.includes('_')) {
-                    let parts = branch.split('_');
-                    if (parts.length > 1) {
-                        let namePart = parts.find(p => isNaN(p) && p !== 'PTBINTANG' && p !== 'UTAMA' && p !== 'JAYA' && p !== 'MAKMUR');
-                        if (namePart) branch = namePart;
-                    }
-                }
-                if (!branch) branch = 'UNKNOWN';
-                
+                let soNo = r['S/O No'] || r['Invoice No'] || '';
+                let colDate = Object.keys(r).find(k => k.toLowerCase() === 's/o date' || k.toLowerCase().includes('date'));
+                let dateVal = colDate ? r[colDate] : null;
+
+                if (!partNo || !dateVal) return;
+
+                // Deduping baris transaksi unik: invoice/soNo + cabang + partNo + date
+                let rowUniqueId = `${soNo}_${branch}_${partNo}_${dateVal}`;
+                if (processedPartsRows.has(rowUniqueId)) return;
+                processedPartsRows.add(rowUniqueId);
+
                 let key = branch + '_' + partNo;
                 if (!partsSalesMap[key]) {
                     partsSalesMap[key] = { branch, partNo, desc, qty: 0 };
@@ -1321,9 +1337,6 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
                 partsSalesMap[key].qty += qty;
                 
                 // Parts Daily Data (Filtered to ADAPTOR & DATA LINK)
-                let colDate = Object.keys(r).find(k => k.toLowerCase() === 's/o date' || k.toLowerCase().includes('date'));
-                let dateVal = colDate ? r[colDate] : null;
-                
                 let isAdaptor = desc.toLowerCase().includes('adaptor') || desc.toLowerCase().includes('travel adapter');
                 let isDataLink = desc.toLowerCase().includes('data link') || desc.toLowerCase().includes('cable');
                 let itemType = null;
@@ -1331,7 +1344,7 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
                 else if (isDataLink) itemType = 'DATA LINK';
 
                 if (itemType && dateVal) {
-                    dateVal = String(dateVal).replace(/\D/g, ''); // 20260924
+                    dateVal = String(dateVal).replace(/\D/g, ''); // YYYYMMDD
                     if (dateVal.length === 8) {
                         let y = parseInt(dateVal.substring(0,4));
                         let m = parseInt(dateVal.substring(4,6)) - 1;
@@ -1340,9 +1353,12 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
                         let now = new Date();
                         if (m === now.getMonth() && y === now.getFullYear()) {
                             let rowKey = branch + ' - ' + itemType;
-                            if (!partsDailyData[rowKey]) partsDailyData[rowKey] = {};
+                            if (!partsDailyData[rowKey]) partsDailyData[rowKey] = { partNos: [] };
                             if (!partsDailyData[rowKey][d]) partsDailyData[rowKey][d] = 0;
                             partsDailyData[rowKey][d] += qty;
+                            if (partNo && !partsDailyData[rowKey].partNos.includes(partNo)) {
+                                partsDailyData[rowKey].partNos.push(partNo);
+                            }
                         }
                     }
                 }
@@ -1411,19 +1427,13 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
     const AgingIntelligenceFacade = require('./intelligence/aging_intelligence_facade');
     const NotificationEngine = require('./intelligence/notification_engine');
     const now = new Date();
-    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
+    const pad = n => String(n).padStart(2, '0');
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`; // Sesuai tanggal lokal Windows
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`; // Sesuai jam lokal Windows
     const snapshotId = `${dateStr}_${timeStr.replace(/:/g, '')}`;
 
     // Optimize payload size for Firestore document limit (1MB max):
-    // 1. Remove raw branchStats.bills.total
-    for (let b in analytics.branchStats) {
-        if (analytics.branchStats[b].bills) {
-            delete analytics.branchStats[b].bills.total;
-        }
-    }
-
-    // 2. Compact shameList and engineerStats (engineerStats provides summary stats; shameList contains bills for modal)
+    // 1. Compact Bill helper
     const compactBill = (bill) => {
         if (!bill) return null;
         return {
@@ -1436,6 +1446,18 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
             engineer: bill.engineer || '-'
         };
     };
+
+    // 2. Extract and compact branchStats.bills.total into soBillsByBranch for dedicated latest_so doc
+    const soBillsByBranch = {};
+    for (let b in analytics.branchStats) {
+        if (analytics.branchStats[b].bills && Array.isArray(analytics.branchStats[b].bills.total)) {
+            soBillsByBranch[b] = analytics.branchStats[b].bills.total.map(compactBill).filter(Boolean);
+            // Delete from branchStats so latest doc stays ultralight
+            delete analytics.branchStats[b].bills.total;
+        }
+    }
+
+    // 3. Compact shameList and engineerStats (engineerStats provides summary stats; shameList contains bills for modal)
 
     if (analytics.shameList) {
         analytics.shameList.forEach(item => {
@@ -1488,11 +1510,13 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
                     item.ai_action = intelligenceResult.action;
                     item.ai_riskScore = intelligenceResult.riskScore ? intelligenceResult.riskScore.riskScore : 0;
                     
-                    // Trigger alerts for Critical/High issues
+                    // Trigger alerts for Critical/High issues (Dinonaktifkan: hemat network & kuota, cegah offline error)
+                    /*
                     try {
                         const alertRes = await NotificationEngine.triggerAlert(db, jobData, intelligenceResult);
                         if (alertRes && alertRes.status === 'ALERT_CREATED') aiAlertsSent++;
                     } catch (e) { console.error('FIREBASE RULES FETCH ERROR:', e); }
+                    */
                 }
             }
         }
@@ -1575,6 +1599,7 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
     // ============================================================
 
     // DOC 1: Core summary + branch stats + shame/dosa (small)
+    // NOTE: partsDailyData dan partsSalesList diisolasi khusus ke payloadPartsSales agar tidak menimpa dengan data parsial
     const payloadCore = {
         lastUpdated: `${dateStr} ${timeStr} WIB`,
         timestamp: Date.now(),
@@ -1590,9 +1615,7 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
         unknownModels: analytics.unknownModels,
         unknownReasons: analytics.unknownReasons,
         totalRawRows: analytics.totalRawRows,
-        status: 'SUCCESS',
-        partsSalesList: partsSalesList,
-        partsDailyData: partsDailyData
+        status: 'SUCCESS'
     };
 
     // DOC 2: Violations lists (mpuList, ubList, x09List, redoList)
@@ -1630,7 +1653,7 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
     if (existingProd) {
         // Merge gdTrendData (retain past 5 months, overwrite current month)
         if (existingProd.gdTrendData) {
-                        const mergedTrend = { ...existingProd.gdTrendData };
+            const mergedTrend = { ...existingProd.gdTrendData };
             for (const month in prodAnalytics.gdTrendData) {
                 if (!mergedTrend[month]) {
                     mergedTrend[month] = { ...prodAnalytics.gdTrendData[month] };
@@ -1640,23 +1663,59 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
             }
             prodAnalytics.gdTrendData = mergedTrend;
         }
-        
-        // Merge fameList (Inject GD Prev Month if possible)
-        // Since we only scrape 1 month, gdCount is actually the current month's GD!
-        // We can look at existingProd.fameList to see what they had previously.
-        if (existingProd.fameList) {
-            const oldFameMap = {};
-            existingProd.fameList.forEach(f => {
-                oldFameMap[f.engineer] = f.gdCount || 0; // previously total
-            });
-            
-            prodAnalytics.fameList.forEach(f => {
-                // Wait! If they only scraped 1 month, then f.gdCount is CURRENT month!
-                // So previous month is in existingProd? Not exactly, existingProd had a 6-month total!
-                // Wait, if existingProd had a 6-month total, we can't extract exactly "last month".
-                // Actually, if we just keep gdTrendData intact, the FRONTEND can calculate it!
-            });
+
+        // Merge gdDailyData (Pertahankan data harian cabang lama jika tidak ter-scrape di siklus ini)
+        if (existingProd.gdDailyData) {
+            const mergedDaily = { ...existingProd.gdDailyData };
+            for (const branch in prodAnalytics.gdDailyData) {
+                mergedDaily[branch] = {
+                    ...(mergedDaily[branch] || {}),
+                    ...prodAnalytics.gdDailyData[branch]
+                };
+            }
+            prodAnalytics.gdDailyData = mergedDaily;
         }
+
+        // Merge fameList (Pertahankan teknisi lama & cegah duplikasi nama)
+        if (Array.isArray(existingProd.fameList) && existingProd.fameList.length > 0) {
+            const fameMap = new Map();
+            existingProd.fameList.forEach(item => {
+                const k = (item.engineer || '').trim().toUpperCase();
+                if (k) fameMap.set(k, item);
+            });
+            (prodAnalytics.fameList || []).forEach(item => {
+                const k = (item.engineer || '').trim().toUpperCase();
+                if (k) fameMap.set(k, item);
+            });
+            prodAnalytics.fameList = Array.from(fameMap.values()).sort((a, b) => (b.gdCount || 0) - (a.gdCount || 0));
+        }
+    }
+
+    // MERGE PARTS SALES (Proteksi agar penjualan aksesoris hari sebelumnya tidak terhapus)
+    let existingParts = null;
+    try {
+        const partsDocSnap = await getDoc(doc(db, 'dashboard_data', 'latest_parts_sales'));
+        if (partsDocSnap.exists()) {
+            existingParts = partsDocSnap.data();
+        }
+    } catch (e) {
+        console.warn('Gagal mengambil data Parts Sales lama dari Firestore:', e);
+    }
+
+    if (existingParts && existingParts.partsDailyData) {
+        const mergedPartsDaily = { ...existingParts.partsDailyData };
+        for (const rowKey in partsDailyData) {
+            if (!mergedPartsDaily[rowKey]) {
+                mergedPartsDaily[rowKey] = partsDailyData[rowKey];
+            } else {
+                mergedPartsDaily[rowKey] = {
+                    ...mergedPartsDaily[rowKey],
+                    ...partsDailyData[rowKey],
+                    partNos: [...new Set([...(mergedPartsDaily[rowKey].partNos || []), ...(partsDailyData[rowKey].partNos || [])])]
+                };
+            }
+        }
+        partsDailyData = mergedPartsDaily;
     }
 
     const payloadPartsSales = {
@@ -1674,6 +1733,13 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
         gdDailyData: prodAnalytics.gdDailyData,
         prodJobs: prodAnalytics.prodJobs,
     };
+    if (existingProd && existingProd.volInTrendData) {
+        payloadProd.volInTrendData = existingProd.volInTrendData;
+        payloadProd.volInLastUpdated = existingProd.volInLastUpdated || new Date().toISOString();
+    }
+    if (existingProd && existingProd.volInDailyData) {
+        payloadProd.volInDailyData = existingProd.volInDailyData;
+    }
 
     console.log('\n☁️ Mengunggah snapshot ke Firebase Firestore (4 dokumen)...');
     console.log(`   Core: ~${(JSON.stringify(payloadCore).length/1024).toFixed(0)}KB`);
@@ -1681,16 +1747,25 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
     console.log(`   Engineering: ~${(JSON.stringify(payloadEng).length/1024).toFixed(0)}KB`);
     console.log(`   Productivity: ~${(JSON.stringify(payloadProd).length/1024).toFixed(0)}KB`);
 
+    const payloadSO = {
+        lastUpdated: `${dateStr} ${timeStr} WIB`,
+        timestamp: Date.now(),
+        soBillsByBranch: soBillsByBranch
+    };
+
+    console.log(`   Total S/O Bills: ~${(JSON.stringify(payloadSO).length/1024).toFixed(0)}KB`);
+
     try {
-        // Upload 4 docs in parallel for speed
+        // Upload docs in parallel for speed
         await Promise.all([
             setDoc(doc(db, 'dashboard_data', 'latest'), payloadCore),
             setDoc(doc(db, 'dashboard_data', 'latest_violations'), payloadViolations),
             setDoc(doc(db, 'dashboard_data', 'latest_eng'), payloadEng),
             setDoc(doc(db, 'dashboard_data', 'latest_prod'), payloadProd),
             setDoc(doc(db, 'dashboard_data', 'latest_parts_sales'), payloadPartsSales),
+            setDoc(doc(db, 'dashboard_data', 'latest_so'), payloadSO),
         ]);
-        console.log('  ✅ [LATEST] Semua 4 dokumen dashboard_data berhasil diperbarui!');
+        console.log('  ✅ [LATEST] Semua dokumen dashboard_data (termasuk latest_so) berhasil diperbarui!');
 
         // Archive minimal summary to history (avoid 1MB limit on history too)
         const historyDocRef = doc(db, 'dashboard_history', snapshotId);

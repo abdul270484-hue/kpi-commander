@@ -13,13 +13,17 @@ export function initFirebaseAutoSync(db) {
 
     // 1. Subscribe to all 4 split dashboard docs and merge them into rawDashboardData
     let _mergedData = {};
+    let _renderTimer = null;
     function _tryRender() {
         // Only render when at least the core doc has loaded
         if (_mergedData._coreLoaded) {
-            window.rawDashboardData = Object.assign({}, _mergedData);
-            if (typeof window.applyDashboardFilterAndRender === 'function') {
-                window.applyDashboardFilterAndRender();
-            }
+            if (_renderTimer) clearTimeout(_renderTimer);
+            _renderTimer = setTimeout(() => {
+                window.rawDashboardData = Object.assign({}, _mergedData);
+                if (typeof window.applyDashboardFilterAndRender === 'function') {
+                    window.applyDashboardFilterAndRender();
+                }
+            }, 300);
         }
     }
 
@@ -41,6 +45,16 @@ export function initFirebaseAutoSync(db) {
     });
     db.collection('dashboard_data').doc('latest_parts_sales').onSnapshot((snap) => {
         if (snap.exists) { Object.assign(_mergedData, snap.data()); _tryRender(); }
+    });
+    db.collection('dashboard_data').doc('latest_so').onSnapshot((snap) => {
+        if (snap.exists) {
+            const soData = snap.data();
+            if (soData && soData.soBillsByBranch) {
+                _mergedData.soBillsByBranch = soData.soBillsByBranch;
+                window.soBillsByBranchGlobal = soData.soBillsByBranch;
+            }
+            _tryRender();
+        }
     });
 
 
@@ -78,6 +92,8 @@ export function initFirebaseAutoSync(db) {
             data.dtsMxData = filterObj(data.dtsMxData);
             data.dtsIhData = filterObj(data.dtsIhData);
             data.gdDailyData = filterObj(data.gdDailyData);
+            data.partsDailyData = filterObj(data.partsDailyData);
+            data.soBillsByBranch = filterObj(data.soBillsByBranch);
 
             if (data.gdTrendData) {
                 let newGd = {};
@@ -89,6 +105,39 @@ export function initFirebaseAutoSync(db) {
                 }
                 data.gdTrendData = newGd;
             }
+
+            if (data.volInTrendData) {
+                let newVolIn = {};
+                for (let m in data.volInTrendData) {
+                    newVolIn[m] = {};
+                    for (let b in data.volInTrendData[m]) {
+                        if (ascMatch(b)) newVolIn[m][b] = data.volInTrendData[m][b];
+                    }
+                }
+                data.volInTrendData = newVolIn;
+            }
+
+            // Recalculate summary metrics for filtered branches
+            let fTotal = 0, fLtp = 0, fExLtp = 0, fX09 = 0;
+            for (let b in data.branchStats) {
+                const bs = data.branchStats[b] || {};
+                fTotal += (bs.total || 0);
+                fLtp += (bs.ltp || 0);
+                fExLtp += (bs.exLtp || 0);
+                fX09 += (bs.x09 || 0);
+            }
+            const fMpu = Array.isArray(data.mpuList) ? data.mpuList.length : 0;
+            const fUb = Array.isArray(data.ubList) ? data.ubList.length : 0;
+            const fRedo = Array.isArray(data.redoItems) ? data.redoItems.length : (Array.isArray(data.redoList) ? data.redoList.length : 0);
+            data.summary = Object.assign({}, data.summary || {}, {
+                total: fTotal,
+                ltp: fLtp,
+                exLtp: fExLtp,
+                mpuViolations: fMpu,
+                ubViolations: fUb,
+                x09Violations: fX09,
+                redoCount: fRedo
+            });
         }
         
         const syncStatusEl = document.getElementById('sync-status');
@@ -115,8 +164,20 @@ export function initFirebaseAutoSync(db) {
         if (data.mpuList) window.mpuData = data.mpuList;
         if (data.ubList) window.ubData = data.ubList;
         if (data.redoList) window.redoList = data.redoList;
-        if (data.redoItems) window.redoList = data.redoItems;
+        if (data.summary) window.dashboardSummary = data.summary;
+        if (data.soBillsByBranch) {
+            window.soBillsByBranchGlobal = data.soBillsByBranch;
+            if (data.branchStats) {
+                for (let b in data.branchStats) {
+                    if (data.soBillsByBranch[b]) {
+                        if (!data.branchStats[b].bills) data.branchStats[b].bills = {};
+                        data.branchStats[b].bills.total = data.soBillsByBranch[b];
+                    }
+                }
+            }
+        }
         if (data.branchStats) window.branchData = data.branchStats;
+        if (data.rcStats) window.rcData = data.rcStats;
         if (data.unknownModels) window.unknownModels = data.unknownModels;
         if (data.unknownReasons) window.unknownReasons = data.unknownReasons;
         if (typeof window.renderUnmappedSuggestions === 'function') {
@@ -125,6 +186,7 @@ export function initFirebaseAutoSync(db) {
 
         const renderData = () => {
             if (data.summary && typeof window.updateUI === 'function') {
+                try {
                 window.updateUI(
                     data.summary,
                     data.mpuList || [],
@@ -147,8 +209,25 @@ export function initFirebaseAutoSync(db) {
                 if (data.gdDailyData && typeof window.renderGdDailyTable === 'function') {
                     window.renderGdDailyTable(data.gdDailyData);
                 }
+                window.partsDailyDataGlobal = data.partsDailyData || {};
+                window.partsSalesListGlobal = data.partsSalesList || [];
                 if (typeof window.renderPartsSalesTable === 'function') {
-                    window.renderPartsSalesTable(data.partsSalesList || []);
+                    window.renderPartsSalesTable(data.partsDailyData || {});
+                }
+                if (typeof window.renderVolInVsGdTable === 'function') {
+                    window.renderVolInVsGdTable(data.volInTrendData || {}, data.gdTrendData || {});
+                }
+                if (typeof window.renderExecutiveSummaryTable === 'function') {
+                    window.renderExecutiveSummaryTable();
+                }
+                } catch (err) {
+                    console.error('Error in updateUI:', err);
+                    const loadingOverlay = document.getElementById('loading-overlay');
+                    const emptyState = document.getElementById('empty-state');
+                    const dashboardContent = document.getElementById('dashboard-content');
+                    if (loadingOverlay) loadingOverlay.classList.add('hidden');
+                    if (emptyState) emptyState.classList.add('hidden');
+                    if (dashboardContent) dashboardContent.classList.remove('hidden');
                 }
             } else {
                 setTimeout(renderData, 250);
@@ -158,12 +237,12 @@ export function initFirebaseAutoSync(db) {
         renderData();
     };
 
-    // 2. Wire 'Tarik GSPN Sekarang' Remote Button Click
+    // 2. Wire 'Fetch GSPN Now' Remote Button Click
     if (btnTriggerRpa) {
         btnTriggerRpa.addEventListener('click', async () => {
             try {
                 btnTriggerRpa.disabled = true;
-                btnTriggerRpa.innerHTML = '<i class="fa-solid fa-robot fa-bounce"></i> Menjalankan Robot...';
+                btnTriggerRpa.innerHTML = '<i class="fa-solid fa-robot fa-bounce"></i> Running Bot...';
 
                 // Try Direct Super Engine API first for instant local trigger
                 fetch('http://127.0.0.1:3001/api/trigger-rpa', {
@@ -182,14 +261,14 @@ export function initFirebaseAutoSync(db) {
                 }, { merge: true }).catch(() => {});
 
                 if (window.showToastNotification) {
-                    window.showToastNotification('⚡ Robot Playwright GSPN mulai berjalan!');
+                    window.showToastNotification('⚡ Playwright GSPN Bot has started running!');
                 }
             } catch (err) {
-                console.error('Gagal mengirim perintah RPA:', err);
+                console.error('Failed to send RPA command:', err);
                 btnTriggerRpa.disabled = false;
-                btnTriggerRpa.innerHTML = '<i class="fa-solid fa-bolt"></i> Tarik GSPN Sekarang';
+                btnTriggerRpa.innerHTML = '<i class="fa-solid fa-bolt"></i> Fetch GSPN Now';
                 if (window.showToastNotification) {
-                    window.showToastNotification('❌ Gagal mengirim perintah: ' + err.message);
+                    window.showToastNotification('❌ Failed to send command: ' + err.message);
                 }
             }
         });
@@ -211,8 +290,8 @@ export function initFirebaseAutoSync(db) {
                         const cur   = statusData.progressCurrent || 0;
                         const tot   = statusData.progressTotal   || 0;
                         const prog  = statusData.status === 'PENDING'
-                            ? '📡 Menghubungi Robot...'
-                            : (statusData.progress || 'Sedang Menarik GSPN...');
+                            ? '📡 Connecting to Bot...'
+                            : (statusData.progress || 'Fetching GSPN Data...');
 
                         const barInner = tot > 0
                             ? `<div style="width:100%;background:rgba(0,0,0,0.2);border-radius:4px;height:5px;margin-top:3px;">
@@ -221,7 +300,7 @@ export function initFirebaseAutoSync(db) {
                             : '';
 
                         const label = tot > 0
-                            ? `<span style="font-size:0.75rem;opacity:0.9;">${cur}/${tot} cabang (${pct}%)</span>`
+                            ? `<span style="font-size:0.75rem;opacity:0.9;">${cur}/${tot} branches (${pct}%)</span>`
                             : '';
 
                         btnTriggerRpa.innerHTML = `

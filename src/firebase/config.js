@@ -14,8 +14,14 @@ const defaultCustomReasons = [
     {keyword: 'MONITORING/AGING OR NOT REPRODUCED', category: 'AGING'},
     {keyword: 'RE-SCHEDULING BY ENG\'R OR ASC', category: 'AGING'},
     {keyword: 'RE-SCHEDULING BY CUSTOMER', category: 'AGING'},
+	{keyword: 'NEED TO SET APPOINTMENT DATE', category: 'AGING'},
+	{keyword: 'WAITING FOR WARRANTY DOCUMENTS', category: 'AGING'},
+	{keyword: 'CHECKING CUSTOMER INFO', category: 'AGING'},
+	{keyword: 'RE-SCHEDULING (due to Part ETA)', category: 'AGING'},
+	{keyword: 'ASSIGN TO ENG\'R AFTER PARTS RECEIVED', category: 'AGING'},
     {keyword: 'WAITING FOR CONFIRMATION FROM CUSTOMER', category: 'AGING'},
-    {keyword: 'REPAIR IN PROGRESS AFTER PARTS RECEIVE', category: 'AGING'},
+	{keyword: 'REPAIR IN PROGRESS', category: 'AGING'},
+    {keyword: 'REPAIR IN PROGRESS AFTER PARTS RECEIVED', category: 'AGING'},
     {keyword: 'WAITING FOR CONFIRMATION FROM SAMSUNG', category: 'AGING'},
     {keyword: 'PARTS ARRIVED BUT NO G/R YET(ASC)', category: 'AGING'},
     {keyword: 'REQUEST TECH SUPPORT (TECHNICAL PROBLEM)', category: 'AGING'},
@@ -48,7 +54,7 @@ export function initRulesListener(onRulesUpdated) {
                 reasons: defaultCustomReasons
             }).catch(err => {
                 console.error("Firestore seed error:", err);
-                if (window.showToastNotification) window.showToastNotification(`<strong>Peringatan Cloud Sync:</strong><br>Database Firestore belum siap!`);
+                if (window.showToastNotification) window.showToastNotification(`<strong>Peringatan Cloud Sync:</strong><br>Firestore Database is not ready!`);
             });
             window.customModels = defaultCustomModels;
             window.customReasons = defaultCustomReasons;
@@ -56,7 +62,7 @@ export function initRulesListener(onRulesUpdated) {
         }
     }, (error) => {
         console.error("Firestore Listen Error:", error);
-        if (window.showToastNotification) window.showToastNotification(`<strong>Koneksi Cloud Terputus:</strong><br>Gagal mengambil rules tersinkronisasi.`);
+        if (window.showToastNotification) window.showToastNotification(`<strong>Koneksi Cloud Terputus:</strong><br>Failed to fetch synced rules.`);
     });
 }
 
@@ -76,7 +82,7 @@ export function addCustomRule(type, kw, cat, onComplete) {
     }, {merge: true}).then(() => {
         if (onComplete) onComplete();
     }).catch(e => {
-        if (window.showToastNotification) window.showToastNotification("Gagal menyimpan ke Cloud: " + e.message);
+        if (window.showToastNotification) window.showToastNotification("Failed to save to Cloud: " + e.message);
     });
 }
 
@@ -94,7 +100,7 @@ export function deleteCustomRule(type, index, onComplete) {
     }, {merge: true}).then(() => {
         if (onComplete) onComplete();
     }).catch(e => {
-        if (window.showToastNotification) window.showToastNotification("Gagal menghapus dari Cloud: " + e.message);
+        if (window.showToastNotification) window.showToastNotification("Failed to delete from Cloud: " + e.message);
     });
 }
 
