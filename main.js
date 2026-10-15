@@ -5,7 +5,7 @@ import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as 
 import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser } from './src/firebase/users.js?v=1790141904536';
 import { initAuth, isAdmin, normalizePhone } from './src/auth.js?v=20261013_v10';
 import { handleFiles, handleProductivityFiles } from './src/parser.js?v=1790141904536';
-import { initFirebaseAutoSync } from './src/firebase_sync.js?v=20261013_v1';
+import { initFirebaseAutoSync } from './src/firebase_sync.js?v=20261015_lock';
 
 // Expose services to global scope for HTML inline onclick handlers
 window.sendWA = sendWA;
@@ -352,7 +352,9 @@ function getAllowedBranches() {
 function isBranchAllowed(branchName, allowedBranches) {
     if (!branchName) return false;
     if (!allowedBranches || !Array.isArray(allowedBranches) || allowedBranches.length === 0) return false;
-    
+    if (typeof window.branchMatches === 'function') {
+        return allowedBranches.some(allowed => window.branchMatches(allowed, branchName));
+    }
     const target = String(branchName).toUpperCase().trim();
     return allowedBranches.some(allowed => {
         const a = String(allowed).toUpperCase().trim();

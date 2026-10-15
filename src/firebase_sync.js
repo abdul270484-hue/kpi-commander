@@ -2,6 +2,72 @@
 // FIREBASE CLOUD REALTIME SYNC & REMOTE RPA TRIGGER
 // ==========================================
 
+export function branchMatches(branchA, branchB) {
+    if (!branchA || !branchB) return false;
+    let a = String(branchA).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    let b = String(branchB).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (a === b) return true;
+    
+    const rawA = String(branchA).toUpperCase();
+    const rawB = String(branchB).toUpperCase();
+    if (rawA.includes('CELLULAR WORLD') || rawB.includes('CELLULAR WORLD')) {
+        return rawA.includes('CELLULAR WORLD') && rawB.includes('CELLULAR WORLD');
+    }
+    if (rawA.includes('PLANET GADGET') || rawB.includes('PLANET GADGET')) {
+        return rawA.includes('PLANET GADGET') && rawB.includes('PLANET GADGET');
+    }
+    if ((rawA.startsWith('DENPASAR') && !rawA.includes('CELLULAR') && !rawA.includes('PLANET')) ||
+        (rawB.startsWith('DENPASAR') && !rawB.includes('CELLULAR') && !rawB.includes('PLANET'))) {
+        return (rawA.startsWith('DENPASAR') && !rawA.includes('CELLULAR') && !rawA.includes('PLANET')) &&
+               (rawB.startsWith('DENPASAR') && !rawB.includes('CELLULAR') && !rawB.includes('PLANET'));
+    }
+
+    if (rawA.includes('ITC') || rawA.includes('BSD') || rawB.includes('ITC') || rawB.includes('BSD')) {
+        return (rawA.includes('ITC') || rawA.includes('BSD')) && (rawB.includes('ITC') || rawB.includes('BSD'));
+    }
+    if (rawA === 'SERPONG' || rawB === 'SERPONG') {
+        return rawA.startsWith('SERPONG') && rawB.startsWith('SERPONG') && !rawA.includes('ITC') && !rawB.includes('ITC');
+    }
+
+    // Pangkal Pinang / Pangkalpinang
+    const isPKA = a.includes('PANGKALPINANG') || (a.includes('PANGKAL') && a.includes('PINANG'));
+    const isPKB = b.includes('PANGKALPINANG') || (b.includes('PANGKAL') && b.includes('PINANG'));
+    if (isPKA || isPKB) {
+        return isPKA && isPKB;
+    }
+
+    // Pangkalan Bun (jangan tertukar dengan Pangkal Pinang)
+    const isPBA = a.includes('PANGKALANBUN') || (a.includes('PANGKALAN') && a.includes('BUN'));
+    const isPBB = b.includes('PANGKALANBUN') || (b.includes('PANGKALAN') && b.includes('BUN'));
+    if (isPBA || isPBB) {
+        return isPBA && isPBB;
+    }
+
+    // Lampung vs Bandar Lampung
+    const isLPA = a.includes('LAMPUNG') && !a.includes('BANDARJAYA');
+    const isLPB = b.includes('LAMPUNG') && !b.includes('BANDARJAYA');
+    if (isLPA || isLPB) {
+        return isLPA && isLPB;
+    }
+
+    // Bandar Jaya vs Bandar
+    const isBJA = (a.includes('BANDARJAYA') || a === 'BANDAR') && !a.includes('LAMPUNG');
+    const isBJB = (b.includes('BANDARJAYA') || b === 'BANDAR') && !b.includes('LAMPUNG');
+    if (isBJA || isBJB) {
+        return isBJA && isBJB;
+    }
+
+    // Tanjungpinang vs Tanjung Pinang vs Tanjung
+    const isTJA = a.includes('TANJUNG');
+    const isTJB = b.includes('TANJUNG');
+    if (isTJA || isTJB) {
+        return isTJA && isTJB;
+    }
+
+    return a.includes(b) || b.includes(a);
+}
+window.branchMatches = branchMatches;
+
 export function initFirebaseAutoSync(db) {
     if (!db) return;
 
@@ -62,14 +128,13 @@ export function initFirebaseAutoSync(db) {
         if (!window.rawDashboardData) return;
         
         let data = JSON.parse(JSON.stringify(window.rawDashboardData));
-        
+
         // --- COMPREHENSIVE AREA MANAGER FILTER ---
         if (window.currentUserBranches && window.currentUserBranches.length > 0) {
             const allowed = window.currentUserBranches;
             const ascMatch = (ascName) => {
                 if (!ascName) return false;
-                let upper = String(ascName).toUpperCase();
-                return allowed.some(a => upper.includes(a));
+                return allowed.some(a => branchMatches(a, ascName));
             };
 
             if (Array.isArray(data.mpuList)) data.mpuList = data.mpuList.filter(s => ascMatch(s.asc || s.branch));
