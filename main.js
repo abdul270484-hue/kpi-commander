@@ -108,6 +108,9 @@ analyzerWorker.onmessage = function(e) {
             if (typeof window.renderGdDailyTable === 'function') {
                 window.renderGdDailyTable(gdDailyData);
             }
+            if (typeof window.renderVolInVsGdTable === 'function') {
+                window.renderVolInVsGdTable(payload.volInTrendData || window.volInTrendDataGlobal || {}, gdTrendData || window.gdTrendDataGlobal || {});
+            }
             if (typeof window.reMapRedoList === 'function') window.reMapRedoList();
         } catch (err) {
             console.error('[PRODUCTIVITY ERROR]', err);
@@ -3751,17 +3754,35 @@ window.renderVolInVsGdTable = function(volInTrendData, gdTrendData) {
         }
     });
 
-    const preferredOrder = [
-        'DENPASAR',
-        'DENPASAR - CELLULAR WORLD',
-        'DENPASAR - PLANET GADGET'
-    ];
+    const pastMonthsCount = monthsConfig.filter(m => !m.isCurrent).length || 3;
+
+    // Hitung performa 3 bulan lalu untuk pengurutan Z - A berdasarkan Average 3 Months RATIO
+    const branchStats = {};
+    branchSet.forEach(b => {
+        let past3VInSum = 0;
+        let past3GdSum = 0;
+        monthsConfig.forEach(m => {
+            if (!m.isCurrent) {
+                past3VInSum += (volInTrendData[m.key] && parseInt(volInTrendData[m.key][b])) || 0;
+                past3GdSum += (gdTrendData[m.key] && parseInt(gdTrendData[m.key][b])) || 0;
+            }
+        });
+        const avgVIn = Math.round(past3VInSum / pastMonthsCount);
+        const avgGd = Math.round(past3GdSum / pastMonthsCount);
+        const ratio = avgVIn > 0 ? (avgGd / avgVIn) * 100 : (avgGd > 0 ? 100 : -1);
+        branchStats[b] = { past3VInSum, past3GdSum, avgVIn, avgGd, ratio };
+    });
+
     const branches = Array.from(branchSet).sort((a, b) => {
-        const idxA = preferredOrder.indexOf(a);
-        const idxB = preferredOrder.indexOf(b);
-        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-        if (idxA !== -1) return -1;
-        if (idxB !== -1) return 1;
+        const statA = branchStats[a] || { ratio: -1, avgGd: 0, avgVIn: 0 };
+        const statB = branchStats[b] || { ratio: -1, avgGd: 0, avgVIn: 0 };
+        // 1. Z - A (Descending): Ratio tertinggi ke terendah
+        if (statB.ratio !== statA.ratio) return statB.ratio - statA.ratio;
+        // 2. Tiebreaker: Avg GD terbanyak
+        if (statB.avgGd !== statA.avgGd) return statB.avgGd - statA.avgGd;
+        // 3. Secondary tiebreaker: Avg VOL IN terbanyak
+        if (statB.avgVIn !== statA.avgVIn) return statB.avgVIn - statA.avgVIn;
+        // 4. Alphabetical tiebreaker
         return a.localeCompare(b);
     });
 
@@ -3777,9 +3798,9 @@ window.renderVolInVsGdTable = function(volInTrendData, gdTrendData) {
         </th>`;
     });
 
-    // Kolom paling kanan: Average 3 Months (Eksklusif MTD)
-    headerHtml += `<th style="padding: 8px 10px; background: #1d4ed8; color: #ffffff; font-size: 0.80rem; font-weight: 800; border: 1px solid var(--border-glass); text-align: center; min-width: 180px; line-height: 1.35;" title="Rata-rata 3 Bulan Terakhir (Bulan Berjalan MTD Tidak Dihitung)">
-        AVG 3 MONTHS<br>
+    // Kolom paling kanan: Average 3 Months (Eksklusif MTD) - Diurutkan Z - A berdasarkan Ratio
+    headerHtml += `<th style="padding: 8px 10px; background: #1d4ed8; color: #ffffff; font-size: 0.80rem; font-weight: 800; border: 1px solid var(--border-glass); text-align: center; min-width: 180px; line-height: 1.35;" title="Rata-rata 3 Bulan Terakhir (Bulan Berjalan MTD Tidak Dihitung) - Diurutkan Z - A berdasarkan Ratio">
+        AVG 3 MONTHS <i class="fa-solid fa-arrow-down-wide-short" style="margin-left: 4px; color: #fbbf24;"></i><br>
         <span style="font-size: 0.72rem; font-weight: 600; opacity: 0.95; color: #bae6fd;">(VOL IN | GD | %)</span>
     </th>`;
 
@@ -3792,8 +3813,6 @@ window.renderVolInVsGdTable = function(volInTrendData, gdTrendData) {
     monthsConfig.forEach(m => {
         colTotals[m.key] = { volIn: 0, gd: 0 };
     });
-
-    const pastMonthsCount = monthsConfig.filter(m => !m.isCurrent).length || 3;
 
     branches.forEach((branch, idx) => {
         let rowHtml = '<tr>';
