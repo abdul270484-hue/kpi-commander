@@ -3936,9 +3936,13 @@ window.renderExecutiveSummaryTable = function() {
     const partsList = window.partsSalesListGlobal || (window.rawDashboardData && window.rawDashboardData.partsSalesList) || [];
 
     const branchSet = new Set();
-    Object.keys(volData[currentKey] || {}).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
-    Object.keys(gdData[currentKey] || {}).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
-    Object.keys(branchStats).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+    if (window.currentUserBranches && window.currentUserBranches.length > 0) {
+        window.currentUserBranches.forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+    } else {
+        Object.keys(volData[currentKey] || {}).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+        Object.keys(gdData[currentKey] || {}).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+        Object.keys(branchStats).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+    }
     if (branchSet.size === 0) {
         ['DENPASAR', 'DENPASAR - CELLULAR WORLD', 'DENPASAR - PLANET GADGET'].forEach(b => branchSet.add(b));
     }
@@ -3970,18 +3974,29 @@ window.renderExecutiveSummaryTable = function() {
     let totPenalties = 0;
 
     function matchBranchParts(branch, rowKey) {
+        if (!branch || !rowKey) return false;
         const bUpper = branch.toUpperCase().trim();
-        const rUpper = rowKey.toUpperCase().trim();
+        const rUpper = String(rowKey).toUpperCase().trim();
         if (bUpper.includes('CELLULAR WORLD')) return rUpper.includes('CELLULAR WORLD');
         if (bUpper.includes('PLANET GADGET')) return rUpper.includes('PLANET GADGET');
         if (bUpper === 'DENPASAR') return rUpper.startsWith('DENPASAR') && !rUpper.includes('CELLULAR WORLD') && !rUpper.includes('PLANET GADGET');
-        return rUpper.includes(bUpper);
+        if (bUpper.includes('ITC') || bUpper.includes('BSD')) return rUpper.includes('ITC') || rUpper.includes('BSD');
+        if (bUpper === 'SERPONG') return rUpper.startsWith('SERPONG') && !rUpper.includes('ITC') && !rUpper.includes('BSD');
+        return rUpper.includes(bUpper) || bUpper.includes(rUpper);
     }
 
     branches.forEach((b, idx) => {
         // 1. Pencapaian GD & Volume
-        const vIn = (volData[currentKey] && parseInt(volData[currentKey][b])) || 0;
-        const gd = (gdData[currentKey] && parseInt(gdData[currentKey][b])) || 0;
+        let vIn = (volData[currentKey] && parseInt(volData[currentKey][b])) || 0;
+        let gd = (gdData[currentKey] && parseInt(gdData[currentKey][b])) || 0;
+        if (vIn === 0 && volData[currentKey]) {
+            const foundK = Object.keys(volData[currentKey]).find(k => matchBranchParts(b, k));
+            if (foundK) vIn = parseInt(volData[currentKey][foundK]) || 0;
+        }
+        if (gd === 0 && gdData[currentKey]) {
+            const foundK = Object.keys(gdData[currentKey]).find(k => matchBranchParts(b, k));
+            if (foundK) gd = parseInt(gdData[currentKey][foundK]) || 0;
+        }
         const rate = vIn > 0 ? ((gd / vIn) * 100).toFixed(1) + '%' : (gd > 0 ? '100%' : '-');
 
         // 2. Aksesoris (Qty pcs terjual)
@@ -4002,25 +4017,42 @@ window.renderExecutiveSummaryTable = function() {
         }
 
         // 3. Kontrol TAT & Aging: Unit Aktif, LTP, Aging > 7D, RC
-        const bs = (branchStats && branchStats[b]) || {};
+        let bs = branchStats && branchStats[b];
+        if (!bs && branchStats) {
+            const foundK = Object.keys(branchStats).find(k => matchBranchParts(b, k));
+            if (foundK) bs = branchStats[foundK];
+        }
+        bs = bs || {};
         const unitAktif = bs.total || 0;
         const ltp = bs.ltp || 0;
 
         let aging7 = 0;
-        if (window.dosaCabangStatsGlobal && window.dosaCabangStatsGlobal[b] && window.dosaCabangStatsGlobal[b].bills) {
-            aging7 = window.dosaCabangStatsGlobal[b].bills.length;
+        let dStat = window.dosaCabangStatsGlobal && window.dosaCabangStatsGlobal[b];
+        if (!dStat && window.dosaCabangStatsGlobal) {
+            const foundK = Object.keys(window.dosaCabangStatsGlobal).find(k => matchBranchParts(b, k));
+            if (foundK) dStat = window.dosaCabangStatsGlobal[foundK];
+        }
+        if (dStat && Array.isArray(dStat.bills)) {
+            aging7 = dStat.bills.length;
         } else if (dosaList && dosaList.length > 0) {
-            aging7 = dosaList.filter(d => (d.asc || '').toUpperCase() === b.toUpperCase()).length;
+            aging7 = dosaList.filter(d => matchBranchParts(b, d.asc || d.branch || '')).length;
         } else {
             aging7 = bs.exLtp || 0;
         }
 
-        const rc = (rcData[b] && (parseInt(rcData[b].total) || parseInt(rcData[b].count))) || 0;
+        let rc = 0;
+        let rcObj = rcData[b];
+        if (!rcObj && rcData) {
+            const foundK = Object.keys(rcData).find(k => matchBranchParts(b, k));
+            if (foundK) rcObj = rcData[foundK];
+        }
+        if (typeof rcObj === 'number') rc = rcObj;
+        else if (rcObj) rc = parseInt(rcObj.total) || parseInt(rcObj.count) || (Array.isArray(rcObj.bills) ? rcObj.bills.length : 0) || 0;
 
         // 4. Quality & Compliance: Redo, Penalti MPU/UB/X09
-        const bRedo = redoList.filter(r => (r.asc || '').toUpperCase() === b.toUpperCase()).length;
-        const bMpu = mpuList.filter(m => (m.asc || '').toUpperCase() === b.toUpperCase()).length || (bs.mpu || 0);
-        const bUb = ubList.filter(u => (u.asc || '').toUpperCase() === b.toUpperCase()).length || (bs.ub || 0);
+        const bRedo = redoList.filter(r => matchBranchParts(b, r.asc || r.branch || '')).length;
+        const bMpu = mpuList.filter(m => matchBranchParts(b, m.asc || m.branch || '')).length || (bs.mpu || 0);
+        const bUb = ubList.filter(u => matchBranchParts(b, u.asc || u.branch || '')).length || (bs.ub || 0);
         const bX09 = bs.x09 || 0;
         const penalties = bMpu + bUb + bX09;
 
@@ -4130,6 +4162,7 @@ window.generateExecutiveReportText = function() {
     const gdData = window.gdTrendDataGlobal || (window.rawDashboardData && window.rawDashboardData.gdTrendData) || {};
 
     const cleanBranchName = (b) => {
+        if (!b) return '-';
         let bName = b.replace(/^DENPASAR\s*-\s*/i, '').trim();
         bName = bName.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         if (bName.toLowerCase() === 'denpasar') bName = 'Denpasar';
@@ -4142,20 +4175,39 @@ window.generateExecutiveReportText = function() {
     };
 
     const matchBranch = (b, raw) => {
-        const bUpper = b.toUpperCase();
-        const rUpper = (raw || '').toUpperCase();
+        if (!b || !raw) return false;
+        const bUpper = b.toUpperCase().trim();
+        const rUpper = String(raw).toUpperCase().trim();
         if (bUpper.includes('CELLULAR WORLD')) return rUpper.includes('CELLULAR WORLD');
         if (bUpper.includes('PLANET GADGET')) return rUpper.includes('PLANET GADGET');
-        return rUpper.startsWith('DENPASAR') && !rUpper.includes('CELLULAR WORLD') && !rUpper.includes('PLANET GADGET');
+        if (bUpper === 'DENPASAR') return rUpper.startsWith('DENPASAR') && !rUpper.includes('CELLULAR WORLD') && !rUpper.includes('PLANET GADGET');
+        if (bUpper.includes('ITC') || bUpper.includes('BSD')) return rUpper.includes('ITC') || rUpper.includes('BSD');
+        if (bUpper === 'SERPONG') return rUpper.startsWith('SERPONG') && !rUpper.includes('ITC') && !rUpper.includes('BSD');
+        return rUpper.includes(bUpper) || bUpper.includes(rUpper);
     };
 
-    const preferredOrder = ['DENPASAR', 'DENPASAR - CELLULAR WORLD', 'DENPASAR - PLANET GADGET'];
-    const branches = preferredOrder.filter(b => {
-        if (window.currentUserBranches && window.currentUserBranches.length > 0) {
-            return window.currentUserBranches.some(ab => b.toUpperCase().includes(ab.toUpperCase()));
+    // Resolusi cabang untuk user yang sedang aktif (Asmen / Admin / Super Admin)
+    let branches = [];
+    if (window.currentUserBranches && window.currentUserBranches.length > 0) {
+        branches = [...window.currentUserBranches];
+    } else {
+        const branchSet = new Set();
+        Object.keys(volData[currentKey] || {}).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+        Object.keys(gdData[currentKey] || {}).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+        Object.keys(branchStats).forEach(b => { if (b && b.trim()) branchSet.add(b.trim()); });
+        if (branchSet.size === 0) {
+            ['DENPASAR', 'DENPASAR - CELLULAR WORLD', 'DENPASAR - PLANET GADGET'].forEach(b => branchSet.add(b));
         }
-        return true;
-    });
+        const preferredOrder = ['DENPASAR', 'DENPASAR - CELLULAR WORLD', 'DENPASAR - PLANET GADGET'];
+        branches = Array.from(branchSet).sort((a, b) => {
+            const idxA = preferredOrder.indexOf(a);
+            const idxB = preferredOrder.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+    }
 
     let totVolIn = 0;
     let totGd = 0;
@@ -4165,8 +4217,19 @@ window.generateExecutiveReportText = function() {
     const gdRateBreakdown = [];
 
     branches.forEach(b => {
-        const v = (volData[currentKey] && parseInt(volData[currentKey][b])) || 0;
-        const g = (gdData[currentKey] && parseInt(gdData[currentKey][b])) || 0;
+        let v = (volData[currentKey] && parseInt(volData[currentKey][b])) || 0;
+        let g = (gdData[currentKey] && parseInt(gdData[currentKey][b])) || 0;
+
+        // Fallback pencarian fleksibel
+        if (v === 0 && volData[currentKey]) {
+            const foundK = Object.keys(volData[currentKey]).find(k => matchBranch(b, k));
+            if (foundK) v = parseInt(volData[currentKey][foundK]) || 0;
+        }
+        if (g === 0 && gdData[currentKey]) {
+            const foundK = Object.keys(gdData[currentKey]).find(k => matchBranch(b, k));
+            if (foundK) g = parseInt(gdData[currentKey][foundK]) || 0;
+        }
+
         totVolIn += v;
         totGd += g;
         const rate = v > 0 ? ((g / v) * 100).toFixed(1) + '%' : (g > 0 ? '100%' : '0%');
@@ -4230,7 +4293,12 @@ window.generateExecutiveReportText = function() {
     const rcBreakdown = [];
 
     branches.forEach(b => {
-        const bs = branchStats[b] || {};
+        let bs = branchStats[b];
+        if (!bs) {
+            const foundK = Object.keys(branchStats).find(k => matchBranch(b, k));
+            if (foundK) bs = branchStats[foundK];
+        }
+        bs = bs || {};
         const bSO = bs.total || 0;
         totalSO += bSO;
         soBreakdown.push(`${cleanBranchName(b)}: ${bSO.toLocaleString('id-ID')}`);
@@ -4248,8 +4316,13 @@ window.generateExecutiveReportText = function() {
 
         // Critical Aging (> 7 hari / Ex-LTP) - detail all bills without "dll"
         let bExBills = [];
-        if (dosaStats[b] && Array.isArray(dosaStats[b].bills)) {
-            bExBills = dosaStats[b].bills;
+        let dStat = dosaStats[b];
+        if (!dStat) {
+            const foundK = Object.keys(dosaStats).find(k => matchBranch(b, k));
+            if (foundK) dStat = dosaStats[foundK];
+        }
+        if (dStat && Array.isArray(dStat.bills)) {
+            bExBills = dStat.bills;
         } else if (dosaList && dosaList.length > 0) {
             bExBills = dosaList.filter(d => matchBranch(b, d.asc || d.branch));
         } else if (bs.bills && Array.isArray(bs.bills.exLtp)) {
@@ -4270,7 +4343,14 @@ window.generateExecutiveReportText = function() {
         }
 
         // RC (Pending Delivery)
-        const rc = (rcData[b] && (parseInt(rcData[b].count) || (rcData[b].bills && rcData[b].bills.length))) || 0;
+        let rcObj = rcData[b];
+        if (!rcObj) {
+            const foundK = Object.keys(rcData).find(k => matchBranch(b, k));
+            if (foundK) rcObj = rcData[foundK];
+        }
+        let rc = 0;
+        if (typeof rcObj === 'number') rc = rcObj;
+        else if (rcObj) rc = parseInt(rcObj.total) || parseInt(rcObj.count) || (Array.isArray(rcObj.bills) ? rcObj.bills.length : 0) || 0;
         totalRC += rc;
         rcBreakdown.push(`${cleanBranchName(b)}: ${rc.toLocaleString('id-ID')}`);
     });
@@ -4299,7 +4379,12 @@ window.generateExecutiveReportText = function() {
     const ubList = window.ubData || (window.rawDashboardData && window.rawDashboardData.ubList) || [];
 
     branches.forEach(b => {
-        const bs = branchStats[b] || {};
+        let bs = branchStats[b];
+        if (!bs) {
+            const foundK = Object.keys(branchStats).find(k => matchBranch(b, k));
+            if (foundK) bs = branchStats[foundK];
+        }
+        bs = bs || {};
         const bMpuBills = mpuList.filter(m => matchBranch(b, m.asc || m.branch));
         const bUbBills = ubList.filter(u => matchBranch(b, u.asc || u.branch));
         const bX09Bills = (bs.bills && bs.bills.x09) || [];
