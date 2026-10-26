@@ -100,6 +100,7 @@ backup_stable_v1/
 *.png
 *.jpg
 !prime_icon_*.png
+!photos/**
 *.xlsx
 
 # Scratch scripts
