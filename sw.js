@@ -7,7 +7,7 @@
  * ==============================================================================
  */
 
-const CACHE_NAME = 'bujm-kpi-shell-v2.5';
+const CACHE_NAME = 'bujm-kpi-shell-v2.6';
 
 const PRECACHE_ASSETS = [
     '/',
@@ -15,6 +15,8 @@ const PRECACHE_ASSETS = [
     '/styles.css',
     '/main.js',
     '/mpm_module.js',
+    '/data/mpm_capacity.json',
+    '/data/mpm_employees.json',
     '/manifest.json',
     '/bujm_icon_192.png',
     '/bujm_icon_512.png',

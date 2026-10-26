@@ -26,49 +26,45 @@
     window.initMpmModule = async function () {
         console.log('[MPM] Initializing Manpower Management Module...');
         const container = document.getElementById('mpm-container');
-        if (!container) return;
+        if (!container) {
+            console.error('[MPM] Container #mpm-container not found in DOM!');
+            return;
+        }
 
-        // Render base shell
+        // Ensure container is forcefully displayed with dark theme background
+        container.style.display = 'flex';
+        container.style.background = '#0f172a';
+        container.style.color = '#f8fafc';
+        container.style.width = '100%';
+        container.style.minHeight = '85vh';
+
+        // Render base shell immediately so user sees layout without delay
         renderMpmShell(container);
 
-        // Load data in parallel
+        // Load data in parallel with immediate fallback support
         await Promise.all([
             loadEmployeesData(),
             calculateMpmCapacityData()
         ]);
 
         // Render active view
+        console.log(`[MPM] Ready! Rendering active view with ${capacityData.length} branches and ${mpmEmployees.length} employees.`);
         renderActiveSubTab();
     };
 
-    // Load employee roster from Firestore or fallback to JSON
+    // Load employee roster from LocalStorage, JSON fallback, or Firestore
     async function loadEmployeesData() {
-        // Check localStorage first for any local unsaved edits
+        // 1. Check localStorage first
         const localCached = localStorage.getItem('bujm_mpm_employees');
         if (localCached) {
             try {
                 mpmEmployees = JSON.parse(localCached);
                 console.log(`[MPM] Loaded ${mpmEmployees.length} employees from LocalStorage.`);
-                return;
+                if (mpmEmployees.length > 0) return;
             } catch (_) {}
         }
 
-        // Try Firestore
-        if (window.db) {
-            try {
-                const snap = await window.db.collection('dashboard_data').doc('mpm_employees').get();
-                if (snap.exists && snap.data().employees) {
-                    mpmEmployees = snap.data().employees;
-                    localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
-                    console.log(`[MPM] Loaded ${mpmEmployees.length} employees from Firestore.`);
-                    return;
-                }
-            } catch (err) {
-                console.warn('[MPM] Firestore fetch fallback to JSON:', err.message);
-            }
-        }
-
-        // Fallback to local JSON file
+        // 2. Fetch local JSON file (guaranteed instant 0-delay load)
         try {
             const res = await fetch('./data/mpm_employees.json');
             if (res.ok) {
@@ -77,36 +73,65 @@
                 console.log(`[MPM] Loaded ${mpmEmployees.length} employees from JSON fallback.`);
             }
         } catch (e) {
-            console.error('[MPM] Failed to load employees data:', e);
+            console.warn('[MPM] JSON fetch error:', e.message);
+        }
+
+        // 3. Background sync from Firestore (non-blocking)
+        if (window.db) {
+            window.db.collection('dashboard_data').doc('mpm_employees').get().then(snap => {
+                if (snap.exists && snap.data().employees) {
+                    mpmEmployees = snap.data().employees;
+                    localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
+                    console.log(`[MPM] Synced ${mpmEmployees.length} employees from Firestore in background.`);
+                }
+            }).catch(err => console.warn('[MPM] Firestore background sync warning:', err.message));
         }
     }
 
     // Calculate capacity data based on 3M GD average + Wall of Fame + BOS Rules
     async function calculateMpmCapacityData() {
-        let gdTrend = {};
-        let fameList = window.fameData || [];
+        // 1. Instant load from local JSON cache if capacityData is empty
+        if (!capacityData.length) {
+            try {
+                const res = await fetch('./data/mpm_capacity.json');
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && json.branches && json.branches.length > 0) {
+                        capacityData = json.branches;
+                        console.log(`[MPM] Instantly pre-loaded ${capacityData.length} branches from mpm_capacity.json.`);
+                    }
+                }
+            } catch (err) {
+                console.warn('[MPM] Local capacity JSON fetch warning:', err.message);
+            }
+        }
+
+        let gdTrend = (window.rawDashboardData && window.rawDashboardData.gdTrendData) || window.gdTrendDataGlobal || {};
+        let fameList = window.fameData || window.prodData || [];
         let dtsMx = {};
         let dtsIh = {};
 
-        // Fetch latest_prod & latest_eng from Firestore if not in memory
+        // 2. Try Firestore with strict 2-second timeout so it NEVER hangs
         if (window.db) {
             try {
-                const [prodSnap, engSnap] = await Promise.all([
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 2000));
+                const fetchPromise = Promise.all([
                     window.db.collection('dashboard_data').doc('latest_prod').get(),
                     window.db.collection('dashboard_data').doc('latest_eng').get()
                 ]);
-                if (prodSnap.exists) {
+                const [prodSnap, engSnap] = await Promise.race([fetchPromise, timeoutPromise]);
+                if (prodSnap && prodSnap.exists) {
                     const p = prodSnap.data();
-                    gdTrend = p.gdTrendData || {};
-                    if (!fameList.length) fameList = p.fameList || [];
+                    if (p.gdTrendData) gdTrend = p.gdTrendData;
+                    if (!fameList.length && p.fameList) fameList = p.fameList;
                 }
-                if (engSnap.exists) {
+                if (engSnap && engSnap.exists) {
                     const e = engSnap.data();
-                    dtsMx = e.dtsMxData || {};
-                    dtsIh = e.dtsIhData || {};
+                    if (e.dtsMxData) dtsMx = e.dtsMxData;
+                    if (e.dtsIhData) dtsIh = e.dtsIhData;
                 }
             } catch (err) {
-                console.warn('[MPM] Firestore capacity fetch warning:', err.message);
+                console.warn('[MPM] Firestore capacity fetch warning (using cached data):', err.message);
             }
         }
 

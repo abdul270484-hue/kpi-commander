@@ -496,7 +496,7 @@
                 </div>
 
                 <!-- MANPOWER MANAGEMENT (MPM) VIEW -->
-                <div id="mpm-container" class="card glass-panel span-12 page-mpm" style="display: none; padding: 20px; min-height: 85vh; border-radius: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(168, 85, 247, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.4); flex-direction: column; gap: 20px;"></div>
+                <div id="mpm-container" class="span-12 page-mpm" style="display: none; padding: 25px; min-height: 85vh; border-radius: 12px; background: #0f172a !important; color: #f8fafc !important; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-direction: column; gap: 20px;"></div>
 
             </div>
 
@@ -821,7 +821,7 @@
     <!-- Scripts -->
     <script src="main.js?v=20261022_clean_share_v3" type="module"></script>
     <script src="pwa_engine.js?v=20261021_checklist_v1"></script>
-    <script src="mpm_module.js?v=20261026_mpm_v1"></script>
+    <script src="mpm_module.js?v=20261026_mpm_v2"></script>
 
     <!-- WhatsApp QR Modal -->
     <div id="jarvis-qr-modal" class="modal hidden">
@@ -980,7 +980,8 @@
         #dashboard-content[data-page="mpm"] > .page-all,
         #dashboard-content[data-page="mpm"] > .page-gd,
         #dashboard-content[data-page="mpm"] > .page-commander { display: none !important; }
-        #dashboard-content[data-page="mpm"] > .page-mpm { display: flex !important; flex-direction: column; grid-column: 1 / -1 !important; width: 100% !important; }
+        #dashboard-content[data-page="mpm"] > .page-mpm { display: flex !important; flex-direction: column; grid-column: 1 / -1 !important; width: 100% !important; background: #0f172a !important; color: #f8fafc !important; }
+        #mpm-container { background: #0f172a !important; color: #f8fafc !important; border: 1px solid rgba(168, 85, 247, 0.4) !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important; }
     </style>
 
     <nav id="page-nav">
@@ -1055,7 +1056,14 @@
                     else el.style.display = 'none';
                 });
                 document.getElementById('dashboard-content').setAttribute('data-page', p);
+                const es = document.getElementById('empty-state');
+                if (es) es.classList.add('hidden');
+                const dc = document.getElementById('dashboard-content');
+                if (dc) dc.classList.remove('hidden');
+
                 if (p === 'mpm') {
+                    const mpmCont = document.getElementById('mpm-container');
+                    if (mpmCont) mpmCont.style.display = 'flex';
                     if (window.initMpmModule) window.initMpmModule();
                 } else if (p === 'commander') {
                     const ifr = document.getElementById('commander-iframe');
