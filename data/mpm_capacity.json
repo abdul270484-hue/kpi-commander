@@ -60,7 +60,7 @@
       "ratioWithAdmin": 75.3,
       "diff": -3,
       "status": "KURANG",
-      "bosGuardrail": true
+      "bosGuardrail": false
     },
     {
       "branch": "SAMARINDA",
@@ -161,6 +161,26 @@
       "diff": -2,
       "status": "KURANG",
       "bosGuardrail": false
+    },
+    {
+      "branch": "SAMPIT",
+      "productType": "HYBRID (MX+CE)",
+      "hasCe": false,
+      "hasMx": true,
+      "avg3MonthGd": 51,
+      "volHhp": 51,
+      "volCe": 0,
+      "cancelHhp": 3,
+      "cancelCe": 0,
+      "totalAdjust": 53,
+      "finalMinStaff": 2,
+      "realTech": 0,
+      "allStaff": 1,
+      "ratioWoAdmin": 0,
+      "ratioWithAdmin": 53,
+      "diff": -2,
+      "status": "KURANG",
+      "bosGuardrail": true
     },
     {
       "branch": "PANGKALAN BUN",
@@ -284,7 +304,7 @@
     },
     {
       "branch": "BERAU",
-      "productType": "CE ONLY",
+      "productType": "HYBRID (MX+CE)",
       "hasCe": true,
       "hasMx": false,
       "avg3MonthGd": 54,
@@ -344,7 +364,7 @@
     },
     {
       "branch": "MAMUJU",
-      "productType": "CE ONLY",
+      "productType": "HYBRID (MX+CE)",
       "hasCe": true,
       "hasMx": false,
       "avg3MonthGd": 41,
@@ -364,7 +384,7 @@
     },
     {
       "branch": "TERNATE",
-      "productType": "CE ONLY",
+      "productType": "HYBRID (MX+CE)",
       "hasCe": true,
       "hasMx": false,
       "avg3MonthGd": 70,
@@ -398,26 +418,6 @@
       "allStaff": 1,
       "ratioWoAdmin": 0,
       "ratioWithAdmin": 50,
-      "diff": -1,
-      "status": "KURANG",
-      "bosGuardrail": false
-    },
-    {
-      "branch": "SAMPIT",
-      "productType": "MX ONLY",
-      "hasCe": false,
-      "hasMx": true,
-      "avg3MonthGd": 51,
-      "volHhp": 51,
-      "volCe": 0,
-      "cancelHhp": 3,
-      "cancelCe": 0,
-      "totalAdjust": 53,
-      "finalMinStaff": 1,
-      "realTech": 0,
-      "allStaff": 1,
-      "ratioWoAdmin": 0,
-      "ratioWithAdmin": 53,
       "diff": -1,
       "status": "KURANG",
       "bosGuardrail": false
@@ -540,7 +540,7 @@
       "ratioWithAdmin": 55,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": false
     },
     {
       "branch": "DENPASAR - CELLULAR WORLD",
@@ -660,7 +660,7 @@
       "ratioWithAdmin": 48.3,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": false
     },
     {
       "branch": "PAMEKASAN",
@@ -680,7 +680,7 @@
       "ratioWithAdmin": 46.3,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": false
     },
     {
       "branch": "BONTANG",
@@ -720,7 +720,7 @@
       "ratioWithAdmin": 29.8,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": false
     },
     {
       "branch": "TIMIKA",
@@ -740,7 +740,7 @@
       "ratioWithAdmin": 57.5,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": false
     },
     {
       "branch": "GORONTALO",
@@ -760,7 +760,7 @@
       "ratioWithAdmin": 34.3,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": false
     },
     {
       "branch": "PATI",

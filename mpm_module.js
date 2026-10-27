@@ -367,16 +367,28 @@
             else if (totalAdjust < 200) pureMinStaff = 2;
             else pureMinStaff = Math.round(totalAdjust / 100);
 
-            // ATURAN EMAS OPERASIONAL DARI BOS:
-            // 1. Hybrid (MX + CE) -> WAJIB MINIMAL 2 MANPOWER (1 counter MX + 1 mobile CE in-home)
-            // 2. Murni MX -> Murni rasio volume
-            const hasCe = volCe > 0 || rData.techCe > 0 || fData.repairCe > 0;
-            const hasMx = volHhp > 0 || rData.techHhp > 0 || fData.repairHhp > 0;
-            const autoProductType = (hasMx && hasCe) ? 'HYBRID (MX+CE)' : (hasCe ? 'CE ONLY' : 'MX ONLY');
+            // MANDAT RESMI OPERASIONAL DARI BOS (27 OKT 2026):
+            // 1. CE ONLY: HANYA cabang SERPONG
+            // 2. MX ONLY: SERPONG ITC-BSD, DENPASAR CELLULAR WORLD, DENPASAR PLANET GADGET, SRAGEN, SINGARAJA, BANDAR JAYA
+            // 3. HYBRID (MX + CE): Semua cabang sisanya (35 cabang)
+            // Serta Aturan Emas BOS: Hybrid WAJIB MINIMAL 2 MANPOWER (1 counter MX + 1 mobile CE in-home)
+            let baseProductType = 'HYBRID (MX+CE)';
+            if (branch === 'SERPONG') {
+                baseProductType = 'CE ONLY';
+            } else if (
+                branch === 'SERPONG ITC-BSD' ||
+                branch === 'DENPASAR - CELLULAR WORLD' ||
+                branch === 'DENPASAR - PLANET GADGET' ||
+                branch === 'SRAGEN' ||
+                branch === 'SINGARAJA' ||
+                branch === 'BANDAR JAYA'
+            ) {
+                baseProductType = 'MX ONLY';
+            }
 
             // Cek apakah ada revisi tipe layanan manual dari BOS
             const ovr = branchOverrides[branch];
-            const productType = (ovr && ovr.productType) ? ovr.productType : autoProductType;
+            const productType = (ovr && ovr.productType) ? ovr.productType : baseProductType;
             const isOverridden = !!(ovr && ovr.productType);
             const overrideNote = ovr ? (ovr.note || '') : '';
 
