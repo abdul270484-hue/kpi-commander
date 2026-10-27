@@ -65,8 +65,12 @@
         if (localCached) {
             try {
                 mpmEmployees = JSON.parse(localCached);
-                console.log(`[MPM] Loaded ${mpmEmployees.length} employees from LocalStorage.`);
-                if (mpmEmployees.length > 0) return;
+                if (mpmEmployees && mpmEmployees.length > 0) {
+                    mpmEmployees.forEach(e => { e.branch = normalizeBranchName(e.branch); });
+                    localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
+                    console.log(`[MPM] Loaded & normalized ${mpmEmployees.length} employees from LocalStorage.`);
+                    return;
+                }
             } catch (_) {}
         }
 
@@ -75,6 +79,7 @@
             const res = await fetch('./data/mpm_employees.json');
             if (res.ok) {
                 mpmEmployees = await res.json();
+                mpmEmployees.forEach(e => { e.branch = normalizeBranchName(e.branch); });
                 localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
                 console.log(`[MPM] Loaded ${mpmEmployees.length} employees from JSON fallback.`);
             }
@@ -87,6 +92,7 @@
             window.db.collection('dashboard_data').doc('mpm_employees').get().then(snap => {
                 if (snap.exists && snap.data().employees) {
                     mpmEmployees = snap.data().employees;
+                    mpmEmployees.forEach(e => { e.branch = normalizeBranchName(e.branch); });
                     localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
                     console.log(`[MPM] Synced ${mpmEmployees.length} employees from Firestore in background.`);
                 }
@@ -103,7 +109,7 @@
                 if (res.ok) {
                     const json = await res.json();
                     if (json && json.branches && json.branches.length > 0) {
-                        capacityData = json.branches;
+                        capacityData = json.branches.map(b => ({ ...b, branch: normalizeBranchName(b.branch) }));
                         console.log(`[MPM] Instantly pre-loaded ${capacityData.length} branches from mpm_capacity.json.`);
                     }
                 }
@@ -306,41 +312,107 @@
         }
     }
 
-    // Helper: Normalize Branch Name for reliable merging
+    // Dictionary mapping 100% abbreviations & 3-letter codes to Official Non-Abbreviated Branch Names
+    const BRANCH_CODE_MAP = {
+        'PNK': 'PONTIANAK', 'PNK2': 'PONTIANAK', 'PT2': 'PONTIANAK', '002-PNK': 'PONTIANAK', '002-PNK2': 'PONTIANAK',
+        'BJM': 'BANJARMASIN', 'BNJ': 'BANJARMASIN', '003-BJM': 'BANJARMASIN', '003-BNJ': 'BANJARMASIN',
+        'PKY': 'PALANGKARAYA', '004-PKY': 'PALANGKARAYA',
+        'SMD': 'SAMARINDA', '005-SMD': 'SAMARINDA',
+        'TRK': 'TARAKAN', 'TKN': 'TARAKAN', '006-TRK': 'TARAKAN', '006-TKN': 'TARAKAN',
+        'LPG': 'BANDAR LAMPUNG', '007-LPG': 'BANDAR LAMPUNG',
+        'BTM': 'BATAM', '008-BTM': 'BATAM',
+        'PPG': 'PANGKAL PINANG', 'PKP': 'PANGKAL PINANG', '009-PPG': 'PANGKAL PINANG', '009-PKP': 'PANGKAL PINANG', 'PANGKALPINANG': 'PANGKAL PINANG',
+        'BKL': 'BENGKULU', '010-BKL': 'BENGKULU',
+        'TPG': 'TANJUNGPINANG', '011-TPG': 'TANJUNGPINANG',
+        'SKW': 'SINGKAWANG', '012-SKW': 'SINGKAWANG',
+        'BTG': 'BONTANG', '013-BTG': 'BONTANG',
+        'PKS': 'PAMEKASAN', 'PMK': 'PAMEKASAN', '014-PKS': 'PAMEKASAN', '014-PMK': 'PAMEKASAN',
+        'KRW': 'KARAWANG', '015-KRW': 'KARAWANG',
+        'SMP': 'SAMPIT', 'SPT': 'SAMPIT', '016-SMP': 'SAMPIT', '016-SPT': 'SAMPIT',
+        'PKB': 'PANGKALAN BUN', 'PBN': 'PANGKALAN BUN', '017-PKB': 'PANGKALAN BUN', '017-PBN': 'PANGKALAN BUN',
+        'BDJ': 'BANDAR JAYA', '018-BDJ': 'BANDAR JAYA',
+        'PTI': 'PATI', 'PAT': 'PATI', '019-PTI': 'PATI', '019-PAT': 'PATI',
+        'SRG': 'SRAGEN', '020-SRG': 'SRAGEN',
+        'SRT': 'SERPONG ITC-BSD', '021-SRT': 'SERPONG ITC-BSD',
+        'SRP': 'SERPONG', '022-SRP': 'SERPONG', '022-SRP B2B': 'SERPONG',
+        'BJN': 'BOJONEGORO', '023-BJN': 'BOJONEGORO',
+        'SDJ': 'SIDOARJO', '024-SDJ': 'SIDOARJO',
+        'PBO': 'PROBOLINGGO', '025-PBO': 'PROBOLINGGO',
+        'DPS': 'DENPASAR', '026-DPS': 'DENPASAR',
+        'DPG': 'DENPASAR - PLANET GADGET', '027-DPG': 'DENPASAR - PLANET GADGET',
+        'DCW': 'DENPASAR - CELLULAR WORLD', '028-DCW': 'DENPASAR - CELLULAR WORLD',
+        'SGJ': 'SINGARAJA', '029-SGJ': 'SINGARAJA',
+        'MKS': 'MAKASSAR', '030-MKS': 'MAKASSAR',
+        'MKL': 'MAKASSAR - LEVEL 21', '031-MKL': 'MAKASSAR - LEVEL 21',
+        'KDI': 'KENDARI', '032-KDI': 'KENDARI',
+        'PLP': 'PALOPO', '033-PLP': 'PALOPO',
+        'MMJ': 'MAMUJU', '034-MMJ': 'MAMUJU',
+        'PLU': 'PALU', '035-PLU': 'PALU',
+        'LWK': 'LUWUK', '036-LWK': 'LUWUK',
+        'GTO': 'GORONTALO', '037-GTO': 'GORONTALO',
+        'MND': 'MANADO', '038-MND': 'MANADO',
+        'TNT': 'TERNATE', '040-TNT': 'TERNATE',
+        'ABN': 'AMBON', '041-ABN': 'AMBON',
+        'KPG': 'KUPANG', '042-KPG': 'KUPANG',
+        'SRO': 'SORONG', '044-SRO': 'SORONG',
+        'JYP': 'JAYAPURA', '045-JYP': 'JAYAPURA',
+        'TMK': 'TIMIKA', '046-TMK': 'TIMIKA',
+        'BRU': 'BERAU', '049-BRU': 'BERAU',
+        'HO': 'HO'
+    };
+
+    // Helper: Normalize Branch Name for reliable merging (Strict Non-Abbreviation)
     function normalizeBranchName(name) {
         if (!name) return '';
         let b = String(name).toUpperCase().trim();
-        b = b.replace(/^BE\s+/i, '').replace(/^\d+\s*-\s*/, '').trim();
+        b = b.replace(/^BE\s+/i, '').replace(/^UNICOM\s+/i, '').replace(/^PT\.?\s*/i, '').trim();
+        if (BRANCH_CODE_MAP[b]) return BRANCH_CODE_MAP[b];
+        const stripped = b.replace(/^\d+\s*-\s*/, '').trim();
+        if (BRANCH_CODE_MAP[stripped]) return BRANCH_CODE_MAP[stripped];
+
         if (b.includes('CELLULAR WORLD') || b.includes('TEUKU')) return 'DENPASAR - CELLULAR WORLD';
         if (b.includes('PLANET GADGET') || b.includes('GATSU')) return 'DENPASAR - PLANET GADGET';
         if (b.includes('ITC') || b.includes('BSD')) return 'SERPONG ITC-BSD';
         if (b.includes('SERPONG')) return 'SERPONG';
         if (b.includes('DENPASAR')) return 'DENPASAR';
-        if (b.includes('MAKASSAR') || b.includes('MKS')) return 'MAKASSAR';
-        if (b.includes('BANJARMASIN') || b.includes('BJM')) return 'BANJARMASIN';
-        if (b.includes('SAMARINDA') || b.includes('SMD')) return 'SAMARINDA';
-        if (b.includes('LAMPUNG') || b.includes('LPG')) return 'BANDAR LAMPUNG';
-        if (b.includes('PONTIANAK') || b.includes('PNK')) return 'PONTIANAK';
-        if (b.includes('SIDOARJO') || b.includes('SDJ')) return 'SIDOARJO';
-        if (b.includes('MANADO') || b.includes('MND')) return 'MANADO';
-        if (b.includes('KARAWANG') || b.includes('KRW')) return 'KARAWANG';
-        if (b.includes('KUPANG') || b.includes('KPG')) return 'KUPANG';
-        if (b.includes('KENDARI') || b.includes('KDI')) return 'KENDARI';
-        if (b.includes('BENGKULU') || b.includes('BKL')) return 'BENGKULU';
-        if (b.includes('PALANGKARAYA') || b.includes('PKY')) return 'PALANGKARAYA';
-        if (b.includes('PALU') || b.includes('PLU')) return 'PALU';
-        if (b.includes('BATAM') || b.includes('BTM')) return 'BATAM';
-        if (b.includes('AMBON') || b.includes('ABN')) return 'AMBON';
-        if (b.includes('JAYAPURA') || b.includes('JYP')) return 'JAYAPURA';
-        if (b.includes('PANGKALAN BUN') || b.includes('PKB')) return 'PANGKALAN BUN';
-        if (b.includes('TANJUNGPINANG') || b.includes('TPG')) return 'TANJUNGPINANG';
-        if (b.includes('PATI') || b.includes('PTI')) return 'PATI';
-        if (b.includes('SORONG') || b.includes('SRO')) return 'SORONG';
-        if (b.includes('BONTANG') || b.includes('BTG')) return 'BONTANG';
-        if (b.includes('SINGARAJA') || b.includes('SGR')) return 'SINGARAJA';
-        if (b.includes('SAMPIT') || b.includes('SMP')) return 'SAMPIT';
-        if (b.includes('SRAGEN') || b.includes('SRG')) return 'SRAGEN';
-        return b;
+        if (b.includes('MAKASSAR')) return 'MAKASSAR';
+        if (b.includes('BANJARMASIN')) return 'BANJARMASIN';
+        if (b.includes('SAMARINDA')) return 'SAMARINDA';
+        if (b.includes('BANDAR LAMPUNG') || b.includes('LAMPUNG')) return 'BANDAR LAMPUNG';
+        if (b.includes('PONTIANAK')) return 'PONTIANAK';
+        if (b.includes('SIDOARJO')) return 'SIDOARJO';
+        if (b.includes('MANADO')) return 'MANADO';
+        if (b.includes('KARAWANG')) return 'KARAWANG';
+        if (b.includes('KUPANG')) return 'KUPANG';
+        if (b.includes('KENDARI')) return 'KENDARI';
+        if (b.includes('BENGKULU')) return 'BENGKULU';
+        if (b.includes('PALANGKARAYA')) return 'PALANGKARAYA';
+        if (b.includes('PALU')) return 'PALU';
+        if (b.includes('BATAM')) return 'BATAM';
+        if (b.includes('AMBON')) return 'AMBON';
+        if (b.includes('JAYAPURA')) return 'JAYAPURA';
+        if (b.includes('PANGKALAN BUN')) return 'PANGKALAN BUN';
+        if (b.includes('TANJUNGPINANG') || b.includes('TANJUNG PINANG')) return 'TANJUNGPINANG';
+        if (b.includes('PATI')) return 'PATI';
+        if (b.includes('SORONG')) return 'SORONG';
+        if (b.includes('BONTANG')) return 'BONTANG';
+        if (b.includes('SINGARAJA')) return 'SINGARAJA';
+        if (b.includes('SAMPIT')) return 'SAMPIT';
+        if (b.includes('SRAGEN')) return 'SRAGEN';
+        if (b.includes('BOJONEGORO')) return 'BOJONEGORO';
+        if (b.includes('PROBOLINGGO')) return 'PROBOLINGGO';
+        if (b.includes('BANDAR JAYA')) return 'BANDAR JAYA';
+        if (b.includes('BERAU')) return 'BERAU';
+        if (b.includes('GORONTALO')) return 'GORONTALO';
+        if (b.includes('LUWUK')) return 'LUWUK';
+        if (b.includes('MAMUJU')) return 'MAMUJU';
+        if (b.includes('PALOPO')) return 'PALOPO';
+        if (b.includes('PAMEKASAN')) return 'PAMEKASAN';
+        if (b.includes('PANGKAL PINANG') || b.includes('PANGKALPINANG')) return 'PANGKAL PINANG';
+        if (b.includes('SINGKAWANG')) return 'SINGKAWANG';
+        if (b.includes('TERNATE')) return 'TERNATE';
+        if (b.includes('TIMIKA')) return 'TIMIKA';
+        return stripped;
     }
 
     // Render base shell with navigation tabs & containers
