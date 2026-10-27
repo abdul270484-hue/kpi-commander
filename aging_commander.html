@@ -127,26 +127,61 @@
             min-height: 250px;
         }
 
+        /* TOGGLE GROUP FOR RATIO */
+        .toggle-group {
+            display: flex;
+            background: var(--bg-color);
+            border-radius: 8px;
+            padding: 3px;
+            border: 1px solid var(--border-color);
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        .toggle-btn {
+            flex: 1;
+            padding: 6px 10px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .toggle-btn:hover { color: var(--text-main); }
+        .toggle-btn.active {
+            background: var(--surface-color);
+            color: var(--accent-blue);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
         .stat-boxes {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
             margin-top: 15px;
         }
 
         .stat-box {
-            padding: 15px;
+            padding: 10px 6px;
             border-radius: 8px;
             text-align: center;
         }
         
-        .stat-box.sein { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green); }
-        .stat-box.branch { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); }
+        .stat-box.branch { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .stat-box.cust { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .stat-box.sein { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); }
 
-        .stat-box h3 { font-size: 1.5rem; margin-bottom: 5px; }
-        .stat-box.sein h3 { color: var(--accent-green); }
+        .stat-box h3 { font-size: 1.05rem; margin-bottom: 3px; font-weight: 800; }
         .stat-box.branch h3 { color: var(--accent-red); }
-        .stat-box p { font-size: 0.75rem; color: var(--text-sub); font-weight: 600; text-transform: uppercase; }
+        .stat-box.cust h3 { color: #f59e0b; }
+        .stat-box.sein h3 { color: var(--accent-green); }
+        .stat-box p { font-size: 0.65rem; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
 
         /* RIGHT PANEL: HEATMAP BOARD */
         .heatmap-table {
@@ -188,6 +223,7 @@
             font-weight: 700;
         }
         .tag.sein { background: var(--accent-green); color: white; }
+        .tag.cust { background: #f59e0b; color: white; }
         .tag.branch { background: var(--accent-red); color: white; }
         .tag.other { background: var(--text-sub); color: white; }
 
@@ -240,7 +276,35 @@
         .tl-reason { font-size: 0.95rem; font-weight: 700; margin: 3px 0; }
         .tl-duration { font-size: 0.8rem; font-weight: 600; }
         .tl-duration.branch { color: var(--accent-red); }
+        .tl-duration.cust { color: #f59e0b; }
         .tl-duration.sein { color: var(--accent-green); }
+
+        .btn-sync {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            background: var(--accent-blue);
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+        .btn-sync:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .btn-sync:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
 
     </style>
 </head>
@@ -254,6 +318,9 @@
             <select id="filterBranch">
                 <option value="ALL">All Branches</option>
             </select>
+            <button class="btn-sync" id="btnSyncChangelog" onclick="triggerManualChangelog()">
+                <i class="fa-solid fa-rotate"></i> <span id="btnSyncText">Sync Change Log</span>
+            </button>
         </div>
     </div>
 
@@ -264,20 +331,34 @@
                 <div class="card-header">
                     <span><i class="fa-solid fa-chart-pie"></i> The Blame Ratio</span>
                 </div>
-                <p style="font-size:0.8rem; color:var(--text-sub); text-align:center; margin-bottom:10px;">
-                    Persentase berdasarkan total hari mengendap di setiap departemen.
+                
+                <div class="toggle-group">
+                    <button class="toggle-btn active" id="btnToggleUnit" onclick="switchRatioMode('UNIT')">
+                        <i class="fa-solid fa-hashtag"></i> Unit Bill (%)
+                    </button>
+                    <button class="toggle-btn" id="btnToggleDays" onclick="switchRatioMode('DAYS')">
+                        <i class="fa-solid fa-clock"></i> Total Days
+                    </button>
+                </div>
+
+                <p style="font-size:0.75rem; color:var(--text-sub); text-align:center; margin-bottom:8px;" id="ratioSubtitle">
+                    Percentage ratio based on active unit bill count.
                 </p>
                 <div class="chart-container">
                     <canvas id="blameChart"></canvas>
                 </div>
                 <div class="stat-boxes">
                     <div class="stat-box branch">
-                        <h3 id="statBranchDays">0</h3>
-                        <p>Total Hari (Dosa Cabang)</p>
+                        <h3 id="statBranchVal">0</h3>
+                        <p id="statBranchLbl">Responsibility Cabang</p>
+                    </div>
+                    <div class="stat-box cust">
+                        <h3 id="statCustVal">0</h3>
+                        <p id="statCustLbl">Responsibility Customer</p>
                     </div>
                     <div class="stat-box sein">
-                        <h3 id="statSeinDays">0</h3>
-                        <p>Total Hari (Dosa SEIN)</p>
+                        <h3 id="statSeinVal">0</h3>
+                        <p id="statSeinLbl">Responsibility SEIN</p>
                     </div>
                 </div>
             </div>
@@ -294,11 +375,12 @@
                     <thead>
                         <tr>
                             <th>JOB NO</th>
-                            <th>CABANG</th>
-                            <th>TEKNISI</th>
-                            <th>KATEGORI</th>
-                            <th>REASON SAAT INI</th>
-                            <th>LAMA MENGENDAP</th>
+                            <th>BRANCH</th>
+                            <th>TECHNICIAN</th>
+                            <th>CATEGORY</th>
+                            <th>CURRENT REASON</th>
+                            <th>PENDING DURATION</th>
+                            <th style="background:#ef4444; color:white; font-size:0.7rem; text-align:center; min-width:65px;">BRANCH</th><th style="background:#f59e0b; color:white; font-size:0.7rem; text-align:center; min-width:65px;">CUSTOMER</th><th style="background:#10b981; color:white; font-size:0.7rem; text-align:center; min-width:65px;">SEIN</th>
                         </tr>
                     </thead>
                     <tbody id="stagnationTbody">

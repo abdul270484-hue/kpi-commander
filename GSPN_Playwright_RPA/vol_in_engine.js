@@ -58,13 +58,13 @@ function getFastVolInConfig(refDate = new Date()) {
     const yearMonth = `${year}-${pad(month)}`;
     const todayGspn = `${pad(day)}.${pad(month)}.${year}`;
 
-    // Kemarin (H-1)
+    // Sesuai Aturan & Logika Emas BOS (Daily Incremental Ledger):
+    // Cukup tarik tanggal kemarin (H-1) s/d hari ini (H).
+    // Tidak perlu tarik ulang dari tgl 1 atau rentang 8-15 hari karena tgl 1 s/d H-2 sudah tersimpan aman di cache MTD & Firestore!
     const yesterday = new Date(refDate);
-    yesterday.setDate(refDate.getDate() - 1);
-    const yesterdayGspn = `${pad(yesterday.getDate())}.${pad(yesterday.getMonth() + 1)}.${yesterday.getFullYear()}`;
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    // Jika tgl 1 awal bulan, fromDate = todayGspn. Jika tgl > 1, fromDate = yesterdayGspn
-    const fromDate = (day === 1) ? todayGspn : yesterdayGspn;
+    const fromDate = (day === 1) ? todayGspn : `${pad(yesterday.getDate())}.${pad(yesterday.getMonth() + 1)}.${yesterday.getFullYear()}`;
     const toDate = todayGspn;
 
     return {
@@ -118,6 +118,14 @@ function loadOrCreateSoCache(yearMonth) {
                 const so = r['Service Order No.'] || r['ASC Job No'] || r['No'];
                 if (!so) return;
                 const soStr = String(so).trim();
+
+                // Anti-pollution guard: reject Denpasar data falsely placed in other branch files
+                const ascName = String(r['ASC Name'] || '').toUpperCase();
+                const ascCode = String(r['ASC Code'] || '');
+                if (br !== 'DENPASAR' && (ascName.includes('DENPASAR') || ascCode.includes('4924441'))) {
+                    return;
+                }
+
                 let targetBr = br;
                 if (br === 'DENPASAR') targetBr = getDenpasarBranch(r);
                 if (!branchSoSets[targetBr]) branchSoSets[targetBr] = new Set();
@@ -141,15 +149,14 @@ function saveSoCache(cacheFile, branchSoSets) {
     }
 }
 
-async function runFastVolInPull(slotName = 'MANUAL') {
-    console.log('\n=============================================================');
-    console.log(`  ⚡ [FAST VOL_IN] SIKLUS INCREMENTAL 2-HARI (H-1 s/d H) (${slotName})`);
-    console.log('=============================================================');
-
+async function runFastVolInPull(slotName = 'MANUAL', onProgress = null) {
     const cfg = getFastVolInConfig();
     const { yearMonth, fromDate, toDate, label } = cfg;
 
-    console.log(`📅 Target Periode: ${yearMonth} | Rentang Tarik: ${fromDate} s/d ${toDate} (${label})`);
+    console.log('\n=============================================================');
+    console.log(`  [===] MEMULAI TARIKAN VOL IN MTD (${TARGET_BRANCHES.length} CABANG)`);
+    console.log(`  📅 Target Periode: ${yearMonth} | Rentang: ${fromDate} s/d ${toDate} (${label})`);
+    console.log('=============================================================');
 
     // 1. Ambil data Firestore saat ini sebagai fallback aman
     const prodDocRef = doc(db, 'dashboard_data', 'latest_prod');
@@ -249,31 +256,53 @@ async function runFastVolInPull(slotName = 'MANUAL') {
         }, { fDate: fromDate, tDate: toDate });
         await delay(350);
 
-        console.log(`2. Menjalankan Fast Incremental Pull untuk ${TARGET_BRANCHES.length} Cabang...`);
+        console.log(`2. Memulai penarikan data incremental untuk ${TARGET_BRANCHES.length} Cabang...`);
 
         for (let i = 0; i < TARGET_BRANCHES.length; i++) {
             const branch = TARGET_BRANCHES[i];
             const t0 = Date.now();
 
+            // Tampilkan listing progress cabang (persis format REDO, GD, PART)
+            console.log(`\n[VOL_IN ${i + 1}/${TARGET_BRANCHES.length}] Cabang: ${branch.short} (${branch.code})`);
+
+            // Notifikasi ke onProgress agar live progress di Dashboard & Firestore ter-update
+            if (onProgress) {
+                onProgress({
+                    phase: 'VOL_IN',
+                    current: i + 1,
+                    total: TARGET_BRANCHES.length,
+                    branch: branch.short,
+                    ok: true
+                });
+            }
+
+            process.stdout.write(`   -> Menarik data Excel Service Order... `);
+
             // Set ASC code dropdown dengan pencocokan ganda (dengan & tanpa leading zeros)
             const matched = await rightFrame.evaluate((bCode) => {
+                const td1 = document.querySelector('#td2_01');
+                if (td1) td1.click(); // Reset ke tab Quick Search agar binding dropdown aktif
                 const sel = document.querySelector('#asc_code');
                 if (!sel) return false;
                 const cleanCode = bCode.replace(/^0+/, '');
+                let found = false;
                 for (let j = 0; j < sel.options.length; j++) {
                     const optVal = sel.options[j].value || '';
                     const optTxt = sel.options[j].text || '';
                     if (optVal === bCode || optVal.includes(cleanCode) || optTxt.includes(bCode) || optTxt.includes(cleanCode)) {
                         sel.selectedIndex = j;
                         sel.dispatchEvent(new Event('change', { bubbles: true }));
-                        return true;
+                        found = true;
+                        break;
                     }
                 }
-                return false;
+                const td2 = document.querySelector('#td2_02');
+                if (td2) td2.click(); // Kembali ke tab Bulk Search
+                return found;
             }, branch.code);
 
             if (!matched) {
-                // Skip jika kode cabang tidak ada di dropdown
+                console.log(`[-] Skip (Kode cabang tidak ada di dropdown GSPN)`);
                 continue;
             }
             await delay(150);
@@ -285,15 +314,15 @@ async function runFastVolInPull(slotName = 'MANUAL') {
             };
             p2.on('dialog', onDialog);
 
-            const activeChunkFile = path.join(OUTPUT_DIR, `VOL_IN_${branch.short}_${yearMonth}_${label}.xls`);
+            const activeChunkFile = path.join(OUTPUT_DIR, `VOL_IN_${branch.short}_${branch.code}_${yearMonth}_${label}.xls`);
 
             try {
-                const dlPromise = p2.waitForEvent('download', { timeout: 3000 });
+                const dlPromise = p2.waitForEvent('download', { timeout: 3500 });
                 await rightFrame.evaluate(() => {
                     if (typeof displaySearch === 'function') displaySearch();
                 });
 
-                // Race download against dialog or timeout 3.2s
+                // Race download against dialog or timeout 3.8s
                 const dl = await Promise.race([
                     dlPromise,
                     new Promise((_, reject) => {
@@ -303,36 +332,59 @@ async function runFastVolInPull(slotName = 'MANUAL') {
                                 reject(new Error('DIALOG: ' + dialogMessage));
                             }
                         }, 80);
-                        setTimeout(() => { clearInterval(timer); reject(new Error('TIMEOUT_NO_NEW_DATA')); }, 3200);
+                        setTimeout(() => { clearInterval(timer); reject(new Error('TIMEOUT_NO_NEW_DATA')); }, 3800);
                     })
                 ]);
 
                 await dl.saveAs(activeChunkFile);
+
+                // Cek apakah file adalah HTML alert 'Excel Data not found!.' (< 200 bytes)
+                const fileStat = fs.statSync(activeChunkFile);
+                if (fileStat.size < 200) {
+                    const currentMtd = branchSoSets[branch.short] ? branchSoSets[branch.short].size : (currentMonthVolIn[branch.short] || 0);
+                    console.log(`[-] (Data tidak ada di GSPN / 0 rows, Total MTD: ${currentMtd} SO, ${Date.now() - t0}ms)`);
+                    continue;
+                }
 
                 // Parse Excel dan merge SO baru ke master cache
                 const wb = XLSX.readFile(activeChunkFile, { cellFormula: false, cellHTML: false, cellText: false });
                 const sheet = wb.Sheets[wb.SheetNames[0]];
                 const rows = XLSX.utils.sheet_to_json(sheet);
 
+                let newRowsCount = 0;
                 rows.forEach(r => {
                     const so = r['Service Order No.'] || r['ASC Job No'] || r['No'];
                     if (!so) return;
                     const soStr = String(so).trim();
 
-                    let targetBr = branch.short;
-                    if (branch.short === 'DENPASAR') {
-                        targetBr = getDenpasarBranch(r);
+                    // Anti-pollution guard: pastikan data Denpasar tidak bocor ke cabang lain
+                    const ascName = String(r['ASC Name'] || '').toUpperCase();
+                    const ascCode = String(r['ASC Code'] || '');
+                    if (branch.short !== 'DENPASAR' && (ascName.includes('DENPASAR') || ascCode.includes('4924441'))) {
+                        return; // Discard data Denpasar jika tertulis pada cabang non-Denpasar
                     }
-                    if (!branchSoSets[targetBr]) branchSoSets[targetBr] = new Set();
-                    branchSoSets[targetBr].add(soStr);
+
+                    const rowBranch = (branch.short === 'DENPASAR') ? getDenpasarBranch(r) : branch.short;
+                    if (!branchSoSets[rowBranch]) branchSoSets[rowBranch] = new Set();
+                    if (!branchSoSets[rowBranch].has(soStr)) {
+                        newRowsCount++;
+                        branchSoSets[rowBranch].add(soStr);
+                    }
                 });
 
                 branchesUpdated++;
-                process.stdout.write(`   [OK] ${branch.short.padEnd(16)} (+${rows.length} rows, ${Date.now() - t0}ms)\n`);
+                const currentMtd = branchSoSets[branch.short] ? branchSoSets[branch.short].size : rows.length;
+                console.log(`[OK] (+${rows.length} rows file, +${newRowsCount} SO baru, Total MTD: ${currentMtd} SO, ${Date.now() - t0}ms)`);
 
             } catch (err) {
-                // Dialog atau timeout = Tidak ada transaksi baru di 2 hari ini (Aman!)
-                // process.stdout.write(`   [-] ${branch.short.padEnd(16)} (No new data, ${Date.now() - t0}ms)\n`);
+                const currentMtd = branchSoSets[branch.short] ? branchSoSets[branch.short].size : (currentMonthVolIn[branch.short] || 0);
+                if (err.message.includes('DIALOG')) {
+                    console.log(`[-] (Data tidak ada di GSPN / 0 rows, Total MTD: ${currentMtd} SO, ${Date.now() - t0}ms)`);
+                } else if (err.message.includes('TIMEOUT') || err.message.includes('Timeout')) {
+                    console.log(`[-] (Tidak ada transaksi baru / 0 rows, Total MTD: ${currentMtd} SO, ${Date.now() - t0}ms)`);
+                } else {
+                    console.log(`[-] (${err.message}, Total MTD: ${currentMtd} SO, ${Date.now() - t0}ms)`);
+                }
             } finally {
                 p2.off('dialog', onDialog);
             }

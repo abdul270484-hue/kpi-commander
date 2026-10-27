@@ -57,11 +57,14 @@ export function branchMatches(branchA, branchB) {
         return isBJA && isBJB;
     }
 
-    // Tanjungpinang vs Tanjung Pinang vs Tanjung
-    const isTJA = a.includes('TANJUNG');
-    const isTJB = b.includes('TANJUNG');
-    if (isTJA || isTJB) {
-        return isTJA && isTJB;
+    // Tanjung (Tabalong, Kalsel - Asmen Riris) vs Tanjungpinang (Kep. Riau - Asmen Sadawani)
+    const hasPinangA = a.includes('PINANG');
+    const hasPinangB = b.includes('PINANG');
+    if (hasPinangA !== hasPinangB && (a.includes('TANJUNG') || b.includes('TANJUNG'))) {
+        return false;
+    }
+    if (hasPinangA && hasPinangB && a.includes('TANJUNG') && b.includes('TANJUNG')) {
+        return true;
     }
 
     return a.includes(b) || b.includes(a);
@@ -130,8 +133,11 @@ export function initFirebaseAutoSync(db) {
         let data = JSON.parse(JSON.stringify(window.rawDashboardData));
 
         // --- COMPREHENSIVE AREA MANAGER FILTER ---
-        if (window.currentUserBranches && window.currentUserBranches.length > 0) {
-            const allowed = window.currentUserBranches;
+        let allowed = (window.currentUserBranches && window.currentUserBranches.length > 0)
+            ? window.currentUserBranches
+            : (typeof window.getAllowedBranches === 'function' ? window.getAllowedBranches() : []);
+
+        if (allowed && allowed.length > 0) {
             const ascMatch = (ascName) => {
                 if (!ascName) return false;
                 return allowed.some(a => branchMatches(a, ascName));

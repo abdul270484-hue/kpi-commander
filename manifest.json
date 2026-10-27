@@ -1,13 +1,26 @@
 {
-  "name": "PRIME AI Executive Console",
-  "short_name": "PRIME",
-  "start_url": "/prime.html",
+  "name": "PT. BUJM - Executive KPI Commander",
+  "short_name": "BUJM KPI",
+  "start_url": "/index.html",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#090d16",
-  "theme_color": "#0f172a",
-  "description": "Autonomous AI PC Remote & Performance Telemetry Console",
+  "orientation": "any",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "description": "PT. Bekarya Ugertama Jaya Mandiri - Executive KPI, Analytics & Automated Operations Console",
   "icons": [
+    {
+      "src": "/bujm_icon_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/bujm_icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "/prime_icon_192.png",
       "sizes": "192x192",
@@ -18,5 +31,32 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "PRIME AI Voice Assistant",
+      "short_name": "PRIME AI",
+      "description": "Open Autonomous AI PC Assistant",
+      "url": "/prime.html",
+      "icons": [
+        {
+          "src": "/prime_icon_192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Executive Dashboard",
+      "short_name": "KPI Dashboard",
+      "description": "View Live Nationwide Operational KPIs",
+      "url": "/index.html",
+      "icons": [
+        {
+          "src": "/bujm_icon_192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"]
 }

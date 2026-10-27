@@ -467,48 +467,6 @@ if (btnShareDosaCabang) {
     });
 }
 
-// Event Listener for Share Wall of Shame
-const btnShareShame = document.getElementById('btnShareShame');
-if (btnShareShame) {
-    btnShareShame.addEventListener('click', () => {
-        if (!window.shameData || window.shameData.length === 0) {
-            showToastNotification('Belum ada data Wall of Shame atau daftar kosong!');
-            return;
-        }
-        
-        const dateStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        let text = `*WALL OF SHAME - DOSA CABANG*\nSelamat pagi Bpk/Ibu, berikut update ${dateStr} daftar teknisi dengan aging yang belum diselesaikan:\n\n`;
-        
-        // Group by Branch
-        const grouped = {};
-        window.shameData.forEach((item) => {
-            if (!grouped[item.asc]) grouped[item.asc] = [];
-            grouped[item.asc].push(item);
-        });
-        
-        // Sort Branch A-Z
-        const sortedBranches = Object.keys(grouped).sort();
-        
-        sortedBranches.forEach((branch, bIdx) => {
-            text += `*${bIdx+1}. ${branch}*\n`;
-            // Sort Engineer A-Z within branch
-            grouped[branch].sort((a, b) => a.engineer.localeCompare(b.engineer));
-            grouped[branch].forEach((eng) => {
-                text += `   - ${eng.engineer}: ${eng.count} bill\n`;
-            });
-        });
-        
-        text += `\nDimohon untuk segera menindaklanjuti bill tersebut agar tidak merusak aging cabang.`;
-        
-        navigator.clipboard.writeText(text).then(() => {
-            showToastNotification('Teks berhasil disalin! Silakan paste di Grup WA Kepala Cabang.');
-        }).catch(err => {
-            console.error('Failed to copy text: ', err);
-            showToastNotification('Gagal menyalin teks. Pastikan browser mengizinkan akses Clipboard.');
-        });
-    });
-}
-
 // Event Listener for Share MPU
 const btnShareMpu = document.getElementById('btnShareMpu');
 if (btnShareMpu) {

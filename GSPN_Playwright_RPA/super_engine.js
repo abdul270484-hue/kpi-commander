@@ -24,16 +24,92 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // ==========================================
+// DUAL-LOGGING TO FILE FOR REALTIME MONITORING
+// ==========================================
+const RUNTIME_LOG_FILE = path.join(__dirname, 'super_engine_runtime.log');
+try {
+    fs.writeFileSync(RUNTIME_LOG_FILE, `=== PRIME SUPER ENGINE LOG SESSION ${new Date().toLocaleString('id-ID')} ===\n`, 'utf8');
+} catch (_) {}
+
+const origLog = console.log;
+const origErr = console.error;
+const origWarn = console.warn;
+const origStdoutWrite = process.stdout.write;
+
+function appendToLog(prefix, args) {
+    try {
+        const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+        const timestamp = new Date().toLocaleTimeString('id-ID');
+        fs.appendFileSync(RUNTIME_LOG_FILE, `[${timestamp}] ${prefix} ${msg}\n`);
+    } catch (_) {}
+}
+
+console.log = function(...args) {
+    origLog.apply(console, args);
+    appendToLog('[INFO]', args);
+};
+console.error = function(...args) {
+    origErr.apply(console, args);
+    appendToLog('[ERROR]', args);
+};
+console.warn = function(...args) {
+    origWarn.apply(console, args);
+    appendToLog('[WARN]', args);
+};
+
+if (origStdoutWrite) {
+    process.stdout.write = function(chunk, encoding, callback) {
+        origStdoutWrite.apply(process.stdout, arguments);
+        try {
+            fs.appendFileSync(RUNTIME_LOG_FILE, chunk);
+        } catch (_) {}
+        return true;
+    };
+}
+
+// ==========================================
 // 1. EXPRESS & WHATSAPP WEB SERVICE (PORT 3001)
 // ==========================================
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Controlled CORS: Allow approved origins and local tools
+const ALLOWED_ORIGINS = [
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
+    'https://aging-commander.web.app',
+    'https://aging-commander.firebaseapp.com'
+];
+
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
+    const origin = req.headers.origin;
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin || '*');
+    }
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
+
+// HARDENED SECURITY FILTER: Block access to backend source code, credentials, and sensitive assets
+app.use((req, res, next) => {
+    const rawPath = decodeURI(req.path);
+    const forbiddenPatterns = [
+        /^\/GSPN_Playwright_RPA/i,
+        /serviceAccountKey/i,
+        /\.env/i,
+        /\.git/i,
+        /\.wwebjs_auth/i,
+        /package(-lock)?\.json/i,
+        /\.bak$/i,
+        /\.log$/i
+    ];
+    if (forbiddenPatterns.some(pattern => pattern.test(rawPath))) {
+        console.warn(`[SECURITY] Blocked unauthorized access to protected resource: ${rawPath} from ${req.ip}`);
+        return res.status(403).json({ error: 'Access Denied: Protected System Resource' });
+    }
     next();
 });
 
@@ -291,8 +367,9 @@ app.get('/api/progress', (req, res) => {
     res.json({ isBlasting, progress: blastProgress });
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`>>> JARVIS WA Engine aktif di http://localhost:${PORT}`);
+const HOST = process.env.HOST || '127.0.0.1';
+const server = app.listen(PORT, HOST, () => {
+    console.log(`>>> JARVIS WA Engine aktif di http://${HOST}:${PORT}`);
 });
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
@@ -344,17 +421,24 @@ async function executeRpaCycle(slotName = 'MANUAL') {
             ).catch(() => {});
         };
 
-        // Robot Chrome berjalan di background (headless: true)
-        const downloadedFiles = await scrapeAllBranches(true, false, onProgress);
+        // Purge require cache agar perubahan pada scraper & sync selalu dimuat segar setiap siklus
+        delete require.cache[require.resolve('./scraper')];
+        delete require.cache[require.resolve('./sync')];
+        const { scrapeAllBranches } = require('./scraper');
+        const { processAndSyncToFirebase } = require('./sync');
+
+        // Robot Chrome: Sesuai arahan BOS, disembunyikan agar berjalan di background (headless: true)
+        const isHeadless = process.env.HEADLESS !== 'false'; // Default: true (Background / Tersembunyi)
+        const downloadedFiles = await scrapeAllBranches(isHeadless, false, onProgress);
 
         await lockManager.updateProgress('SYNC', 'ðŸ§  Memproses Data & Intelijen AI (Validation, Sync)...');
         syncResult = await processAndSyncToFirebase(downloadedFiles, slotName);
 
         // 4. Eksekusi Daily Ledger VOL IN (Cerdas & Cepat: 1 Hari Saja)
         try {
-            await lockManager.updateProgress('VOL_IN', 'Memperbarui VOL IN MTD (Daily Ledger)...');
+            delete require.cache[require.resolve('./vol_in_engine')];
             const { runDailyVolInLedger } = require('./vol_in_engine');
-            await runDailyVolInLedger(slotName);
+            await runDailyVolInLedger(slotName, onProgress);
         } catch (volErr) {
             console.warn('⚠️ [WARN] Daily Ledger VOL IN Warning:', volErr.message);
         }
@@ -395,19 +479,6 @@ const { getAuth, signInAnonymously } = require('firebase/auth');
 const auth = getAuth(firebaseApp);
 
 
-// ==================================================================
-// PRIME AUTONOMOUS AI TASK RUNNER (DELEGATED TO UNIVERSAL AGENT)
-// ==================================================================
-const { runUniversalTask } = require('./prime_universal_agent');
-
-async function executeAutonomousTask(instruction, userEmail) {
-    return await runUniversalTask(instruction, userEmail, lockManager, executeRpaCycle);
-}
-
-function cmdIs(actual, expected) {
-    return actual === expected;
-}
-
 async function startRemoteListener() {
     console.log('[LISTEN] Mendengarkan perintah remote trigger dari Web Dashboard...');
     const triggerDocRef = doc(db, 'rpa_commands', 'trigger');
@@ -426,7 +497,7 @@ async function startRemoteListener() {
             const data = snap.data();
             if (data.command === 'RUN_NOW' && data.status === 'PENDING') {
                 if (lockManager.currentExecutionId) {
-                    console.log(`[WARN] [REMOTE TRIGGER] Diabaikan: RPA sedang berjalan.`);
+                    console.log(`[WARN]  [REMOTE TRIGGER] Diabaikan: RPA sedang berjalan.`);
                     setDoc(triggerDocRef, {
                         status: 'RUNNING',
                         progress: 'Sedang berjalan dalam proses aktif...'
@@ -439,32 +510,6 @@ async function startRemoteListener() {
         }
     }, (err) => {
         console.error('Snapshot Listener Warning:', err.message);
-    });
-
-    // ------------------------------------------------------------------
-    // PRIME MOBILE APP REMOTE COMMANDS (from APK / PWA)
-    // ------------------------------------------------------------------
-    const primeRemoteDocRef = doc(db, 'rpa_commands', 'prime_remote');
-    onSnapshot(primeRemoteDocRef, async (snap) => {
-        if (snap.exists()) {
-            const data = snap.data();
-            if (data.status === 'PENDING') {
-                const cmd = data.command || data.text || '';
-                const user = data.userEmail || 'Commander';
-                console.log('\n[PRIME MOBILE] 📱 Tugas diterima (' + user + '): ' + cmd);
-                
-                const { feedback, detail } = await executeAutonomousTask(cmd, user);
-
-                setDoc(primeRemoteDocRef, {
-                    status: 'EXECUTED',
-                    feedback: feedback,
-                    detail: detail || null,
-                    executedAt: new Date().toISOString()
-                }, { merge: true }).catch(() => {});
-            }
-        }
-    }, (err) => {
-        console.warn('[PRIME MOBILE] Listener error:', err.message);
     });
 
     // Telemetry Heartbeat (update every 20 seconds)
@@ -481,41 +526,91 @@ async function startRemoteListener() {
     };
     updateTelemetry();
     setInterval(updateTelemetry, 20000);
-
 }
 
-// 4. Start Cron Schedulers (Setiap 30 menit dari jam 09:00 - 17:30 mengikuti jam lokal Windows/sistem)
-let lastTriggeredSlot = '';
-const triggerCycle = () => {
-    const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const slotKey = `${now.toISOString().slice(0, 10)}_${timeStr}`;
-    if (lastTriggeredSlot === slotKey) return;
-    lastTriggeredSlot = slotKey;
-    executeRpaCycle(timeStr);
-};
-// Mengikuti waktu lokal sistem: Menjalankan RPA setiap 30 menit (:00, :30)
-cron.schedule('0,30 9-17 * * *', triggerCycle, {
-    scheduled: true,
-    timezone: 'Asia/Jakarta'
-});
+// =============================================================
+// 4. CONTINUOUS RPA CYCLE WITH 10-MIN REST (09:00 - 17:30)
+// Sesuai arahan BOS: Tarik selesai -> Istirahat 10 menit -> Tarik lagi
+// Berulang terus menerus jam 09:00 s/d 17:30 waktu setempat.
+// Jadwal WA Blasting tetap tidak ada perubahan.
+// =============================================================
+let isContinuousLoopRunning = false;
 
-// Watchdog interval cadangan (memastikan detik 00 yang terlewat tetap tereksekusi di menit 00 atau 30)
-setInterval(() => {
+function isWithinOperatingHours() {
     const now = new Date();
-    const h = now.getHours();
-    const m = now.getMinutes();
-    if (h >= 9 && h <= 17 && (m === 0 || m === 30)) {
-        triggerCycle();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTimeMinutes = hours * 60 + minutes;
+
+    const startMinutes = 9 * 60;       // 09:00
+    const endMinutes = 17 * 60 + 30;   // 17:30
+
+    return currentTimeMinutes >= startMinutes && currentTimeMinutes <= endMinutes;
+}
+
+function getMsUntilNextStart() {
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(9, 0, 0, 0);
+
+    // Jika sudah lewat 17:30 hari ini, jadwalkan ke jam 09:00 besok
+    if (now.getHours() > 17 || (now.getHours() === 17 && now.getMinutes() > 30)) {
+        start.setDate(start.getDate() + 1);
     }
-}, 15000);
+    const diff = start.getTime() - now.getTime();
+    return Math.max(diff, 60000); // minimal 1 menit
+}
+
+async function startContinuousRpaLoop() {
+    if (isContinuousLoopRunning) return;
+    isContinuousLoopRunning = true;
+
+    console.log('[AUTO-LOOP] 🔄 Siklus Kontinu BUJM Aktif: Tarik GSPN -> Istirahat 10 Menit -> Ulangi (09:00 - 17:30)');
+
+    while (true) {
+        if (!isWithinOperatingHours()) {
+            const waitMs = getMsUntilNextStart();
+            const waitHours = (waitMs / 3600000).toFixed(1);
+            console.log(`[AUTO-LOOP] 🌙 Di luar jam operasional (09:00 - 17:30). Menunggu ${waitHours} jam hingga pukul 09:00...`);
+            await new Promise(res => setTimeout(res, Math.min(waitMs, 300000))); // cek periodik tiap max 5 menit
+            continue;
+        }
+
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const slotName = `AUTO_${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+        console.log(`\n=============================================================`);
+        console.log(`  🔄 [AUTO-LOOP RUN] Memulai Siklus Tarikan GSPN: ${slotName}`);
+        console.log(`=============================================================`);
+
+        try {
+            await executeRpaCycle(slotName);
+        } catch (err) {
+            console.error('[AUTO-LOOP] ⚠️ Error saat siklus tarikan:', err.message);
+        }
+
+        if (!isWithinOperatingHours()) {
+            console.log('[AUTO-LOOP] 🏁 Jam operasional hari ini telah berakhir (lewat 17:30). Menunggu besok pagi.');
+            continue;
+        }
+
+        const restMinutes = 10;
+        const nextRunTime = new Date(Date.now() + restMinutes * 60 * 1000);
+        console.log(`\n💤 [AUTO-LOOP REST] Siklus tarikan selesai! Istirahat ${restMinutes} menit sesuai arahan BOS.`);
+        console.log(`⏰ Tarikan berikutnya otomatis dimulai pukul: ${pad(nextRunTime.getHours())}:${pad(nextRunTime.getMinutes())}:${pad(nextRunTime.getSeconds())} WIB\n`);
+
+        await new Promise(res => setTimeout(res, restMinutes * 60 * 1000));
+    }
+}
 
 signInAnonymously(auth).then(() => {
     console.log('[AUTH] Terautentikasi ke Firebase Service.');
     startRemoteListener();
+    startContinuousRpaLoop();
 }).catch(() => {
     startRemoteListener();
+    startContinuousRpaLoop();
 });
 
 console.log('\n=============================================================');

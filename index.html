@@ -124,6 +124,9 @@
                     <iframe id="commander-iframe" src="https://aging-commander.web.app/mobile.html?embed=1" style="flex: 1; width: 100%; min-height: 0; border: none; background: #ffffff;" allow="clipboard-write; notifications;" loading="lazy"></iframe>
                 </div>
 
+                <!-- MANPOWER MANAGEMENT (MPM) VIEW -->
+                <div id="mpm-container" class="span-12 page-mpm" style="display: none; padding: 25px; min-height: 85vh; border-radius: 12px; background: #0f172a !important; color: #f8fafc !important; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-direction: column; gap: 20px;"></div>
+
                 <!-- Summary Cards -->
                 <div class="card glass-panel span-12 page-all">
                     <h3 style="color: var(--text-main); margin-bottom: 15px;"><i class="fa-solid fa-chart-pie" style="color: var(--accent-blue);"></i> OVERALL SUMMARY</h3>
@@ -386,6 +389,7 @@
                     <div class="chart-wrapper" style="position: relative; height: 220px !important; max-height: 220px !important; width: 100%; padding: 0;">
                         <canvas id="gdTrendChart" style="width: 100%; height: 100%;"></canvas>
                     </div>
+                </div>
                 <!-- VOL IN vs GD Performance (Historical & MTD) -->
                 <div class="card glass-panel table-container span-12 page-gd" style="grid-column: 1 / -1; width: 100%; clear: both; margin-bottom: 20px;">
                     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -495,8 +499,6 @@
                     </div>
                 </div>
 
-                <!-- MANPOWER MANAGEMENT (MPM) VIEW -->
-                <div id="mpm-container" class="span-12 page-mpm" style="display: none; padding: 25px; min-height: 85vh; border-radius: 12px; background: #0f172a !important; color: #f8fafc !important; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-direction: column; gap: 20px;"></div>
 
             </div>
 

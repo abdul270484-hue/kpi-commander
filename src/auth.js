@@ -70,6 +70,7 @@ export function initAuth(db) {
             }).catch(() => {});
         }
 
+        window.authReady = true;
         window.dispatchEvent(new Event('bujm_auth_ready'));
     } else if (mainApp) {
         mainApp.classList.add('hidden');
@@ -204,6 +205,7 @@ export function initAuth(db) {
                 
                 // --- SECURITY LOCK RELEASE ---
                 // Trigger event global menandakan sistem siap digunakan
+                window.authReady = true;
                 window.dispatchEvent(new Event('bujm_auth_ready'));
 
             } catch (err) {
@@ -213,6 +215,7 @@ export function initAuth(db) {
                 isAdmin = (user && user.email === 'abdul270484@gmail.com');
                 if (loginScreen) loginScreen.style.display = 'none';
                 if (mainApp) mainApp.classList.remove('hidden');
+                window.authReady = true;
                 window.dispatchEvent(new Event('bujm_auth_ready'));
             }
         } else {

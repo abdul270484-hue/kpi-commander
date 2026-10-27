@@ -67,200 +67,239 @@ async function downloadAscData(page2, asc, downloadDir, savePrefix = 'SO', attem
 
 async function scrapeRedoOrders(mainPage, businessBtn, branchList, downloadedFiles) {
     console.log('\n==============================================');
-    console.log('  [===] MEMULAI PENCARIAN REDO ORDERS (SERVICE ORDER MANAGEMENT LIGHT)');
+    console.log(`  🔍 [===] MEMULAI PENCARIAN REDO ORDERS (5 WORKER PARALEL, ${branchList.length} CABANG)`);
     console.log('==============================================');
 
-    let page2 = null;
     const allRedoItems = [];
+    const CONCURRENCY = Math.min(5, branchList.length);
 
-    try {
+    const openRedoTabForBatch = async (workerId) => {
         await mainPage.bringToFront();
-        const popupPromise = mainPage.waitForEvent('popup', { timeout: 20000 });
+        await delay(500);
+        const popupPromise = mainPage.waitForEvent('popup', { timeout: 30000 });
         await businessBtn.click({ timeout: 5000 });
-        page2 = await popupPromise;
-        page2.on('dialog', async d => { await d.accept().catch(() => {}); });
+        const p2 = await popupPromise;
+        p2.on('dialog', async d => { await d.accept().catch(() => {}); });
+        await delay(2000);
 
         // 1. Klik Service Tracking -> Service Order Management Light
-        await page2.locator('iframe[name="leftMenus"]').waitFor({ state: 'attached', timeout: 15000 });
-        const leftMenusFrame = page2.frameLocator('iframe[name="leftMenus"]');
+        await p2.locator('iframe[name="leftMenus"]').waitFor({ state: 'attached', timeout: 15000 });
+        const leftMenusFrame = p2.frameLocator('iframe[name="leftMenus"]');
         const b2bScrollFrame = leftMenusFrame.frameLocator('iframe[name="b2BLeftMenuScroll"]');
 
-        await b2bScrollFrame.getByRole('cell', { name: 'Service Tracking' }).first().click({ timeout: 5000 });
-        await b2bScrollFrame.getByRole('cell', { name: 'Service Order Management Light', exact: true }).first().click({ timeout: 5000 });
+        await b2bScrollFrame.getByRole('cell', { name: 'Service Tracking' }).first().click({ timeout: 5000 }).catch(() => {});
+        await delay(600);
+        await b2bScrollFrame.getByRole('cell', { name: 'Service Order Management Light', exact: true }).first().click({ timeout: 5000 }).catch(() => {});
 
-        await page2.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(() => {});
-        const rightContents = page2.frameLocator('iframe[name="rightContents"]');
-        const rightFrame = page2.frame({ name: 'rightContents' }) || page2.frames().find(f => f.name() === 'rightContents');
-
-        // Loop per branch
-        for (let i = 0; i < branchList.length; i++) {
-            const asc = branchList[i];
-            console.log(`\n[REDO ${i + 1}/${branchList.length}]] Cabang: ${asc.short} (${asc.code})`);
-
-            // TIP DARI USER: Jika SO kosong, skip REDO
-            const soFile = downloadedFiles.soFiles.find(f => f.code === asc.code);
-            if (soFile) {
-                try {
-                    const html = require('fs').readFileSync(soFile.path, 'utf8');
-                    const trCount = (html.match(/<tr/gi) || []).length;
-                    if (trCount <= 3) { 
-                        console.log('  [-] Skip pencarian REDO karena data SO cabang ini kosong.');
-                        continue;
-                    }
-                } catch(e) {}
+        await p2.waitForLoadState('domcontentloaded', { timeout: 15000 }).catch(() => {});
+        
+        let rightFrame = null;
+        for (let attempt = 0; attempt < 25; attempt++) {
+            rightFrame = p2.frames().find(f => f.name() === 'rightContents');
+            if (rightFrame) {
+                const hasForm = await rightFrame.evaluate(() => {
+                    return Array.from(document.querySelectorAll('select')).some(s => s.name === 'asc_code' || s.id === 'asc_code' || s.name === 'ASC_CODE' || (s.closest('tr') && s.closest('tr').innerText.includes('Ship to Branch')));
+                }).catch(() => false);
+                if (hasForm) break;
             }
+            await delay(800);
+        }
 
-            try {
-                // 1. Pilih Ship to Branch (Dropdown header pada form Service Order Management Light)
-                await rightFrame.evaluate((branchCode) => {
-                    const selects = Array.from(document.querySelectorAll('select'));
-                    for (const s of selects) {
-                        const tr = s.closest('tr');
-                        const rowText = tr ? tr.innerText : '';
-                        if (rowText.includes('Ship to Branch') || s.name === 'asc_code' || s.id === 'asc_code' || s.name === 'ASC_CODE') {
-                            for (let i = 0; i < s.options.length; i++) {
-                                const opt = s.options[i];
-                                if (opt.value.includes(branchCode) || opt.text.includes(branchCode)) {
-                                    s.selectedIndex = i;
-                                    s.dispatchEvent(new Event('change', { bubbles: true }));
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }, asc.code).catch(() => {});
-                await delay(100);
+        if (!rightFrame) throw new Error(`[Worker ${workerId}] Gagal memuat form Service Order Management Light`);
+        return { p2, rightFrame };
+    };
 
-                // 2. Daftar Status operasional GSPN yang valid (5 Status)
-                const statusList = [
-                    { value: 'ST010', text: 'Assigned to Service Center' },
-                    { value: 'ST015', text: 'Acknowledged (ASC)' },
-                    { value: 'ST025', text: 'Engineer Assigned' },
-                    { value: 'ST030', text: 'Pending' },
-                    { value: 'ST035', text: 'Repair Completed' }
-                ];
+    const statusList = [
+        { value: 'ST010', text: 'Assigned to Service Center' },
+        { value: 'ST015', text: 'Acknowledged (ASC)' },
+        { value: 'ST025', text: 'Engineer Assigned' },
+        { value: 'ST030', text: 'Pending' },
+        { value: 'ST035', text: 'Repair Completed' }
+    ];
 
-                // 3. Loop per Status
-                for (let s = 0; s < statusList.length; s++) {
-                    const st = statusList[s];
-                    process.stdout.write(`   -> [${st.value}] ${st.text}... `);
+    try {
+        console.log(`  -> Mempersiapkan ${CONCURRENCY} Tab Worker untuk REDO (Staggered 1.5s)...`);
+        const workerTabs = [];
+        for (let i = 0; i < CONCURRENCY; i++) {
+            const tabData = await openRedoTabForBatch(i + 1);
+            workerTabs.push(tabData);
+            await delay(1500); // Stagger 1.5s agar event popup tidak tabrakan
+        }
 
+        console.log(`  ✅ Semua ${CONCURRENCY} Tab Worker REDO Siap! Menjalankan antrean paralel...`);
+        const redoQueue = [...branchList];
+        let branchIndex = 0;
+
+        const workerLoop = async (workerId, tabData) => {
+            const { p2, rightFrame } = tabData;
+            while (redoQueue.length > 0) {
+                const asc = redoQueue.shift();
+                if (!asc) break;
+                branchIndex++;
+                const currentIdx = branchIndex;
+
+                // TIP DARI USER: Jika SO kosong, skip REDO
+                const soFile = downloadedFiles.soFiles.find(f => f.code === asc.code);
+                if (soFile) {
                     try {
-                        // Set Status & REDO = Y via exact matching and trigger search
-                        await rightFrame.evaluate((val) => {
-                            const selects = Array.from(document.querySelectorAll('select'));
-                            selects.forEach(sel => {
-                                const tr = sel.closest('tr');
-                                const rowText = tr ? tr.innerText : '';
-                                const selName = (sel.name || sel.id || '').toUpperCase();
-
-                                if (selName === 'STATUS' || selName === 'STATUS1' || rowText.includes('Status')) {
-                                    for (let i = 0; i < sel.options.length; i++) {
-                                        if (sel.options[i].value === val || sel.options[i].text.includes(val)) {
-                                            sel.selectedIndex = i;
-                                            sel.dispatchEvent(new Event('change', { bubbles: true }));
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if (selName === 'REDO' || rowText.includes('REDO')) {
-                                    for (let i = 0; i < sel.options.length; i++) {
-                                        if (sel.options[i].value.toUpperCase() === 'Y' || sel.options[i].text.trim().toUpperCase() === 'YES') {
-                                            sel.selectedIndex = i;
-                                            sel.dispatchEvent(new Event('change', { bubbles: true }));
-                                            break;
-                                        }
-                                    }
-                                }
-                            });
-
-                            // Click Quick Search button / invoke search
-                            if (typeof goSearch === 'function') {
-                                goSearch();
-                            } else if (typeof doSearch === 'function') {
-                                doSearch();
-                            } else {
-                                const btn = Array.from(document.querySelectorAll('a, input, button')).find(el => {
-                                    const t = (el.innerText || el.value || '').trim();
-                                    return t === 'Search' || t === 'Quick Search' || (el.className && el.className.includes('btn_padT'));
-                                });
-                                if (btn) btn.click();
-                            }
-                        }, st.value).catch(() => {});
-
-                        await delay(700);
-
-                        // Ekstrak baris tabel Service Order Management (Total: )
-                        const extractedRows = await rightFrame.evaluate((ctx) => {
-                            const results = [];
-                            const trs = Array.from(document.querySelectorAll('table tr'));
-                            for (const tr of trs) {
-                                const tds = Array.from(tr.querySelectorAll('td'));
-                                if (tds.length < 8) continue;
-                                const textCells = tds.map(td => td.innerText.trim());
-                                
-                                const col0 = textCells[0] || '';
-                                if (!/^\d+$/.test(col0)) continue;
-
-                                const col1 = textCells[1] || '';
-                                const matchJob = col1.match(/\b(\d{10})\b/);
-                                const jobNo = matchJob ? matchJob[1] : null;
-                                
-                                if (jobNo) {
-                                    const lines = col1.split('\n').map(l => l.replace(/Edit/gi, '').trim()).filter(Boolean);
-                                    const customer = lines.length > 1 ? lines[1] : '-';
-                                    const model = textCells[5] || '-';
-                                    const statusVal = textCells[7] || ctx.statusName || 'Pending';
-
-                                    results.push({
-                                        jobNo: jobNo,
-                                        asc: ctx.branchInfo.short || ctx.branchInfo.name || 'ASC',
-                                        model: model,
-                                        engineer: `PIC ${ctx.branchInfo.short || 'ASC'}`,
-                                        customer: customer,
-                                        status: statusVal
-                                    });
-                                }
-                            }
-                            return results;
-                        }, { branchInfo: asc, statusName: st.text }).catch(() => []);
-
-                        if (extractedRows && extractedRows.length > 0) {
-                            console.log(`[OK] ${extractedRows.length} REDO orders ditemukan!`);
-                            extractedRows.forEach(r => {
-                                if (!allRedoItems.find(x => x.jobNo === r.jobNo)) {
-                                    allRedoItems.push(r);
-                                }
-                            });
-                        } else {
-                            console.log(`0`);
+                        const html = fs.readFileSync(soFile.path, 'utf8');
+                        const trCount = (html.match(/<tr/gi) || []).length;
+                        if (trCount <= 3) {
+                            console.log(`  [W${workerId}] [REDO ${currentIdx}/${branchList.length}] [-] Skip ${asc.short} (SO Kosong)`);
+                            continue;
                         }
-                    } catch (errStatus) {
-                        console.log(`[WARN] Skip status: ${errStatus.message.substring(0, 30)}`);
-                    }
-
-                    await delay(50);
+                    } catch(e) {}
                 }
-            } catch (errBranch) {
-                console.log(`[WARN] Skip Cabang: ${errBranch.message.substring(0, 35)}`);
+
+                console.log(`  [W${workerId}] [REDO ${currentIdx}/${branchList.length}] Cabang: ${asc.short} (${asc.code})`);
+
+                try {
+                    let currentRightFrame = p2.frames().find(f => f.name() === 'rightContents') || rightFrame;
+
+                    // 1. Pilih Ship to Branch
+                    await currentRightFrame.evaluate((branchCode) => {
+                        const selects = Array.from(document.querySelectorAll('select'));
+                        for (const s of selects) {
+                            const tr = s.closest('tr');
+                            const rowText = tr ? tr.innerText : '';
+                            if (rowText.includes('Ship to Branch') || s.name === 'asc_code' || s.id === 'asc_code' || s.name === 'ASC_CODE') {
+                                for (let i = 0; i < s.options.length; i++) {
+                                    const opt = s.options[i];
+                                    if (opt.value.includes(branchCode) || opt.text.includes(branchCode)) {
+                                        s.selectedIndex = i;
+                                        s.dispatchEvent(new Event('change', { bubbles: true }));
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }, asc.code).catch(() => {});
+                    await delay(100);
+
+                    // 2. Loop 5 Status
+                    for (let s = 0; s < statusList.length; s++) {
+                        const st = statusList[s];
+                        currentRightFrame = p2.frames().find(f => f.name() === 'rightContents') || currentRightFrame;
+
+                        try {
+                            await currentRightFrame.evaluate((val) => {
+                                const selects = Array.from(document.querySelectorAll('select'));
+                                selects.forEach(sel => {
+                                    const tr = sel.closest('tr');
+                                    const rowText = tr ? tr.innerText : '';
+                                    const selName = (sel.name || sel.id || '').toUpperCase();
+
+                                    if (selName === 'STATUS' || selName === 'STATUS1' || rowText.includes('Status')) {
+                                        for (let i = 0; i < sel.options.length; i++) {
+                                            if (sel.options[i].value === val || sel.options[i].text.includes(val)) {
+                                                sel.selectedIndex = i;
+                                                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if (selName === 'REDO' || rowText.includes('REDO')) {
+                                        for (let i = 0; i < sel.options.length; i++) {
+                                            if (sel.options[i].value.toUpperCase() === 'Y' || sel.options[i].text.trim().toUpperCase() === 'YES') {
+                                                sel.selectedIndex = i;
+                                                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                                                break;
+                                            }
+                                        }
+                                    }
+                                });
+
+                                if (typeof goSearch === 'function') {
+                                    goSearch();
+                                } else if (typeof doSearch === 'function') {
+                                    doSearch();
+                                } else {
+                                    const btn = Array.from(document.querySelectorAll('a, input, button')).find(el => {
+                                        const t = (el.innerText || el.value || '').trim();
+                                        return t === 'Search' || t === 'Quick Search' || (el.className && el.className.includes('btn_padT'));
+                                    });
+                                    if (btn) btn.click();
+                                }
+                            }, st.value).catch(() => {});
+
+                            await delay(650);
+
+                            currentRightFrame = p2.frames().find(f => f.name() === 'rightContents') || currentRightFrame;
+                            const extractedRows = await currentRightFrame.evaluate((ctx) => {
+                                const results = [];
+                                const trs = Array.from(document.querySelectorAll('table tr'));
+                                for (const tr of trs) {
+                                    const tds = Array.from(tr.querySelectorAll('td'));
+                                    if (tds.length < 8) continue;
+                                    const textCells = tds.map(td => td.innerText.trim());
+                                    
+                                    const col0 = textCells[0] || '';
+                                    if (!/^\d+$/.test(col0)) continue;
+
+                                    const col1 = textCells[1] || '';
+                                    const matchJob = col1.match(/\b(\d{10})\b/);
+                                    const jobNo = matchJob ? matchJob[1] : null;
+                                    
+                                    if (jobNo) {
+                                        const lines = col1.split('\n').map(l => l.replace(/Edit/gi, '').trim()).filter(Boolean);
+                                        const customer = lines.length > 1 ? lines[1] : '-';
+                                        const model = textCells[5] || '-';
+                                        const statusVal = textCells[7] || ctx.statusName || 'Pending';
+
+                                        results.push({
+                                            jobNo: jobNo,
+                                            asc: ctx.branchInfo.short || ctx.branchInfo.name || 'ASC',
+                                            model: model,
+                                            engineer: `PIC ${ctx.branchInfo.short || 'ASC'}`,
+                                            customer: customer,
+                                            status: statusVal
+                                        });
+                                    }
+                                }
+                                return results;
+                            }, { branchInfo: asc, statusName: st.text }).catch(() => []);
+
+                            if (extractedRows && extractedRows.length > 0) {
+                                console.log(`  [W${workerId}] >>> [OK] ${extractedRows.length} REDO di ${asc.short} [${st.value}]!`);
+                                extractedRows.forEach(r => {
+                                    if (!allRedoItems.find(x => x.jobNo === r.jobNo)) {
+                                        allRedoItems.push(r);
+                                    }
+                                });
+                            }
+                        } catch (errStatus) {
+                            // Abaikan error per-status
+                        }
+                        await delay(50);
+                    }
+                } catch (errBranch) {
+                    console.log(`  [W${workerId}] [WARN] Skip Cabang ${asc.short}: ${errBranch.message.substring(0, 35)}`);
+                }
+                await delay(50);
             }
 
-            await delay(50);
+            await p2.close().catch(() => {});
+        };
+
+        await Promise.all(workerTabs.map((tab, idx) => workerLoop(idx + 1, tab)));
+
+        // Pastikan semua tab tertutup
+        for (const tabData of workerTabs) {
+            if (tabData && tabData.p2 && !tabData.p2.isClosed()) {
+                await tabData.p2.close().catch(() => {});
+            }
         }
     } catch (err) {
         console.warn('  [WARN] REDO Scrape Error:', err.message);
-    } finally {
-        if (page2 && !page2.isClosed()) {
-            await page2.close().catch(() => {});
-        }
     }
 
+    console.log(`  🎉 [SELESAI] Penarikan REDO selesai! Total ${allRedoItems.length} unit REDO ditemukan.`);
     return allRedoItems;
 }
 
-async function scrapeAllBranches(headless = false, sampleOnly = false, onProgress = null) {
+async function scrapeAllBranches(headless = true, sampleOnly = false, onProgress = null) {
     console.log('==============================================');
     console.log(`  >>> GSPN PLAYWRIGHT RPA - ${sampleOnly ? 'SAMPLE TEST (3 CABANG)' : 'ULTRA FAST NATIONAL SCRAPER'}`);
     console.log(`  Waktu: ${new Date().toLocaleString('id-ID')}`);
@@ -705,7 +744,7 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
                     }
                 }, asc.code);
                 
-                await delay(2500); // Tunggu AJAX partner dropdown settle
+                await delay(600); // Partner dropdown settle
 
                 const now = new Date();
                 const pad = n => String(n).padStart(2, '0');
@@ -757,6 +796,8 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
         if (pageData && pageData.p2) await pageData.p2.close().catch(()=>{});
     };
 
+    // STRICT SEQUENTIAL EXECUTION (CONCURRENCY = 1):
+    // Prevents GSPN server-side session crosstalk between partner dropdowns
     const CONCURRENCY = Math.min(5, branchList.length);
     const workers = [];
     for (let i = 0; i < CONCURRENCY; i++) {
@@ -772,18 +813,16 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
 
 
     // ==========================================
-    // PARALLEL PARTS SALES SCRAPE
+    // DAILY STATEMENT PARTS SALES (1X TARIKAN NASIONAL - SERVICE BRANCH ALL)
+    // Sesuai arahan BOS: 1x tarikan nasional, Service Branch = ALL, tanggal 1 s/d hari ini
     // ==========================================
     console.log('\n==============================================');
-    console.log('  >>> PROSES BATCH PARALLEL PARTS SALES (' + branchList.length + ' CABANG)');
+    console.log('  🛒 [PARTS SALES] MENARIK DAILY STATEMENT PARTS SALES (1X TARIKAN NASIONAL - SERVICE BRANCH ALL)');
     console.log('==============================================');
     
-    if (onProgress) onProgress({ phase: 'PARTS BATCH', current: 0, total: branchList.length, branch: 'Memulai...', ok: true });
-    
-    const partsQueue = [...branchList];
+    if (onProgress) onProgress({ phase: 'PARTS', current: 1, total: 1, branch: 'NASIONAL (ALL)', ok: true });
     downloadedFiles.partsFiles = [];
-    let partsCompleted = 0;
-    
+
     const openPartsTabForBatch = async () => {
         await mainPage.bringToFront();
         await delay(500);
@@ -793,141 +832,120 @@ async function scrapeAllBranches(headless = false, sampleOnly = false, onProgres
         p2.on('dialog', async d => { await d.accept().catch(()=>{}); });
         await delay(2000);
         
-        await p2.locator('iframe[name="leftMenus"]').waitFor({ state: 'attached', timeout: 15000 });
-        const clickInMenu = async (selector, text) => {
-            await p2.evaluate(({ selector, text }) => {
-                const lm = document.querySelector('iframe[name="leftMenus"]');
-                if (!lm) return;
-                const sc = lm.contentDocument.querySelector('iframe[name="b2BLeftMenuScroll"]');
-                if (!sc) return;
-                const doc = sc.contentDocument;
-                let el = selector ? doc.querySelector(selector) : null;
-                if (!el && text) el = Array.from(doc.querySelectorAll('td')).find(t => t.innerText.trim() === text);
-                if (el) el.click();
-            }, { selector, text });
-        };
-        await clickInMenu('td#Accounting_top', 'Accounting');
-        await delay(800);
-        await clickInMenu('td#Accounting_2', 'Partner Accounting');
-        await delay(800);
-        await clickInMenu(null, 'Daily Statement (Parts Sales)');
-        
-        let rightFrame = null;
-        for (let attempt = 0; attempt < 20; attempt++) {
-            rightFrame = p2.frames().find(f => f.name() === 'rightContents');
-            if (rightFrame) {
-                try {
-                    const found = await rightFrame.evaluate(() => !!document.querySelector('#Partner'));
-                    if (found) break;
-                } catch (_) {}
+        let rightFrame = p2.frames().find(f => f.name() === 'rightContents');
+        if (!rightFrame) {
+            for (let attempt = 0; attempt < 20; attempt++) {
+                await delay(500);
+                rightFrame = p2.frames().find(f => f.name() === 'rightContents');
+                if (rightFrame) break;
             }
-            await delay(1000);
         }
-        if (!rightFrame) throw new Error("Failed to load Parts Sales tab");
+        if (!rightFrame) throw new Error("Failed to find rightContents frame");
+
+        // Buka langsung URL DailyStateParts.jsp
+        await rightFrame.goto('https://biz2.samsungcsportal.com/acct/ascacct/DailyStateParts.jsp', { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await delay(2000);
         
         return { p2, rightFrame };
     };
 
-    const workerParts = async (workerId) => {
-        let pageData = null;
-        while (partsQueue.length > 0) {
-            const asc = partsQueue.shift();
-            try {
-                if (!pageData) pageData = await openPartsTabForBatch();
-                const { p2 } = pageData;
-                
-                let currentRightFrame = p2.frames().find(f => f.name() === 'rightContents');
-                if (!currentRightFrame) {
-                    for (let attempt = 0; attempt < 15; attempt++) {
-                        await delay(1000);
-                        currentRightFrame = p2.frames().find(f => f.name() === 'rightContents');
-                        if (currentRightFrame) break;
-                    }
-                }
-                if (!currentRightFrame) throw new Error("rightContents frame not found");
+    try {
+        const pageData = await openPartsTabForBatch();
+        const { p2, rightFrame } = pageData;
 
-                await currentRightFrame.evaluate(val => {
-                    const selects = Array.from(document.querySelectorAll('select'));
-                    const branchSel = selects.find(s => s.id.toLowerCase().includes('branch') || s.name.toLowerCase().includes('branch') || s.id === 'asc_code');
-                    const partnerSel = document.querySelector('#Partner') || selects.find(s => s.id.toLowerCase().includes('partner') || s.name.toLowerCase().includes('partner'));
-
-                    if (branchSel) {
-                        for (let i = 0; i < branchSel.options.length; i++) {
-                            if (branchSel.options[i].value === val || branchSel.options[i].text.includes(val)) {
-                                branchSel.selectedIndex = i;
-                                branchSel.dispatchEvent(new Event('change', { bubbles: true }));
-                                break;
-                            }
-                        }
-                    }
-                    if (partnerSel) {
-                        for (let i = 0; i < partnerSel.options.length; i++) {
-                            if (partnerSel.options[i].value === val || partnerSel.options[i].text.includes(val)) {
-                                partnerSel.selectedIndex = i;
-                                partnerSel.dispatchEvent(new Event('change', { bubbles: true }));
-                                break;
-                            }
-                        }
-                    }
-                }, asc.code);
-                
-                await delay(2500); // Tunggu AJAX partner dropdown settle
-
-                const now = new Date();
-                const pad = n => String(n).padStart(2, '0');
-                // Sesuai filter bulan berjalan di GSPN: 01.MM.YYYY s/d DD.MM.YYYY
-                const fromStr = '01.' + pad(now.getMonth() + 1) + '.' + now.getFullYear();
-                const toStr = pad(now.getDate()) + '.' + pad(now.getMonth() + 1) + '.' + now.getFullYear();
-                
-                currentRightFrame = p2.frames().find(f => f.name() === 'rightContents') || currentRightFrame;
-                await currentRightFrame.evaluate(({ from, to }) => {
-                    const fi = document.querySelector('#FromDate');
-                    const ti = document.querySelector('#ToDate');
-                    if (fi) fi.value = from;
-                    if (ti) ti.value = to;
-                    
-                    const btn = Array.from(document.querySelectorAll('a')).find(a => a.innerText.trim() === 'Search');
-                    if (btn) btn.click();
-                }, { from: fromStr, to: toStr }).catch(()=>{});
-                
-                await delay(5000); // Tunggu query server selesai
-                
-                currentRightFrame = p2.frames().find(f => f.name() === 'rightContents') || currentRightFrame;
-                const downloadPromise = p2.waitForEvent('download', { timeout: 30000 }).catch(() => null);
-                
-                await currentRightFrame.evaluate(() => {
-                    const dlBtn = Array.from(document.querySelectorAll('a')).find(a => a.innerText.trim() === 'Download' || a.innerText.trim() === 'Excel Download' || a.innerText.trim() === 'Excel');
-                    if (dlBtn) dlBtn.click();
-                }).catch(()=>{});
-                
-                const download = await downloadPromise;
-                if (download) {
-                    const partsPath = require('path').join(config.DOWNLOAD_DIR, 'PARTS_SALES_' + asc.short + '_' + Date.now() + '.xls');
-                    await download.saveAs(partsPath);
-                    downloadedFiles.partsFiles.push({ branch: asc.short, name: asc.name, code: asc.code, path: partsPath });
-                    console.log('  [W' + workerId + '] [OK] Parts OK: ' + asc.short);
-                } else {
-                    console.log('  [W' + workerId + '] [-] Parts kosong: ' + asc.short);
-                }
-            } catch (err) {
-                console.log('  [W' + workerId + '] [WARN] Parts Error (' + asc.short + '): ' + err.message.substring(0, 40));
-                if (pageData && pageData.p2) await pageData.p2.close().catch(()=>{});
-                pageData = null;
+        // 1. Pilih Service Branch: --ALL-- (value: "")
+        await rightFrame.evaluate(() => {
+            const partnerSel = document.querySelector('#Partner') || document.querySelector('select[name="Partner"]');
+            if (partnerSel) {
+                partnerSel.value = '';
+                partnerSel.selectedIndex = 0;
+                partnerSel.dispatchEvent(new Event('change', { bubbles: true }));
             }
-            partsCompleted++;
-            if (onProgress) onProgress({ phase: 'PARTS', current: partsCompleted, total: branchList.length, branch: asc.short, ok: true });
-        }
-        if (pageData && pageData.p2) await pageData.p2.close().catch(()=>{});
-    };
+        });
 
-    // CONCURRENCY is already defined in gdLogic
-    const partsWorkers = [];
-    for (let i = 0; i < CONCURRENCY; i++) {
-        partsWorkers.push(workerParts(i + 1));
-        await delay(3000);
+        await delay(1500);
+
+        // 2. Set Tanggal S/O Date: 01.MM.YYYY s/d DD.MM.YYYY (1 - hari ini)
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const fromStr = '01.' + pad(now.getMonth() + 1) + '.' + now.getFullYear();
+        const toStr = pad(now.getDate()) + '.' + pad(now.getMonth() + 1) + '.' + now.getFullYear();
+        console.log(`  -> Filter Periode Penjualan: ${fromStr} s/d ${toStr} (Service Branch: ALL)...`);
+
+        await rightFrame.evaluate(({ from, to }) => {
+            const fi = document.querySelector('#FromDate');
+            const ti = document.querySelector('#ToDate');
+            if (fi) fi.value = from;
+            if (ti) ti.value = to;
+
+            const btn = Array.from(document.querySelectorAll('a, button, input[type="button"]')).find(b => (b.innerText || b.value || '').trim() === 'Search');
+            if (btn) btn.click();
+        }, { from: fromStr, to: toStr });
+
+        console.log('  -> Menunggu query server GSPN selesai (10 detik)...');
+        await delay(10000);
+
+        // 3. Download file Excel nasional
+        const downloadPromise = p2.waitForEvent('download', { timeout: 45000 }).catch(err => {
+            console.log('  [WARN] Download timeout/error:', err.message);
+            return null;
+        });
+
+        await rightFrame.evaluate(() => {
+            const dlBtn = Array.from(document.querySelectorAll('a, button, input[type="button"]')).find(b => {
+                const t = (b.innerText || b.value || '').trim();
+                return t === 'Download' || t === 'Excel Download' || t === 'Excel';
+            });
+            if (dlBtn) dlBtn.click();
+        });
+
+        const download = await downloadPromise;
+        if (download) {
+            const partsPath = path.join(config.DOWNLOAD_DIR, 'PARTS_SALES_NATIONAL_' + Date.now() + '.xls');
+            await download.saveAs(partsPath);
+            downloadedFiles.partsFiles.push({ branch: 'ALL', name: 'ALL BRANCHES', code: '', path: partsPath });
+            console.log('  ✅ [OK] File Daily Statement Parts Sales Nasional (ALL) berhasil diunduh!');
+        } else {
+            console.log('  ⚠️ [WARN] File download parts sales tidak diterima.');
+        }
+
+        await p2.close().catch(() => {});
+    } catch (err) {
+        console.error('  ❌ [ERROR] Gagal saat penarikan parts sales nasional:', err.message);
     }
-    await Promise.all(partsWorkers);
-    console.log('  [SELESAI] PROSES PARALLEL PARTS SALES SELESAI!');
+    console.log('  [SELESAI] PENARIKAN PARTS SALES NASIONAL SELESAI!');
+
+    // ==========================================
+    // 5. STOK CABANG AKSESORIS (JADWAL SESUAI ARAHAN TERBARU BOS)
+    // 1. Di putaran awal hari ini
+    // 2. Di rentang jam 15-an (15:00 - 15:59) hanya 1x
+    // ==========================================
+    try {
+        delete require.cache[require.resolve('./branch_stock_engine')];
+        const { shouldRunStockScrapeToday, getStockScrapeTriggerReason, scrapeStockOverview, syncBranchStockToFirestore, markStockScrapeDoneToday } = require('./branch_stock_engine');
+        const triggerInfo = getStockScrapeTriggerReason ? getStockScrapeTriggerReason() : { shouldRun: shouldRunStockScrapeToday(), label: 'STOK OVERVIEW' };
+
+        if (shouldRunStockScrapeToday()) {
+            console.log('\n==============================================');
+            console.log(`  >>> [${triggerInfo.label}] SCRAPE STOK CABANG GSPN (ADAPTOR & KABEL DATA)`);
+            console.log('==============================================');
+            if (onProgress) onProgress({ phase: 'STOCK', current: 0, total: 18, branch: `Membuka Stock Overview (${triggerInfo.label})...`, ok: true });
+
+            // Eksekusi Multi-Tab 3 Worker Paralel (Hemat durasi dari ~98s ke ~23s)
+            const stockResult = await scrapeStockOverview(mainPage, onProgress, businessBtn);
+
+            if (stockResult.success && stockResult.stockRecords && stockResult.stockRecords.length > 0) {
+                await syncBranchStockToFirestore(stockResult.stockRecords);
+                markStockScrapeDoneToday({ totalRecords: stockResult.stockRecords.length });
+                downloadedFiles.stockRecords = stockResult.stockRecords;
+            }
+        } else {
+            console.log(`  ⚡ [STOCK SKIP] Stok cabang tidak ditarik pada putaran ini: ${triggerInfo.label}`);
+        }
+    } catch (stockErr) {
+        console.warn('  ⚠️ [WARN] Error saat penarikan stok cabang:', stockErr.message);
+    }
+
 
 
     await browser.close().catch(() => {});

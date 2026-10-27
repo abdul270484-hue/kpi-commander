@@ -427,7 +427,7 @@ function performAnalysis(data, customModels, customReasons) {
         
         let defectDesc = row['Defect Description'] || row['Symptom'] || '-';
         
-        const billInfo = { jobNo, model, customer: customerName, pendingDays: agingDays, reason: reason, category: category, engineer: engineer, defect: defectDesc, status: status };
+        const billInfo = { jobNo, model, customer: customerName, pendingDays: agingDays, reason: reason, category: category, engineer: engineer, defect: defectDesc, status: status, asc: ascName };
         
         branchStats[ascName].total++;
         branchStats[ascName].bills.total.push(billInfo);
@@ -641,10 +641,17 @@ function performAnalysis(data, customModels, customReasons) {
 
     let shameList = [];
     for (let eng in engineerStats) {
+        if (!eng || eng === 'UNKNOWN ENGINEER' || eng === 'UNKNOWN' || eng === 'UNKNOWN_ENGINEER' || eng.startsWith('PIC ') || eng.startsWith('KACAB ')) continue;
         let es = engineerStats[eng];
         let totalDosa = es.mxAging + es.vdAging + es.daAging;
         if (totalDosa > 0) {
-            shameList.push({ engineer: eng, asc: es.asc, count: totalDosa, detail: `MX:${es.mxAging} VD:${es.vdAging} DA:${es.daAging}` });
+            shameList.push({
+                engineer: eng,
+                asc: es.asc,
+                count: totalDosa,
+                detail: `MX:${es.mxAging} VD:${es.vdAging} DA:${es.daAging}`,
+                bills: (es.bills || []).filter(b => !b.asc || b.asc === es.asc || b.asc.includes(es.asc) || es.asc.includes(b.asc))
+            });
         }
     }
     // Sort: 1. Branch A-Z, 2. Aging Units DESC

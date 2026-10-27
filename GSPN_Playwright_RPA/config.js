@@ -1,58 +1,58 @@
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 module.exports = {
     // GSPN Portal URL & Selectors
     GSPN_URL: 'https://gspn2.samsungcsportal.com',
-    DEFAULT_USER_ID: process.env.GSPN_USER_ID || 'BLACKMENCHEST22',
-    DEFAULT_PASSWORD: process.env.GSPN_PASSWORD || 'KHAIRUNNISA@22',
+    DEFAULT_USER_ID: process.env.GSPN_USER_ID || '',
+    DEFAULT_PASSWORD: process.env.GSPN_PASSWORD || '',
     
     // ASC Target Branches
     ASC_CODES: [
     {
         "code": "0007130603",
         "name": "0007130603 / BE UNICOM BEBELITUNG BANGKA BELITUNG JL. ZAINUDIN ABA, PANGKAL LALANG",
-        "short": "BELITUNG"
+        "short": "BE BELITUNG"
     },
     {
         "code": "0006469030",
         "name": "0006469030 / BE UNICOM BITUNG TATELU,KEL.TENDEKI,RT.10/3,KEC. JL.MANADO-BITUNG VIA JALUR TENDEKI-",
-        "short": "BITUNG"
+        "short": "BE BITUNG"
     },
     {
         "code": "0004986640",
         "name": "0004986640 / BE UNICOM CURUP TENGAH KAB.REJANG LEBONG, JL.SULTAN JAMIL,KEPALA SIRING KEC.",
-        "short": "CURUP"
+        "short": "BE CURUP"
     },
     {
         "code": "0006479073",
         "name": "0006479073 / BE UNICOM KETAPANG,KAB.KETAPANG, JL.KH.MANSYUR NO.88,SUKAHARJA,",
-        "short": "KETAPANG"
+        "short": "BE KETAPANG"
     },
     {
         "code": "0007115862",
         "name": "0007115862 / BE UNICOM KONAWE TENGGARA JL LAKIDENDE NO59,PEREMPATAN AROMBU",
-        "short": "KONAWE"
+        "short": "BE KONAWE"
     },
     {
         "code": "0005773598",
         "name": "0005773598 / BE UNICOM KOTA BUMI KEC.SUNGKAI TENGAH,KABUPATEN JL.PROTOKOL SIMPANG BATU NANGKOP",
-        "short": "KOTA"
+        "short": "BE KOTA BUMI"
     },
     {
         "code": "0004986618",
         "name": "0004986618 / BE UNICOM METRO METRO, LAMPUNG JlN IMAM BONJOL, 22 HADIMULYO BARAT",
-        "short": "METRO"
+        "short": "BE METRO"
     },
     {
         "code": "0004986619",
         "name": "0004986619 / BE UNICOM PRINGSEWU KAB.PRINGSEWU,LAMPUNG JL.PRINGADI NO.707-125 PODOMORO",
-        "short": "PRINGSEWU"
+        "short": "BE PRINGSEWU"
     },
     {
         "code": "0006479074",
         "name": "0006479074 / BE UNICOM SANGGAU SANGGAU KALIMANTAN BARAT DUSUN KAYU TUNU SUNGAI MUNTIK",
-        "short": "SANGGAU"
+        "short": "BE SANGGAU"
     },
     {
         "code": "0004886679",
@@ -67,7 +67,7 @@ module.exports = {
     {
         "code": "0002321530",
         "name": "0002321530 / UNICOM BANDAR JAYA KEL.BANDAR JAYA TIMUR KEC.TERBANGGI JL.PROKLAMATOR RAYA RT02/RW01",
-        "short": "BANDAR"
+        "short": "BANDAR JAYA"
     },
     {
         "code": "0005195856",
@@ -132,7 +132,7 @@ module.exports = {
     {
         "code": "0004411732",
         "name": "0004411732 / UNICOM Lampung BANDAR LAMPUNG JL CUT NYAK DIEN NO 7B-C",
-        "short": "LAMPUNG"
+        "short": "BANDAR LAMPUNG"
     },
     {
         "code": "0004924922",
@@ -212,7 +212,7 @@ module.exports = {
     {
         "code": "0004925238",
         "name": "0004925238 / UNICOM SERPONG ITC-BSD BSD LANTAI 1,BLOK A3A JL.PAHLAWAN SERIBU NO.2,MALL ITC",
-        "short": "SERPONG"
+        "short": "SERPONG ITC-BSD"
     },
     {
         "code": "0004924700",
@@ -257,7 +257,7 @@ module.exports = {
     {
         "code": "0004411731",
         "name": "0004411731 / UNICOM Tanjung Pinang JL.DI PANDJAITAN KM.9,TANJUNGPINANG RUKO TAMAN GURINDAM 10",
-        "short": "TANJUNG"
+        "short": "TANJUNGPINANG"
     }
 ],
 

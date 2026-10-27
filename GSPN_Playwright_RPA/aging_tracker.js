@@ -75,11 +75,7 @@ async function trackAgingStates(oldDb, baseData) {
             }
         } catch(e) {}
 
-        if (status.includes('Assigned to Service Center') || status.includes('Acknowledge')) {
-            engineer = `PIC ${virtualAsc}`;
-        } else if (reason && (reason.trim().toUpperCase() === 'WAITING FOR CONFIRMATION FROM SAMSUNG' || reason.trim().toUpperCase() === 'PROCESSING EXCHANGE')) {
-            engineer = `PIC ${virtualAsc}`;
-        }
+        // Keep actual technician name from SO pull (do not overwrite with PIC)
 
         let warranty = '';
         for (let k in row) {

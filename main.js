@@ -1,8 +1,8 @@
 import { CONFIG } from './src/config.js?v=1790141904536';
 import { scanRedoImage, initTesseract } from './src/services/ocr.js?v=1790141904536';
-import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo, getWAPayloadShame, getWAPayloadRC } from './src/services/whatsapp.js?v=20261012_v11';
+import { sendWA, sendWARC, sendWADosaSingleBranch, sendWARedo, getWAPayloadShame, getWAPayloadRC, getWAPayloadShameBranch, sendWABranchShame, getBranchPICContact } from './src/services/whatsapp.js?v=20261022_clean_filter_v2';
 import { initRulesListener, addCustomRule as configAddRule, deleteCustomRule as configDeleteRule, initContactsListener, saveTechContacts } from './src/firebase/config.js?v=20261007_v8';
-import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser } from './src/firebase/users.js?v=1790141904536';
+import { initUserListener, resetDeviceLock, removeApprovedUser, approveUser, editUserBranches } from './src/firebase/users.js?v=20261021_checklist_v1';
 import { initAuth, isAdmin, normalizePhone } from './src/auth.js?v=20261013_v10';
 import { handleFiles, handleProductivityFiles } from './src/parser.js?v=1790141904536';
 import { initFirebaseAutoSync } from './src/firebase_sync.js?v=20261015_lock';
@@ -11,12 +11,16 @@ import { initFirebaseAutoSync } from './src/firebase_sync.js?v=20261015_lock';
 window.sendWA = sendWA;
 window.sendWARC = sendWARC;
 window.getWAPayloadShame = getWAPayloadShame;
+window.getWAPayloadShameBranch = getWAPayloadShameBranch;
+window.sendWABranchShame = sendWABranchShame;
+window.getBranchPICContact = getBranchPICContact;
 window.getWAPayloadRC = getWAPayloadRC;
 window.sendWADosaSingleBranch = sendWADosaSingleBranch;
 window.sendWARedo = sendWARedo;
 window.resetDeviceLock = resetDeviceLock;
 window.removeApprovedUser = removeApprovedUser;
 window.approveUser = approveUser;
+window.editUserBranches = editUserBranches;
 
 // Firebase Initialization
 const firebaseConfig = {
@@ -142,66 +146,73 @@ const emptyState = document.getElementById('empty-state');
 // Check if a part string matches any expensive part keywords
 
 // Event Listeners for File Upload (Locked by Auth)
-window.addEventListener('bujm_auth_ready', () => {
-initTesseract(); // Pre-warm OCR worker in the background
-if (dropZone && fileInput) {
-    dropZone.addEventListener('click', () => fileInput.click());
+function initAuthGuardedListeners() {
+    initTesseract(); // Pre-warm OCR worker in the background
+    if (dropZone && fileInput) {
+        dropZone.addEventListener('click', () => fileInput.click());
 
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
 
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
 
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) {
-            handleFiles(e.dataTransfer.files, analyzerWorker, window.customModels || [], window.customReasons || []);
-        }
-    });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFiles(e.dataTransfer.files, analyzerWorker, window.customModels || [], window.customReasons || []);
+            }
+        });
 
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) {
-            handleFiles(e.target.files, analyzerWorker, window.customModels || [], window.customReasons || []);
-        }
-    });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFiles(e.target.files, analyzerWorker, window.customModels || [], window.customReasons || []);
+            }
+        });
+    }
+
+    // Event Listeners for Productivity File Upload
+    if (dropZoneProd && fileInputProd) {
+        dropZoneProd.addEventListener('click', () => fileInputProd.click());
+        dropZoneProd.addEventListener('dragover', (e) => { e.preventDefault(); dropZoneProd.classList.add('dragover'); });
+        dropZoneProd.addEventListener('dragleave', () => dropZoneProd.classList.remove('dragover'));
+        dropZoneProd.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZoneProd.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleProductivityFiles(e.dataTransfer.files, analyzerWorker);
+        });
+        fileInputProd.addEventListener('change', (e) => {
+            if (e.target.files.length) handleProductivityFiles(e.target.files, analyzerWorker);
+        });
+    }
+
+    // Event Listeners for Queue CSV Upload (Multi File)
+    const dropZoneQueue = document.getElementById('drop-zone-queue');
+    const fileInputQueue = document.getElementById('file-input-queue');
+
+    if (dropZoneQueue && fileInputQueue) {
+        dropZoneQueue.addEventListener('click', () => fileInputQueue.click());
+        dropZoneQueue.addEventListener('dragover', (e) => { e.preventDefault(); dropZoneQueue.classList.add('dragover'); });
+        dropZoneQueue.addEventListener('dragleave', () => dropZoneQueue.classList.remove('dragover'));
+        dropZoneQueue.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZoneQueue.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleQueueFiles(e.dataTransfer.files);
+        });
+        fileInputQueue.addEventListener('change', (e) => {
+            if (e.target.files.length) handleQueueFiles(e.target.files);
+        });
+    }
 }
 
-// Event Listeners for Productivity File Upload
-if (dropZoneProd && fileInputProd) {
-    dropZoneProd.addEventListener('click', () => fileInputProd.click());
-    dropZoneProd.addEventListener('dragover', (e) => { e.preventDefault(); dropZoneProd.classList.add('dragover'); });
-    dropZoneProd.addEventListener('dragleave', () => dropZoneProd.classList.remove('dragover'));
-    dropZoneProd.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZoneProd.classList.remove('dragover');
-        if (e.dataTransfer.files.length) handleProductivityFiles(e.dataTransfer.files, analyzerWorker);
-    });
-    fileInputProd.addEventListener('change', (e) => {
-        if (e.target.files.length) handleProductivityFiles(e.target.files, analyzerWorker);
-    });
-}
-
-// Event Listeners for Queue CSV Upload (Multi File)
-const dropZoneQueue = document.getElementById('drop-zone-queue');
-const fileInputQueue = document.getElementById('file-input-queue');
-
-if (dropZoneQueue && fileInputQueue) {
-    dropZoneQueue.addEventListener('click', () => fileInputQueue.click());
-    dropZoneQueue.addEventListener('dragover', (e) => { e.preventDefault(); dropZoneQueue.classList.add('dragover'); });
-    dropZoneQueue.addEventListener('dragleave', () => dropZoneQueue.classList.remove('dragover'));
-    dropZoneQueue.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZoneQueue.classList.remove('dragover');
-        if (e.dataTransfer.files.length) handleQueueFiles(e.dataTransfer.files);
-    });
-    fileInputQueue.addEventListener('change', (e) => {
-        if (e.target.files.length) handleQueueFiles(e.target.files);
-    });
+if (window.authReady) {
+    initAuthGuardedListeners();
+} else {
+    window.addEventListener('bujm_auth_ready', initAuthGuardedListeners);
 }
 
 // ==========================================
@@ -359,6 +370,11 @@ function isBranchAllowed(branchName, allowedBranches) {
     return allowedBranches.some(allowed => {
         const a = String(allowed).toUpperCase().trim();
         if (!a) return false;
+        const hasPinangTarget = target.includes('PINANG');
+        const hasPinangA = a.includes('PINANG');
+        if (hasPinangTarget !== hasPinangA && (target.includes('TANJUNG') || a.includes('TANJUNG'))) {
+            return false;
+        }
         return target.includes(a) || a.includes(target);
     });
 }
@@ -451,6 +467,11 @@ async function executeAreaBlastShame(isAuto = false) {
 
     // 2. Filter STRICT HANYA cabang area sendiri
     const areaShameData = sourceShame.filter(item => {
+        if (!item || !item.engineer) return false;
+        const norm = (item.engineer || '').toUpperCase().trim();
+        if (norm === 'UNKNOWN ENGINEER' || norm === 'UNKNOWN' || norm === 'UNKNOWN_ENGINEER' || norm === 'N/A' || norm.startsWith('PIC ') || norm.startsWith('KACAB ')) {
+            return false;
+        }
         return isBranchAllowed(item.asc, allowedBranches);
     });
 
@@ -459,32 +480,56 @@ async function executeAreaBlastShame(isAuto = false) {
         return true; // Tidak ada pelanggaran di area sendiri, dianggap beres
     }
 
-    // 3. Kumpulkan payload Sistem Bot WA
+    // 3. Kelompokkan teknisi Wall of Shame per Cabang (ASC) untuk Blast ke PIC/Leader Cabang
+    const branchMap = {};
+    areaShameData.forEach(item => {
+        const branchKey = item.asc;
+        if (!branchMap[branchKey]) branchMap[branchKey] = [];
+        branchMap[branchKey].push(item);
+    });
+
     const blastQueueArray = [];
     const blastQueueManual = [];
-    
-    areaShameData.forEach(item => {
-        if (window.getWAPayloadShame) {
-            const payload = window.getWAPayloadShame(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
-            if (payload) {
+    const missingPicBranches = [];
+
+    for (let branch in branchMap) {
+        const branchTechs = branchMap[branch];
+        if (typeof window.getWAPayloadShameBranch === 'function') {
+            const payload = window.getWAPayloadShameBranch(branch, branchTechs);
+            if (payload && payload.phone) {
                 blastQueueArray.push({
                     phone: payload.phone,
-                    name: payload.name,
-                    branch: item.asc,
+                    name: payload.name || ("PIC " + branch),
+                    branch: branch,
                     PesanUtama: payload.text
                 });
-                blastQueueManual.push(item);
+                blastQueueManual.push({
+                    branch: branch,
+                    payload: payload
+                });
+            } else {
+                missingPicBranches.push(branch);
             }
         }
-    });
-    
+    }
+
     if (blastQueueArray.length === 0) {
-        if (!isAuto) showToastNotification('Semua teknisi di area Anda pada Wall of Shame belum memiliki nomor WA di kontak!');
+        if (!isAuto) {
+            if (missingPicBranches.length > 0) {
+                showToastNotification("Nomor WA PIC/Leader untuk cabang (" + missingPicBranches.join(', ') + ") belum disetting di menu Kontak!");
+            } else {
+                showToastNotification('Tidak ada kontak PIC/Leader yang ditemukan untuk cabang di area Anda.');
+            }
+        }
         return false;
     }
 
+    if (missingPicBranches.length > 0) {
+        console.warn("[BLAST SHAME PIC] Cabang tanpa kontak PIC/Leader: " + missingPicBranches.join(', '));
+    }
+
     // 4. Langsung jalankan pengiriman (Non-blocking tanpa modal popup)
-    const targetBranches = [...new Set(blastQueueManual.map(item => item.asc))];
+    const targetBranches = blastQueueArray.map(item => item.branch);
     // Pastikan status WA dicek ulang TERLEBIH DAHULU sebelum memberi notifikasi
     if (!isJarvisOnline) {
         try {
@@ -496,29 +541,28 @@ async function executeAreaBlastShame(isAuto = false) {
 
     if (isJarvisOnline) {
         // Sistem Bot WA Mode (Online)
-        console.log(`[BLAST WA SHAME] Mengirim chat ke ${blastQueueArray.length} teknisi di area (${targetBranches.join(', ')})...`);
-        showToastNotification(`\u{1F680} Mengirim WA Blast ke ${blastQueueArray.length} teknisi di area Anda (${targetBranches.join(', ')})...`);
+        console.log("[BLAST WA SHAME PIC] Mengirim chat ke " + blastQueueArray.length + " PIC Cabang (" + targetBranches.join(', ') + ")...");
+        showToastNotification("🚀 Mengirim WA Blast ke " + blastQueueArray.length + " PIC Cabang (" + targetBranches.join(', ') + ")...");
         const blastOk = await blastViaJarvis(blastQueueArray);
         return blastOk;
     } else if (!isAuto) {
         // Manual Fallback Mode (Hanya saat manual klik di browser)
-        showToastNotification(`\u{26A0}\u{FE0F} Bot WA belum terhubung (Scan QR). Beralih ke WhatsApp Web Manual untuk ${blastQueueManual.length} teknisi area... Izinkan POPUP BROWSER!`);
+        showToastNotification("⚠️ Bot WA offline. Membuka WhatsApp Web Manual untuk " + blastQueueManual.length + " PIC Cabang... Izinkan POPUP BROWSER!");
         let index = 0;
         const blastInterval = setInterval(() => {
             if (index >= blastQueueManual.length) {
                 clearInterval(blastInterval);
-                showToastNotification('WA Blast Area Selesai! Semua pesan peringatan telah diproses.');
+                showToastNotification('WA Blast PIC Cabang Selesai! Semua pesan monitoring telah diproses.');
                 return;
             }
             const item = blastQueueManual[index];
-            if (typeof window.sendWA === 'function') {
-                window.sendWA(item.engineer.replace(/'/g, "\\'"), item.asc, item.count, item.detail);
-            }
+            const url = "https://wa.me/" + item.payload.phone + "?text=" + encodeURIComponent(item.payload.text);
+            window.open(url, '_blank');
             index++;
         }, 10000);
         return true;
     } else {
-        console.warn('\u{26A0}\u{FE0F}  [AUTO ALERT] Bot WA lokal offline di port 3001, pengiriman otomatis ditunda.');
+        console.warn('⚠️ [AUTO ALERT] Bot WA lokal offline di port 3001, pengiriman otomatis ditunda.');
         return false;
     }
 }
@@ -737,48 +781,6 @@ if (btnShareFame) {
     });
 }
 
-
-// Event Listener for Share Wall of Shame
-const btnShareShame = document.getElementById('btnShareShame');
-if (btnShareShame) {
-    btnShareShame.addEventListener('click', () => {
-        if (!window.shameData || window.shameData.length === 0) {
-            showToastNotification('No Wall of Shame data available or list is empty!');
-            return;
-        }
-        
-        const dateStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        let text = `*WALL OF SHAME - DOSA CABANG*\nGood morning everyone, here is the update for ${dateStr} technicians with unresolved aging units:\n\n`;
-        
-        // Group by Branch
-        const grouped = {};
-        window.shameData.forEach((item) => {
-            if (!grouped[item.asc]) grouped[item.asc] = [];
-            grouped[item.asc].push(item);
-        });
-        
-        // Sort Branch A-Z
-        const sortedBranches = Object.keys(grouped).sort();
-        
-        sortedBranches.forEach((branch, bIdx) => {
-            text += `*${bIdx+1}. ${branch}*\n`;
-            // Sort Engineer A-Z within branch
-            grouped[branch].sort((a, b) => a.engineer.localeCompare(b.engineer));
-            grouped[branch].forEach((eng) => {
-                text += `   - ${eng.engineer}: ${eng.count} bill\n`;
-            });
-        });
-        
-        text += `\nPlease follow up immediately to maintain branch aging performance.`;
-        
-        navigator.clipboard.writeText(text).then(() => {
-            showToastNotification('Text copied! Please paste into Branch Head WA group.');
-        }).catch(err => {
-            console.error('Failed to copy text: ', err);
-            showToastNotification('Failed to copy text. Pastikan browser mengizinkan akses Clipboard.');
-        });
-    });
-}
 
 // Event Listener for Share MPU
 const btnShareMpu = document.getElementById('btnShareMpu');
@@ -1792,7 +1794,7 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
             // Helper to generate clickable cell
             const getCell = (val, metric, colorStyle) => {
                 if (val === 0) return `<td></td>`;
-                return `<td style="text-align:center; ${colorStyle}"><span class="clickable-number" style="font-size: 1rem; font-weight: 700;" onclick="openModal('${branch}', '${metric}')">${val} Units</span></td>`;
+                return `<td style="text-align:center; ${colorStyle}"><span class="clickable-number" style="font-weight: 700;" onclick="openModal('${branch}', '${metric}')">${val}<span class="unit-text"> Units</span></span></td>`;
             };
             
             tr.innerHTML = `
@@ -1829,71 +1831,6 @@ function updateUI(stats, mpuList, ubList, branchStats, shameList, rcStats) {
     }, 500);
 } // End of updateUI
 
-// Render Redo Table
-function renderRedoTable() {
-    const tbodyRedo = document.querySelector('#redo-table tbody');
-    if (!tbodyRedo) return;
-    
-    let redoList = window.redoList || [];
-    if (window.currentUserBranches && window.currentUserBranches.length > 0) {
-        const allowed = window.currentUserBranches;
-        redoList = redoList.filter(s => {
-            if (!s.asc) return false;
-            let upper = String(s.asc).toUpperCase();
-            return allowed.some(a => upper.includes(a));
-        });
-    }
-    tbodyRedo.innerHTML = '';
-    
-    // Update branch table counts for REDO
-    const redoBranchCounts = {};
-    redoList.forEach(item => {
-        const b = item.asc || 'Unknown';
-        redoBranchCounts[b] = (redoBranchCounts[b] || 0) + 1;
-    });
-
-    document.querySelectorAll('.val-redo').forEach(el => {
-        const asc = el.getAttribute('data-asc');
-        const count = redoBranchCounts[asc] || 0;
-        if (count > 0) {
-            el.innerHTML = `<span class="clickable-number" style="color:var(--accent-orange); font-weight:bold;">${count}</span>`;
-        } else {
-            el.innerHTML = '';
-        }
-    });
-
-    if (redoList.length === 0) {
-        tbodyRedo.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted);">Clean! No REDO violations detected.</td></tr>`;
-        return;
-    }
-
-    const sortedRedo = [...redoList].sort((a, b) => {
-        const comp = (a.asc || '').localeCompare(b.asc || '');
-        if (comp !== 0) return comp;
-        return (a.engineer || '').localeCompare(b.engineer || '');
-    });
-
-    sortedRedo.forEach(item => {
-        const tr = document.createElement('tr');
-        const isRC = item.status && (item.status.includes('Completed') || item.status === 'Repair Completed' || item.status === 'REDO');
-        const warningTag = `<br><span style="background:var(--accent-orange); color:white; padding:2px 4px; border-radius:3px; font-size:0.6rem; font-weight:bold;">\u{26A0}\u{FE0F}  REDO</span>`;
-
-        tr.innerHTML = `
-            <td><strong>${item.asc}</strong></td>
-            <td style="color:var(--text-main); font-weight: 500; font-size: 0.85rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span style="color:var(--accent-orange); font-weight:bold;">${item.engineer || 'PIC ' + item.asc}</span>
-                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">${item.jobNo} | ${item.model || '-'} ${warningTag}</div>
-                    </div>
-                </div>
-            </td>
-        `;
-        tbodyRedo.appendChild(tr);
-    });
-}
-
-window.renderRedoTable = renderRedoTable;
 window.updateUI = updateUI;
 
 window.onclick = function(event) {
@@ -2197,7 +2134,7 @@ function renderApprovedUsers() {
         
         let branchesDisplay = '<span style="color:var(--text-muted); font-style:italic;">No Branch Assigned</span>';
         if (user.branches && Array.isArray(user.branches) && user.branches.length > 0) {
-            branchesDisplay = '<div style="font-size:0.75rem; color:var(--accent-blue); max-width: 150px; word-wrap: break-word;">' + user.branches.join(', ') + '</div>';
+            branchesDisplay = '<div style="font-size:0.75rem; color:var(--accent-blue); line-height: 1.4; word-wrap: break-word;">' + user.branches.join(', ') + '</div>';
         } else if (user.role === 'admin') {
             branchesDisplay = '<span style="color:var(--text-muted); font-style:italic;">All Branches (Global)</span>';
         }
@@ -2214,7 +2151,7 @@ function renderApprovedUsers() {
             `;
         } else {
             actionsHTML = `
-                <button onclick="window.editUserBranches('${user.id}', '${(user.branches || []).join(', ')}')" style="background: rgba(59, 130, 246, 0.2); border: 1px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Edit Branch">
+                <button onclick="window.editUserBranches('${user.id}', '${(user.branches || []).join(', ')}', '${user.email || ''}')" style="background: rgba(59, 130, 246, 0.2); border: 1px solid var(--accent-blue); color: var(--accent-blue); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Edit Branch">
                     <i class="fa-solid fa-map-location-dot"></i>
                 </button>
                 <button onclick="resetDeviceLock('${user.id}')" style="background: rgba(37, 211, 102, 0.2); border: 1px solid var(--accent-green); color: var(--accent-green); cursor: pointer; padding: 5px 8px; border-radius:4px; font-size: 0.8rem; margin-right: 5px;" title="Reset Device (Unlock)">
@@ -2234,7 +2171,7 @@ function renderApprovedUsers() {
             <td style="color:${roleColor}; font-weight:600; font-size:0.8rem;">${roleDisplay}</td>
               <td>${branchesDisplay}</td>
               <td>${deviceStatus}</td>
-              <td style="text-align:center; min-width: 130px;">
+              <td style="text-align:center; white-space: nowrap;">
                 ${actionsHTML}
             </td>
         `;
@@ -2267,41 +2204,44 @@ function renderUnmappedSuggestions() {
     const unModels = window.unknownModels || [];
     const unReasons = window.unknownReasons || [];
     
-    if (unModels.length === 0) ml.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted);">None</span>';
+    if (unModels.length === 0) ml.innerHTML = '<span style="font-size: 0.75rem; color: #94a3b8; font-style: italic;"><i class="fa-solid fa-check"></i> None</span>';
     else {
         unModels.forEach(m => {
             const btn = document.createElement('button');
             btn.textContent = m;
-            btn.style.cssText = 'background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #dc2626; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;';
+            btn.style.cssText = 'background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #dc2626; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;';
             btn.onclick = () => fillModelRule(m);
             ml.appendChild(btn);
         });
     }
     
-    if (unReasons.length === 0) rl.innerHTML = '<span style="font-size: 0.75rem; color: var(--text-muted);">None</span>';
+    if (unReasons.length === 0) rl.innerHTML = '<span style="font-size: 0.75rem; color: #94a3b8; font-style: italic;"><i class="fa-solid fa-check"></i> None</span>';
     else {
         unReasons.forEach(r => {
             const btn = document.createElement('button');
             btn.textContent = r;
-            btn.style.cssText = 'background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #dc2626; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;';
+            btn.style.cssText = 'background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #dc2626; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s;';
             btn.onclick = () => fillReasonRule(r);
             rl.appendChild(btn);
         });
     }
 }
+
 function renderCustomRules() {
     const tbodyModels = document.getElementById('custom-models-list');
     if(tbodyModels) {
         tbodyModels.innerHTML = '';
         if (customModels.length === 0) {
-            tbodyModels.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 10px;">Belum ada aturan model</td></tr>`;
+            tbodyModels.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 14px; font-size:0.8rem;">Belum ada aturan model</td></tr>';
         } else {
             customModels.forEach((rule, idx) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${rule.keyword}</td>
-                    <td><span style="color:var(--accent-blue);">${rule.category}</span></td>
-                    <td style="text-align:center;"><button onclick="deleteCustomRule('model', ${idx})" style="background: none; border: none; color: var(--accent-red); cursor: pointer;" title="Hapus"><i class="fa-solid fa-trash"></i></button></td>
+                    <td style="padding: 7px 10px; font-weight: 600; color: #0f172a; font-size: 0.82rem;">${rule.keyword}</td>
+                    <td style="padding: 7px 10px; text-align:center;"><span style="color: #2563eb; font-weight: 700; font-size: 0.8rem;">${rule.category}</span></td>
+                    <td style="padding: 7px 10px; text-align:center;">
+                        <button onclick="deleteCustomRule('model', ${idx})" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px 8px; font-size: 0.85rem;" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 `;
                 tbodyModels.appendChild(tr);
             });
@@ -2312,21 +2252,22 @@ function renderCustomRules() {
     if(tbodyReasons) {
         tbodyReasons.innerHTML = '';
         if (customReasons.length === 0) {
-            tbodyReasons.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 10px;">Belum ada aturan reason</td></tr>`;
+            tbodyReasons.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 14px; font-size:0.8rem;">Belum ada aturan reason</td></tr>';
         } else {
             customReasons.forEach((rule, idx) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${rule.keyword}</td>
-                    <td><span style="color:var(--accent-red);">${rule.category}</span></td>
-                    <td style="text-align:center;"><button onclick="deleteCustomRule('reason', ${idx})" style="background: none; border: none; color: var(--accent-red); cursor: pointer;" title="Hapus"><i class="fa-solid fa-trash"></i></button></td>
+                    <td style="padding: 7px 10px; font-size: 0.78rem; font-weight: 500; color: #0f172a; line-height: 1.35; word-break: break-word;">${rule.keyword}</td>
+                    <td style="padding: 7px 10px; text-align:center;"><span style="color: #ef4444; font-weight: 700; font-size: 0.8rem;">${rule.category}</span></td>
+                    <td style="padding: 7px 10px; text-align:center;">
+                        <button onclick="deleteCustomRule('reason', ${idx})" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 4px 8px; font-size: 0.85rem;" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 `;
                 tbodyReasons.appendChild(tr);
-              });
-          }
-      }
-      renderUnmappedSuggestions();
-
+            });
+        }
+    }
+    renderUnmappedSuggestions();
 
     // Render Misterious Models
     let modelsAlertContainer = document.getElementById('unknown-models-alert');
@@ -3343,8 +3284,7 @@ function renderRedoTable() {
         const allowed = window.currentUserBranches;
         window.redoList = window.redoList.filter(s => {
             if (!s.asc) return false;
-            let upper = String(s.asc).toUpperCase();
-            return allowed.some(a => upper.includes(a));
+            return isBranchAllowed(s.asc, allowed);
         });
     }
     
@@ -3984,6 +3924,11 @@ window.renderExecutiveSummaryTable = function() {
         if (bUpper === 'DENPASAR') return rUpper.startsWith('DENPASAR') && !rUpper.includes('CELLULAR WORLD') && !rUpper.includes('PLANET GADGET');
         if (bUpper.includes('ITC') || bUpper.includes('BSD')) return rUpper.includes('ITC') || rUpper.includes('BSD');
         if (bUpper === 'SERPONG') return rUpper.startsWith('SERPONG') && !rUpper.includes('ITC') && !rUpper.includes('BSD');
+        const hasPinangB = bUpper.includes('PINANG');
+        const hasPinangR = rUpper.includes('PINANG');
+        if (hasPinangB !== hasPinangR && (bUpper.includes('TANJUNG') || rUpper.includes('TANJUNG'))) {
+            return false;
+        }
         return rUpper.includes(bUpper) || bUpper.includes(rUpper);
     }
 
@@ -4185,6 +4130,11 @@ window.generateExecutiveReportText = function() {
         if (bUpper === 'DENPASAR') return rUpper.startsWith('DENPASAR') && !rUpper.includes('CELLULAR WORLD') && !rUpper.includes('PLANET GADGET');
         if (bUpper.includes('ITC') || bUpper.includes('BSD')) return rUpper.includes('ITC') || rUpper.includes('BSD');
         if (bUpper === 'SERPONG') return rUpper.startsWith('SERPONG') && !rUpper.includes('ITC') && !rUpper.includes('BSD');
+        const hasPinangB = bUpper.includes('PINANG');
+        const hasPinangR = rUpper.includes('PINANG');
+        if (hasPinangB !== hasPinangR && (bUpper.includes('TANJUNG') || rUpper.includes('TANJUNG'))) {
+            return false;
+        }
         return rUpper.includes(bUpper) || bUpper.includes(rUpper);
     };
 
@@ -4542,8 +4492,6 @@ if (btnBlastSummary) {
 
 window.showToastNotification = showToastNotification;
 window.openAllProdModal = openAllProdModal;
-
-}); // End of bujm_auth_ready block
 
 
 // ==========================================

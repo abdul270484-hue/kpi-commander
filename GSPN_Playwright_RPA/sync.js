@@ -567,10 +567,23 @@ function analyzeProductivity(data, techMap = {}) {
     }
 
     let prodJobs = [];
+    const seenProdJobNos = new Set();
 
     for (let i = 2; i < data.length; i++) {
         const row = data[i];
         if (!row || row.length === 0) continue;
+
+        // Strict 10-digit SO validation & cross-file deduplication
+        let prodJobNo = null;
+        for (let j = 0; j < 5; j++) {
+            if (row[j] && String(row[j]).startsWith('4') && String(row[j]).length === 10) {
+                prodJobNo = String(row[j]);
+                break;
+            }
+        }
+        if (!prodJobNo) continue; // Automatically ignores Total summary row or non-SO lines
+        if (seenProdJobNos.has(prodJobNo)) continue; // Eliminates duplicate SOs
+        seenProdJobNos.add(prodJobNo);
 
         const gdDate = row[col.date];
         if (!gdDate) continue;
@@ -630,14 +643,6 @@ function analyzeProductivity(data, techMap = {}) {
             if (!gdDailyData[branch]) gdDailyData[branch] = {};
             if (!gdDailyData[branch][gdDay]) gdDailyData[branch][gdDay] = 0;
             gdDailyData[branch][gdDay]++;
-        }
-
-        let prodJobNo = null;
-        for (let j = 0; j < 5; j++) {
-            if (row[j] && String(row[j]).startsWith('4') && String(row[j]).length === 10) {
-                prodJobNo = String(row[j]);
-                break;
-            }
         }
 
         if (prodJobNo && gdMonth === currMonth && gdYear === currYear) {
@@ -834,11 +839,7 @@ function calculateAnalytics(baseData, customModels = [], customReasons = []) {
             }
         }
 
-        if (status.includes('Assigned to Service Center') || status.includes('Acknowledge')) {
-            engineer = `PIC ${ascName}`;
-        } else if (reason && (reason.trim().toUpperCase() === 'WAITING FOR CONFIRMATION FROM SAMSUNG' || reason.trim().toUpperCase() === 'PROCESSING EXCHANGE')) {
-            engineer = `PIC ${ascName}`;
-        }
+        // Keep actual technician name from SO pull (do not overwrite with PIC)
         
         ascName = shortenASC(ascName, row, engineer);
 
@@ -880,8 +881,8 @@ function calculateAnalytics(baseData, customModels = [], customReasons = []) {
         }
         if (!engineerStats[engineer].ascCounts) engineerStats[engineer].ascCounts = {};
         engineerStats[engineer].ascCounts[ascName] = (engineerStats[engineer].ascCounts[ascName] || 0) + 1;
-        // Prioritize specific sub-branch/CC if technician handles CC jobs
-        if (ascName.includes(' - ') || !engineerStats[engineer].asc || engineerStats[engineer].asc === 'DENPASAR') {
+        // Prioritize specific sub-branch/CC if technician handles CC jobs (never for UNKNOWN ENGINEER or PIC)
+        if (engineer && engineer !== 'UNKNOWN ENGINEER' && !engineer.startsWith('PIC ') && (ascName.includes(' - ') || !engineerStats[engineer].asc || engineerStats[engineer].asc === 'DENPASAR')) {
             engineerStats[engineer].asc = ascName;
         }
 
@@ -1088,6 +1089,7 @@ function calculateAnalytics(baseData, customModels = [], customReasons = []) {
 
     let shameList = [];
     for (let eng in engineerStats) {
+        if (!eng || eng === 'UNKNOWN ENGINEER' || eng === 'UNKNOWN' || eng === 'UNKNOWN_ENGINEER' || eng.startsWith('PIC ') || eng.startsWith('KACAB ')) continue;
         let es = engineerStats[eng];
         let totalDosa = es.mxAging + es.vdAging + es.daAging;
         if (totalDosa > 0) {
@@ -1096,7 +1098,7 @@ function calculateAnalytics(baseData, customModels = [], customReasons = []) {
                 asc: es.asc,
                 count: totalDosa,
                 detail: `MX:${es.mxAging} VD:${es.vdAging} DA:${es.daAging}`,
-                bills: es.bills
+                bills: (es.bills || []).filter(b => !b.asc || b.asc === es.asc || b.asc.includes(es.asc) || es.asc.includes(b.asc))
             });
         }
     }
@@ -1307,9 +1309,17 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
 
                 // 1. Tentukan Cabang dari data baris tabel GSPN (r['Name'] atau r['Branch']) agar tidak tertukar/tercampur
                 let rawBranch = r['Name'] || r['Branch'] || f.branch;
-                if (!rawBranch || /^\d+$/.test(rawBranch)) rawBranch = f.branch;
+                if (!rawBranch || /^\d+$/.test(rawBranch) || rawBranch === 'ALL') {
+                    if (r['Name']) rawBranch = r['Name'];
+                }
                 let branch = shortenASC(rawBranch);
-                if (!branch || branch === 'Unknown ASC') branch = f.branch.replace(/_/g, ' ');
+                if (!branch || branch === 'Unknown ASC' || branch === 'ALL') {
+                    if (r['Branch'] && /\d+/.test(String(r['Branch']))) {
+                        const { toCanonicalBranchName } = require('./branch_stock_engine');
+                        branch = toCanonicalBranchName(r['Branch']);
+                    }
+                }
+                if (!branch || branch === 'Unknown ASC' || branch === 'ALL') branch = (f.branch && f.branch !== 'ALL') ? f.branch.replace(/_/g, ' ') : rawBranch;
 
                 let colPart = Object.keys(r).find(k => k.toLowerCase().includes('material code') || k.toLowerCase().includes('parts no') || k.toLowerCase().includes('part') || k.toLowerCase().includes('item'));
                 let colDesc = Object.keys(r).find(k => k.toLowerCase().includes('description') || k.toLowerCase().includes('desc'));
@@ -1337,11 +1347,20 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
                 partsSalesMap[key].qty += qty;
                 
                 // Parts Daily Data (Filtered to ADAPTOR & DATA LINK)
-                let isAdaptor = desc.toLowerCase().includes('adaptor') || desc.toLowerCase().includes('travel adapter');
-                let isDataLink = desc.toLowerCase().includes('data link') || desc.toLowerCase().includes('cable');
+                const TARGET_14_PARTS = new Set([
+                    'GH39-01999A', 'GH39-02002A', 'GH39-02026A', 'GH39-02028A', 'GH39-02060A',
+                    'GH39-02111A', 'GH39-02115A', 'GH39-02134A', 'GH39-02169A',
+                    'GH44-02950A', 'GH44-03023A', 'GH44-03049A', 'GH44-03053A', 'GH44-03055A'
+                ]);
+                const cleanPartNo = partNo.trim().toUpperCase();
                 let itemType = null;
-                if (isAdaptor) itemType = 'ADAPTOR';
-                else if (isDataLink) itemType = 'DATA LINK';
+                if (TARGET_14_PARTS.has(cleanPartNo)) {
+                    if (cleanPartNo.startsWith('GH44') || desc.toLowerCase().includes('adaptor') || desc.toLowerCase().includes('travel adapter')) {
+                        itemType = 'ADAPTOR';
+                    } else {
+                        itemType = 'DATA LINK';
+                    }
+                }
 
                 if (itemType && dateVal) {
                     dateVal = String(dateVal).replace(/\D/g, ''); // YYYYMMDD

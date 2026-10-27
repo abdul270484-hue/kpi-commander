@@ -1219,3 +1219,261 @@ tbody tr:hover { background: #f8fafc !important; box-shadow: none !important; }
 
 
 #ltpChart, #responsibilityChart { max-height: 220px !important; }
+
+
+
+/* --- TOPBAR & NAVIGATION TOGGLE SYSTEM --- */
+.topbar-main-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.subtitle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.subtitle-wrap .sep {
+    color: rgba(0, 0, 0, 0.2);
+}
+.brand-text {
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.nav-toggle-btn {
+    background: #ffffff;
+    border: 1px solid var(--border-glass);
+    color: var(--text-main);
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.nav-toggle-btn:hover {
+    background: #f8fafc;
+    color: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+.user-profile-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.th-short {
+    display: none;
+}
+.th-full {
+    display: inline;
+}
+.unit-text {
+    display: inline;
+}
+
+/* --- MOBILE COMPACT OPTIMIZATIONS (<= 768px) --- */
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+    }
+    .app-container {
+        padding: 10px 10px 40px 10px !important;
+        width: 100% !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+    }
+    .main-content {
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    .topbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 4px 0 !important;
+        margin-bottom: 12px !important;
+        width: 100% !important;
+    }
+    .topbar-main-row {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+    .topbar-main-row .nav-toggle-btn {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 1rem !important;
+    }
+    .page-title h1 {
+        font-size: 1.35rem !important;
+        line-height: 1.1 !important;
+    }
+    .subtitle-wrap {
+        gap: 6px !important;
+    }
+    .subtitle-wrap p {
+        font-size: 0.72rem !important;
+    }
+    .subtitle-wrap .sep {
+        display: none !important;
+    }
+    .brand-text {
+        font-size: 0.75rem !important;
+    }
+    .user-profile {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+    .user-profile button, .user-profile div[id*="status"] {
+        padding: 4px 8px !important;
+        font-size: 0.7rem !important;
+        border-radius: 6px !important;
+    }
+    .user-profile-badge {
+        display: none !important; /* Managed via avatar in user-profile */
+    }
+
+    /* KPI Summary Cards: Modern 2-Column Compact Grid */
+    .kpi-cards-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        padding: 0 10px 10px 10px !important;
+    }
+    .kpi-cards-grid .kpi-master-card {
+        min-width: 0 !important;
+        padding: 10px 12px !important;
+        gap: 8px !important;
+        border-radius: 10px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06) !important;
+    }
+    .kpi-cards-grid .kpi-master-card:first-child {
+        grid-column: 1 / -1 !important; /* Total Service Orders Hero Card */
+    }
+    .kpi-master-card .kpi-icon-left {
+        font-size: 1.25rem !important;
+    }
+    .kpi-master-card .kpi-title {
+        font-size: 0.65rem !important;
+        line-height: 1.1 !important;
+    }
+    .kpi-master-card .value {
+        font-size: 1.35rem !important;
+    }
+    .kpi-master-card .kpi-subtitle {
+        font-size: 0.6rem !important;
+    }
+    .kpi-master-card .kpi-chart-right {
+        font-size: 1.25rem !important;
+        right: 10px !important;
+        bottom: -2px !important;
+    }
+
+    /* Branch Breakdown Table Compactness (Zero Horizontal Scroll) */
+    .table-responsive {
+        overflow-x: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .th-short {
+        display: inline !important;
+    }
+    .th-full {
+        display: none !important;
+    }
+    .unit-text {
+        display: none !important;
+    }
+
+    #branch-table {
+        width: 100% !important;
+        table-layout: auto !important;
+    }
+    #branch-table th, #branch-table td {
+        padding: 5px 3px !important;
+        font-size: 0.72rem !important;
+        text-align: center !important;
+    }
+    #branch-table th:first-child, #branch-table td:first-child {
+        text-align: left !important;
+        padding-left: 6px !important;
+        font-size: 0.75rem !important;
+        white-space: nowrap !important;
+        max-width: 85px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    #branch-table .clickable-number {
+        font-size: 0.78rem !important;
+        padding: 1px 3px !important;
+        display: inline-block !important;
+    }
+
+    /* Card Headers */
+    .card-header {
+        padding: 8px 12px !important;
+    }
+    .card-header > div {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    .card-header h3 {
+        font-size: 0.82rem !important;
+    }
+    .card-header .btn {
+        padding: 4px 8px !important;
+        font-size: 0.7rem !important;
+    }
+    .dashboard-grid {
+        gap: 10px !important;
+    }
+}
+
+
+/* ============================================================ */
+/* RULES CONFIGURATION MODAL SCOPED STYLES                      */
+/* ============================================================ */
+#rules-modal .data-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+}
+#rules-modal .data-table th {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.04em !important;
+    border-bottom: 2px solid #1d4ed8 !important;
+    padding: 8px 10px !important;
+    text-transform: uppercase !important;
+}
+#rules-modal .data-table td {
+    border-bottom: 1px solid #f1f5f9 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+#rules-modal .data-table tbody tr:hover td {
+    background: #f8fafc !important;
+}
+#rules-modal select option {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
