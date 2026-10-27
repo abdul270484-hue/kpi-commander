@@ -2284,15 +2284,16 @@
     "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
+    "roleStatus": "TEKNISI CE IN HOME, TEKNISI CE CARRY IN, TEKNISI WELDER",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
     "updatedAt": "2026-10-26T10:35:42.186Z",
     "rawPosition": "TEKNISI IN HOME DAN CARRY IN",
     "roles": [
+      "TEKNISI CE IN HOME",
       "TEKNISI CE CARRY IN",
-      "TEKNISI CE IN HOME"
+      "TEKNISI WELDER"
     ]
   },
   {
@@ -4236,7 +4237,7 @@
     "position": "LEADER/PIC",
     "tenureYears": "1.4",
     "tenureText": "1 tahun, 4 bulan, 17 hari",
-    "roleStatus": "PIC, ADMIN PART HHP",
+    "roleStatus": "PIC, CUSTOMER SERVICE, ADMIN KEUANGAN, ADMIN TRACKING HHP, ADMIN TRACKING CE, ADMIN PART HHP, ADMIN PART CE",
     "status": "AKTIF",
     "photo": "photos/emp_25006065.jpg",
     "hasPhoto": true,
@@ -4244,7 +4245,12 @@
     "rawPosition": "LEADER BACK UP ADMIN PART",
     "roles": [
       "PIC",
-      "ADMIN PART HHP"
+      "CUSTOMER SERVICE",
+      "ADMIN KEUANGAN",
+      "ADMIN TRACKING HHP",
+      "ADMIN TRACKING CE",
+      "ADMIN PART HHP",
+      "ADMIN PART CE"
     ]
   },
   {
@@ -5461,19 +5467,21 @@
     "nik": "26070033",
     "name": "MUHAMMAD FAUZAN TARAFANNUR",
     "joinDate": "13/07/2026",
-    "branch": "AMBON",
+    "branch": "JAYAPURA",
     "rawBranch": "041-ABN",
     "position": "TEKNISI",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 13 hari",
-    "roleStatus": "TEKNISI CE IN HOME",
+    "roleStatus": "CUSTOMER SERVICE, TEKNISI HHP, TEKNISI UB",
     "status": "AKTIF",
     "photo": "photos/emp_26070033.jpg",
     "hasPhoto": true,
     "updatedAt": "2026-10-26T10:35:42.187Z",
     "rawPosition": "TEKNISI IN HOME",
     "roles": [
-      "TEKNISI CE IN HOME"
+      "CUSTOMER SERVICE",
+      "TEKNISI HHP",
+      "TEKNISI UB"
     ]
   },
   {

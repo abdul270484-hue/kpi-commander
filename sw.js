@@ -7,7 +7,7 @@
  * ==============================================================================
  */
 
-const CACHE_NAME = 'bujm-kpi-shell-v3.7';
+const CACHE_NAME = 'bujm-kpi-shell-v3.8';
 
 const PRECACHE_ASSETS = [
     '/',

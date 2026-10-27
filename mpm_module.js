@@ -285,45 +285,72 @@
         });
     }
 
-    // Load employee roster from LocalStorage, JSON fallback, or Firestore
+    // Load employee roster from LocalStorage, JSON fallback, and REALTIME Firestore listener
     async function loadEmployeesData() {
-        // 1. Check localStorage first
+        let loadedInitial = false;
+
+        // 1. Check localStorage first for instant 0ms rendering
         const localCached = localStorage.getItem('bujm_mpm_employees');
         if (localCached) {
             try {
-                mpmEmployees = JSON.parse(localCached);
-                if (mpmEmployees && mpmEmployees.length > 0) {
+                const parsed = JSON.parse(localCached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    mpmEmployees = parsed;
                     mpmEmployees.forEach(normalizeEmployeeFields);
-                    localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
+                    loadedInitial = true;
                     console.log(`[MPM] Loaded & normalized ${mpmEmployees.length} employees from LocalStorage.`);
-                    return;
                 }
             } catch (_) {}
         }
 
-        // 2. Fetch local JSON file (guaranteed instant 0-delay load)
-        try {
-            const res = await fetch('./data/mpm_employees.json');
-            if (res.ok) {
-                mpmEmployees = await res.json();
-                mpmEmployees.forEach(normalizeEmployeeFields);
-                localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
-                console.log(`[MPM] Loaded ${mpmEmployees.length} employees from JSON fallback.`);
+        // 2. Fetch local JSON file if localCache is not available
+        if (!loadedInitial) {
+            try {
+                const res = await fetch('./data/mpm_employees.json');
+                if (res.ok) {
+                    mpmEmployees = await res.json();
+                    mpmEmployees.forEach(normalizeEmployeeFields);
+                    try { localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees)); } catch (_) {}
+                    console.log(`[MPM] Loaded ${mpmEmployees.length} employees from JSON fallback.`);
+                }
+            } catch (e) {
+                console.warn('[MPM] JSON fetch error:', e.message);
             }
-        } catch (e) {
-            console.warn('[MPM] JSON fetch error:', e.message);
         }
 
-        // 3. Background sync from Firestore (non-blocking)
+        // 3. ATTACH REAL-TIME FIRESTORE LISTENER (Mandat Real-time Multi-User Asmen & BOS)
+        // Whenever ANY Asmen or BOS edits any employee, changes sync automatically in real-time
         if (window.db) {
-            window.db.collection('dashboard_data').doc('mpm_employees').get().then(snap => {
-                if (snap.exists && snap.data().employees) {
-                    mpmEmployees = snap.data().employees;
-                    mpmEmployees.forEach(normalizeEmployeeFields);
-                    localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
-                    console.log(`[MPM] Synced ${mpmEmployees.length} employees from Firestore in background.`);
-                }
-            }).catch(err => console.warn('[MPM] Firestore background sync warning:', err.message));
+            if (!window._mpmEmployeesListenerAttached) {
+                window._mpmEmployeesListenerAttached = true;
+                window.db.collection('dashboard_data').doc('mpm_employees').onSnapshot(snap => {
+                    if (snap.exists && snap.data().employees) {
+                        const remoteEmployees = snap.data().employees;
+                        console.log(`[MPM] Realtime Firestore sync: ${remoteEmployees.length} employees received.`);
+                        mpmEmployees = remoteEmployees;
+                        mpmEmployees.forEach(normalizeEmployeeFields);
+                        try {
+                            localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
+                        } catch (_) {}
+
+                        // Auto-recalculate capacity when data changes remotely
+                        calculateMpmCapacityData();
+
+                        // Update current active subtab
+                        if (currentMpmSubTab === 'roster') {
+                            updateRosterTableRows();
+                            // Update tab header badge
+                            const branchEmployees = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO' && e.status !== 'RESIGN');
+                            const rosterBtn = document.getElementById('mpm-tab-roster');
+                            if (rosterBtn) {
+                                rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Data Manpower (${branchEmployees.length})`;
+                            }
+                        } else if (currentMpmSubTab === 'capacity') {
+                            updateCapacityTableRows();
+                        }
+                    }
+                }, err => console.warn('[MPM] Realtime employees listener warning:', err.message));
+            }
 
             // 4. Background sync photos from Firestore collection 'mpm_photos' (non-blocking)
             window.db.collection('mpm_photos').get().then(snap => {
@@ -1365,7 +1392,7 @@
                     <button id="btn-add-employee" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
                         <i class="fa-solid fa-user-plus"></i> Tambah Manpower Baru
                     </button>
-                    <button id="btn-reset-roster" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;" title="Reset Filter Manpower">
+                    <button id="btn-reset-roster" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;" title="Muat Ulang & Sinkronkan Data dari Cloud Firestore">
                         <i class="fa-solid fa-arrow-rotate-right"></i>
                     </button>
                 </div>
@@ -1411,14 +1438,46 @@
 
         const resetBtn = document.getElementById('btn-reset-roster');
         if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
+            resetBtn.addEventListener('click', async () => {
+                const icon = resetBtn.querySelector('i');
+                if (icon) icon.className = 'fa-solid fa-arrow-rotate-right fa-spin';
+                resetBtn.disabled = true;
+
                 currentRosterBranch = 'ALL';
                 currentRosterSearch = '';
                 const bSel = document.getElementById('roster-branch-select');
                 if (bSel) bSel.value = 'ALL';
                 const sInp = document.getElementById('roster-search-input');
                 if (sInp) sInp.value = '';
+
+                // Force re-fetch from Firestore
+                if (window.db) {
+                    try {
+                        const snap = await window.db.collection('dashboard_data').doc('mpm_employees').get();
+                        if (snap.exists && snap.data().employees) {
+                            mpmEmployees = snap.data().employees;
+                            mpmEmployees.forEach(normalizeEmployeeFields);
+                            try { localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees)); } catch (_) {}
+                            console.log(`[MPM] Force refreshed ${mpmEmployees.length} employees from Firestore.`);
+                            showToast(`Berhasil menyinkronkan ${mpmEmployees.length} data manpower dari Cloud Firestore!`);
+                        }
+                    } catch (e) {
+                        console.warn('[MPM] Force refresh error:', e);
+                    }
+                }
+
+                await calculateMpmCapacityData();
                 updateRosterTableRows();
+
+                // Update badge
+                const branchEmployees = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO' && e.status !== 'RESIGN');
+                const rosterBtn = document.getElementById('mpm-tab-roster');
+                if (rosterBtn) {
+                    rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Data Manpower (${branchEmployees.length})`;
+                }
+
+                if (icon) icon.className = 'fa-solid fa-arrow-rotate-right';
+                resetBtn.disabled = false;
             });
         }
 
@@ -1939,49 +1998,68 @@
                 }
             }
 
-            if (isNew) {
-                // Add new employee
-                const newEmpObj = {
-                    id: newNik,
-                    nik: newNik,
-                    name: newName,
-                    branch: newBranch,
-                    position: newPosition,
-                    roles: checkedRoles,
-                    roleStatus: checkedRoles.join(', '),
-                    joinDate: new Date().toLocaleDateString('id-ID'),
-                    status: newStatus,
-                    photo: finalPhoto,
-                    updatedAt: new Date().toISOString()
-                };
-                mpmEmployees.unshift(newEmpObj);
-            } else {
-                // Update existing
-                const existingIdx = mpmEmployees.findIndex(x => String(x.nik) === String(targetEmp.nik));
-                if (existingIdx !== -1) {
-                    mpmEmployees[existingIdx].name = newName;
-                    mpmEmployees[existingIdx].branch = newBranch;
-                    mpmEmployees[existingIdx].position = newPosition;
-                    mpmEmployees[existingIdx].roles = checkedRoles;
-                    mpmEmployees[existingIdx].roleStatus = checkedRoles.join(', ');
-                    mpmEmployees[existingIdx].status = newStatus;
-                    mpmEmployees[existingIdx].photo = finalPhoto;
-                    mpmEmployees[existingIdx].updatedAt = new Date().toISOString();
+            // Build the updated employee record
+            const updatedEmpObj = {
+                id: newNik,
+                nik: newNik,
+                name: newName,
+                branch: newBranch,
+                position: newPosition,
+                roles: checkedRoles,
+                roleStatus: checkedRoles.join(', '),
+                joinDate: targetEmp.joinDate || new Date().toLocaleDateString('id-ID'),
+                status: newStatus,
+                photo: finalPhoto,
+                updatedAt: new Date().toISOString()
+            };
+
+            // Atomic merge with latest Firestore data to PREVENT overwriting edits from other Asmens
+            let baseEmployees = [...mpmEmployees];
+            if (window.db) {
+                try {
+                    const snap = await window.db.collection('dashboard_data').doc('mpm_employees').get();
+                    if (snap.exists && Array.isArray(snap.data().employees)) {
+                        baseEmployees = snap.data().employees;
+                    }
+                } catch (fetchErr) {
+                    console.warn('[MPM] Firestore fetch before save warning:', fetchErr);
                 }
             }
 
-            // Save to LocalStorage immediately
-            localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
+            if (isNew) {
+                baseEmployees.unshift(updatedEmpObj);
+            } else {
+                const existingIdx = baseEmployees.findIndex(x => String(x.nik) === String(targetEmp.nik));
+                if (existingIdx !== -1) {
+                    baseEmployees[existingIdx] = {
+                        ...baseEmployees[existingIdx],
+                        ...updatedEmpObj
+                    };
+                } else {
+                    baseEmployees.unshift(updatedEmpObj);
+                }
+            }
 
-            // Sync to Firestore in background
+            mpmEmployees = baseEmployees;
+            mpmEmployees.forEach(normalizeEmployeeFields);
+
+            // Save to LocalStorage immediately
+            try {
+                localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
+            } catch (_) {}
+
+            // Save to Firestore (which triggers real-time onSnapshot for everyone)
             if (window.db) {
                 try {
-                    window.db.collection('dashboard_data').doc('mpm_employees').set({
+                    await window.db.collection('dashboard_data').doc('mpm_employees').set({
                         updatedAt: new Date().toISOString(),
                         totalCount: mpmEmployees.length,
                         employees: mpmEmployees
-                    }, { merge: true }).catch(err => console.warn('Firestore sync background:', err));
-                } catch (_) {}
+                    }, { merge: true });
+                    console.log(`[MPM] Saved ${mpmEmployees.length} employees to Firestore.`);
+                } catch (err) {
+                    console.error('[MPM] Error saving employees to Firestore:', err);
+                }
             }
 
             closeModal();
