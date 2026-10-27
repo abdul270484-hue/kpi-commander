@@ -367,6 +367,9 @@
             else if (totalAdjust < 200) pureMinStaff = 2;
             else pureMinStaff = Math.round(totalAdjust / 100);
 
+            const hasCe = volCe > 0 || rData.techCe > 0 || fData.repairCe > 0;
+            const hasMx = volHhp > 0 || rData.techHhp > 0 || fData.repairHhp > 0;
+
             // MANDAT RESMI OPERASIONAL DARI BOS (27 OKT 2026):
             // 1. CE ONLY: HANYA cabang SERPONG
             // 2. MX ONLY: SERPONG ITC-BSD, DENPASAR CELLULAR WORLD, DENPASAR PLANET GADGET, SRAGEN, SINGARAJA, BANDAR JAYA
@@ -551,8 +554,42 @@
         return stripped;
     }
 
+    // Ensure modals are mounted directly to document.body to prevent containing-block / transform trapping
+    function ensureMpmModals() {
+        let editBackdrop = document.getElementById('mpm-edit-modal-backdrop');
+        if (!editBackdrop) {
+            editBackdrop = document.createElement('div');
+            editBackdrop.id = 'mpm-edit-modal-backdrop';
+            editBackdrop.style.cssText = 'display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 999999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; overflow-y: auto;';
+            editBackdrop.innerHTML = `
+                <div id="mpm-edit-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; width: 95%; max-width: 580px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); max-height: 90vh; overflow-y: auto; color: #0f172a; margin: auto;">
+                    <!-- Modal body injected dynamically -->
+                </div>
+            `;
+            document.body.appendChild(editBackdrop);
+        } else if (editBackdrop.parentElement !== document.body) {
+            document.body.appendChild(editBackdrop);
+        }
+
+        let typeBackdrop = document.getElementById('mpm-type-modal-backdrop');
+        if (!typeBackdrop) {
+            typeBackdrop = document.createElement('div');
+            typeBackdrop.id = 'mpm-type-modal-backdrop';
+            typeBackdrop.style.cssText = 'display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 999999; backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; overflow-y: auto;';
+            typeBackdrop.innerHTML = `
+                <div id="mpm-type-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; width: 95%; max-width: 540px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); max-height: 90vh; overflow-y: auto; color: #0f172a; margin: auto;">
+                    <!-- Modal body injected dynamically -->
+                </div>
+            `;
+            document.body.appendChild(typeBackdrop);
+        } else if (typeBackdrop.parentElement !== document.body) {
+            document.body.appendChild(typeBackdrop);
+        }
+    }
+
     // Render base shell with navigation tabs & containers
     function renderMpmShell(container) {
+        ensureMpmModals();
         const branchStaffCount = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO').length || 257;
         container.innerHTML = `
             <!-- MPM Header Bar (Executive Light Theme) -->
@@ -563,7 +600,7 @@
                         MANPOWER MANAGEMENT & CAPACITY INTELLIGENCE (MPM)
                     </h2>
                     <p style="font-size: 0.85rem; color: #64748b; margin: 4px 0 0 0;">
-                        Standar Norma Samsung FTE & Master Roster Tim Operasional PT BUJM (Terintegrasi Live GSPN)
+                        Standar Norma Samsung FTE & Data Manpower Tim Operasional PT BUJM (Terintegrasi Live GSPN)
                     </p>
                 </div>
 
@@ -573,7 +610,7 @@
                         <i class="fa-solid fa-chart-pie"></i> Capacity & Load Ratios
                     </button>
                     <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-id-card-clip"></i> Master Roster Karyawan (${branchStaffCount})
+                        <i class="fa-solid fa-id-card-clip"></i> Data Manpower Karyawan (${branchStaffCount})
                     </button>
                     <button id="mpm-tab-simulator" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-scale-balanced"></i> Simulator Mutasi (Zero-Cost)
@@ -586,20 +623,6 @@
                 <div style="text-align: center; padding: 40px; color: #64748b;">
                     <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--accent-blue, #2563eb);"></i>
                     <p style="margin-top: 10px; font-weight: 500;">Menghitung kapasitas dan memuat data karyawan...</p>
-                </div>
-            </div>
-
-            <!-- Modal Edit Karyawan Container -->
-            <div id="mpm-edit-modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 99999; backdrop-filter: blur(4px); align-items: center; justify-content: center;">
-                <div id="mpm-edit-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; width: 95%; max-width: 580px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; color: #0f172a;">
-                    <!-- Modal body injected dynamically -->
-                </div>
-            </div>
-
-            <!-- Modal Revisi Tipe Layanan Cabang (BOS Request) -->
-            <div id="mpm-type-modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 99999; backdrop-filter: blur(4px); align-items: center; justify-content: center;">
-                <div id="mpm-type-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; width: 95%; max-width: 540px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; color: #0f172a;">
-                    <!-- Modal body injected dynamically -->
                 </div>
             </div>
         `;
@@ -628,11 +651,11 @@
             activeBtn.style.fontWeight = '700';
         }
 
-        // Dynamically update Roster tab label to show branch staff count (excl HO)
+        // Dynamically update Manpower tab label to show branch staff count (excl HO)
         const branchStaffCount = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO').length || 257;
         const rosterBtn = document.getElementById('mpm-tab-roster');
         if (rosterBtn) {
-            rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Master Roster Karyawan (${branchStaffCount})`;
+            rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Data Manpower Karyawan (${branchStaffCount})`;
         }
 
         renderActiveSubTab();
@@ -716,7 +739,7 @@
                     <div class="kpi-content">
                         <div class="kpi-title">TEKNISI RIIL LAPANGAN</div>
                         <div class="value">${totalReal} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Teknisi</span></div>
-                        <div class="kpi-subtitle">Aktif di Roster & Fame</div>
+                        <div class="kpi-subtitle">Aktif di Manpower & Fame</div>
                     </div>
                     <div class="kpi-chart-right"><i class="fa-solid fa-id-badge"></i></div>
                 </div>
@@ -859,8 +882,8 @@
                                             <button class="mpm-btn-edit-type" data-branch="${r.branch}" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Revisi Tipe Layanan Cabang ${r.branch}">
                                                 <i class="fa-solid fa-sliders" style="color: #2563eb;"></i> Revisi Layanan
                                             </button>
-                                            <button class="mpm-btn-view-roster" data-branch="${r.branch}" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Lihat & Edit Roster Tim di Cabang ini">
-                                                <i class="fa-solid fa-users"></i> Roster
+                                            <button class="mpm-btn-view-roster" data-branch="${r.branch}" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Lihat Data Manpower Cabang ${r.branch}">
+                                                <i class="fa-solid fa-users"></i> Manpower
                                             </button>
                                         </div>
                                     </td>
@@ -919,6 +942,7 @@
     // MODAL REVISI TIPE LAYANAN CABANG (BOS REVISION MODAL)
     // =========================================================================
     function openBranchTypeModal(branchName) {
+        ensureMpmModals();
         const branchData = capacityData.find(c => c.branch === branchName);
         if (!branchData) return;
 
@@ -1176,9 +1200,9 @@
                 <!-- Action Button: Add New Employee -->
                 <div style="display: flex; gap: 10px;">
                     <button id="btn-add-employee" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
-                        <i class="fa-solid fa-user-plus"></i> Tambah Karyawan Baru
+                        <i class="fa-solid fa-user-plus"></i> Tambah Manpower Baru
                     </button>
-                    <button id="btn-reset-roster" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;" title="Reset Filter">
+                    <button id="btn-reset-roster" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;" title="Reset Filter Manpower">
                         <i class="fa-solid fa-arrow-rotate-right"></i>
                     </button>
                 </div>
@@ -1201,7 +1225,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 500;">Tidak ada data karyawan yang cocok dengan filter.</td></tr>` : ''}
+                        ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 500;">Tidak ada data manpower yang cocok dengan filter.</td></tr>` : ''}
                         ${filtered.map(emp => {
                             const isResign = emp.status === 'RESIGN';
                             const photoSrc = emp.photo ? emp.photo : `photos/emp_${emp.nik}.jpg`;
@@ -1344,6 +1368,7 @@
     // MODAL EDIT / UPDATE KARYAWAN (BOS BISA EDIT LANGSUNG - LIGHT THEME)
     // =========================================================================
     function openEmployeeEditModal(emp) {
+        ensureMpmModals();
         const isNew = !emp;
         const targetEmp = emp || {
             nik: '',
@@ -1369,7 +1394,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px;">
                 <h3 style="margin: 0; color: #0f172a; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-user-pen" style="color: var(--accent-blue, #2563eb);"></i>
-                    ${isNew ? 'Tambah Karyawan Baru' : 'Edit Profil & Lokasi Karyawan'}
+                    ${isNew ? 'Tambah Manpower Baru' : 'Edit Data Manpower Karyawan'}
                 </h3>
                 <button id="mpm-modal-close-x" style="background: transparent; border: none; color: #64748b; font-size: 1.4rem; cursor: pointer; line-height: 1;">&times;</button>
             </div>
