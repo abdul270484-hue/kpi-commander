@@ -1,6 +1,7 @@
 /**
  * @file mpm_module.js
  * @description Manpower Management & Capacity Intelligence (MPM) Module for BUJM Dashboard.
+ * Executive Light Theme matching ALL AGING and GD & SALES pages.
  * Integrates:
  * 1. Samsung Capacity Plan & 3-Month Moving Average GD
  * 2. Wall of Fame Live Production Ratios (Repair, Cancel, MX vs CE)
@@ -24,22 +25,27 @@
 
     // Initialize module when DOM is ready or called
     window.initMpmModule = async function () {
-        console.log('[MPM] Initializing Manpower Management Module...');
+        console.log('[MPM] Initializing Manpower Management Module (Executive Light Theme)...');
         const container = document.getElementById('mpm-container');
         if (!container) {
             console.error('[MPM] Container #mpm-container not found in DOM!');
             return;
         }
 
-        // Ensure container is forcefully displayed with dark theme background
+        // Apply clean executive white background matching ALL AGING and GD & SALES
         container.style.display = 'flex';
-        container.style.background = '#0f172a';
-        container.style.color = '#f8fafc';
+        container.style.background = '#ffffff';
+        container.style.color = '#0f172a';
         container.style.width = '100%';
         container.style.minHeight = '85vh';
 
         // Render base shell immediately so user sees layout without delay
         renderMpmShell(container);
+
+        // Instant render from local cache if already present
+        if (capacityData.length > 0) {
+            renderActiveSubTab();
+        }
 
         // Load data in parallel with immediate fallback support
         await Promise.all([
@@ -47,7 +53,7 @@
             calculateMpmCapacityData()
         ]);
 
-        // Render active view
+        // Render active view with fresh data
         console.log(`[MPM] Ready! Rendering active view with ${capacityData.length} branches and ${mpmEmployees.length} employees.`);
         renderActiveSubTab();
     };
@@ -135,11 +141,6 @@
             }
         }
 
-        const months3 = ['2026-07', '2026-08', '2026-09'];
-        const techCategoryMap = {};
-        for (const name in dtsMx) techCategoryMap[name.toUpperCase()] = 'MX';
-        for (const name in dtsIh) techCategoryMap[name.toUpperCase()] = 'CE';
-
         // Count real technicians from live edited mpmEmployees for real-time reactive sync!
         const rosterBranchStats = {};
         mpmEmployees.filter(e => e.status !== 'RESIGN').forEach(e => {
@@ -153,6 +154,31 @@
                 else rosterBranchStats[b].techHhp++;
             }
         });
+
+        const hasGdData = gdTrend && Object.keys(gdTrend).length > 0;
+
+        // If no live GD trend data available (offline / initial load), preserve precalculated GD numbers from cache
+        if (!hasGdData && capacityData.length > 0) {
+            capacityData.forEach(r => {
+                const rData = rosterBranchStats[r.branch];
+                if (rData) {
+                    if (rData.techs > 0) r.realTech = rData.techs;
+                    if (rData.allStaff > 0) r.allStaff = rData.allStaff;
+                    r.ratioWoAdmin = r.realTech > 0 ? parseFloat((r.totalAdjust / r.realTech).toFixed(1)) : 0;
+                    r.ratioWithAdmin = r.allStaff > 0 ? parseFloat((r.totalAdjust / r.allStaff).toFixed(1)) : 0;
+                    r.diff = r.realTech - r.finalMinStaff;
+                    if (r.realTech < r.finalMinStaff) r.status = 'KURANG';
+                    else if (r.realTech > r.finalMinStaff) r.status = 'LEBIH';
+                    else r.status = 'CUKUP';
+                }
+            });
+            return;
+        }
+
+        const months3 = ['2026-07', '2026-08', '2026-09'];
+        const techCategoryMap = {};
+        for (const name in dtsMx) techCategoryMap[name.toUpperCase()] = 'MX';
+        for (const name in dtsIh) techCategoryMap[name.toUpperCase()] = 'CE';
 
         // Fame stats
         const fameStats = {};
@@ -274,7 +300,10 @@
             return b.totalAdjust - a.totalAdjust;
         });
 
-        capacityData = results;
+        // Only update if we calculated valid branches, otherwise keep preloaded cache
+        if (results.length > 0) {
+            capacityData = results;
+        }
     }
 
     // Helper: Normalize Branch Name for reliable merging
@@ -317,27 +346,27 @@
     // Render base shell with navigation tabs & containers
     function renderMpmShell(container) {
         container.innerHTML = `
-            <!-- MPM Header Bar -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 15px;">
+            <!-- MPM Header Bar (Executive Light Theme) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
                 <div>
-                    <h2 style="font-size: 1.5rem; font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 10px; margin: 0;">
-                        <i class="fa-solid fa-users-gear" style="color: #c084fc;"></i>
+                    <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 10px; margin: 0;">
+                        <i class="fa-solid fa-users-gear" style="color: var(--accent-blue, #2563eb);"></i>
                         MANPOWER MANAGEMENT & CAPACITY INTELLIGENCE (MPM)
                     </h2>
-                    <p style="font-size: 0.85rem; color: #94a3b8; margin: 4px 0 0 0;">
+                    <p style="font-size: 0.85rem; color: #64748b; margin: 4px 0 0 0;">
                         Standar Norma Samsung FTE & Master Roster Tim Operasional PT BUJM (Terintegrasi Live GSPN)
                     </p>
                 </div>
 
                 <!-- Sub-Tabs Switcher -->
-                <div style="display: flex; gap: 8px; background: rgba(15, 23, 42, 0.6); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                    <button id="mpm-tab-capacity" class="mpm-tab-btn active" style="background: #a855f7; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                <div style="display: flex; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <button id="mpm-tab-capacity" class="mpm-tab-btn active" style="background: #ffffff; color: var(--accent-blue, #2563eb); border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
                         <i class="fa-solid fa-chart-pie"></i> Capacity & Load Ratios
                     </button>
-                    <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: transparent; color: #94a3b8; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                    <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-id-card-clip"></i> Master Roster Karyawan (${mpmEmployees.length || 284})
                     </button>
-                    <button id="mpm-tab-simulator" class="mpm-tab-btn" style="background: transparent; color: #94a3b8; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                    <button id="mpm-tab-simulator" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-scale-balanced"></i> Simulator Mutasi (Zero-Cost)
                     </button>
                 </div>
@@ -345,15 +374,15 @@
 
             <!-- Content Area for Sub-Tabs -->
             <div id="mpm-subtab-content" style="width: 100%;">
-                <div style="text-align: center; padding: 40px; color: #94a3b8;">
-                    <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
-                    <p style="margin-top: 10px;">Menghitung kapasitas dan memuat data karyawan...</p>
+                <div style="text-align: center; padding: 40px; color: #64748b;">
+                    <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--accent-blue, #2563eb);"></i>
+                    <p style="margin-top: 10px; font-weight: 500;">Menghitung kapasitas dan memuat data karyawan...</p>
                 </div>
             </div>
 
             <!-- Modal Edit Karyawan Container -->
-            <div id="mpm-edit-modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 99999; backdrop-filter: blur(4px); align-items: center; justify-content: center;">
-                <div id="mpm-edit-modal-box" style="background: #0f172a; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 12px; width: 95%; max-width: 580px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); max-height: 90vh; overflow-y: auto;">
+            <div id="mpm-edit-modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 99999; backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+                <div id="mpm-edit-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; width: 95%; max-width: 580px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; color: #0f172a;">
                     <!-- Modal body injected dynamically -->
                 </div>
             </div>
@@ -369,12 +398,18 @@
         currentMpmSubTab = tabName;
         document.querySelectorAll('.mpm-tab-btn').forEach(btn => {
             btn.style.background = 'transparent';
-            btn.style.color = '#94a3b8';
+            btn.style.color = '#64748b';
+            btn.style.borderColor = 'transparent';
+            btn.style.boxShadow = 'none';
+            btn.style.fontWeight = '600';
         });
         const activeBtn = document.getElementById(`mpm-tab-${tabName}`);
         if (activeBtn) {
-            activeBtn.style.background = '#a855f7';
-            activeBtn.style.color = '#ffffff';
+            activeBtn.style.background = '#ffffff';
+            activeBtn.style.color = 'var(--accent-blue, #2563eb)';
+            activeBtn.style.borderColor = '#cbd5e1';
+            activeBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.06)';
+            activeBtn.style.fontWeight = '700';
         }
         renderActiveSubTab();
     }
@@ -393,7 +428,7 @@
     }
 
     // =========================================================================
-    // SUB-TAB 1: CAPACITY & LIVING LOAD RATIOS
+    // SUB-TAB 1: CAPACITY & LIVING LOAD RATIOS (EXECUTIVE LIGHT THEME)
     // =========================================================================
     function renderCapacitySubTab(container) {
         const totalPoints = capacityData.reduce((s, r) => s + r.totalAdjust, 0);
@@ -412,120 +447,140 @@
         });
 
         container.innerHTML = `
-            <!-- Top KPI Stat Cards -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0 20px 0;">
-                <div style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 15px;">
-                    <div style="font-size: 0.8rem; color: #c084fc; text-transform: uppercase; font-weight: 600;">Total Poin Beban Kerja</div>
-                    <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff; margin-top: 5px;">${totalPoints.toLocaleString('id-ID')} <span style="font-size: 0.9rem; font-weight: 400; color: #94a3b8;">Poin</span></div>
-                    <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 4px;">Rata-rata 3 Bulan GD + Bobot CE 2.5x</div>
-                </div>
-                <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 15px;">
-                    <div style="font-size: 0.8rem; color: #38bdf8; text-transform: uppercase; font-weight: 600;">Kebutuhan Min Teknisi</div>
-                    <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff; margin-top: 5px;">${totalMin} <span style="font-size: 0.9rem; font-weight: 400; color: #94a3b8;">Orang</span></div>
-                    <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 4px;">Norma Samsung (100 Poin) + Aturan BOS</div>
-                </div>
-                <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 15px;">
-                    <div style="font-size: 0.8rem; color: #34d399; text-transform: uppercase; font-weight: 600;">Teknisi Riil Lapangan</div>
-                    <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff; margin-top: 5px;">${totalReal} <span style="font-size: 0.9rem; font-weight: 400; color: #94a3b8;">Teknisi</span></div>
-                    <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 4px;">Aktif Terdata di Roster & Wall of Fame</div>
-                </div>
-                <div style="background: ${gap < 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)'}; border: 1px solid ${gap < 0 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)'}; border-radius: 10px; padding: 15px;">
-                    <div style="font-size: 0.8rem; color: ${gap < 0 ? '#f87171' : '#34d399'}; text-transform: uppercase; font-weight: 600;">Gap Defisit Nasional</div>
-                    <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff; margin-top: 5px;">${gap} <span style="font-size: 0.9rem; font-weight: 400; color: #94a3b8;">Teknisi</span></div>
-                    <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 4px;">${gap < 0 ? 'Defisit Nasional Perlu Rebalancing' : 'Kapasitas Nasional Terpenuhi'}</div>
-                </div>
-                <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 15px;">
-                    <div style="font-size: 0.8rem; color: #fbbf24; text-transform: uppercase; font-weight: 600;">Sebaran 52 Cabang</div>
-                    <div style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-top: 8px;">
-                        <span style="color: #ef4444;">${kurangCount} Kurang</span> | 
-                        <span style="color: #10b981;">${cukupCount} Cukup</span> | 
-                        <span style="color: #38bdf8;">${lebihCount} Lebih</span>
+            <!-- Top KPI Stat Cards (Matching ALL AGING & GD & SALES) -->
+            <div class="kpi-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 15px; margin: 15px 0 20px 0;">
+                <div class="kpi-master-card bg-purple">
+                    <div class="kpi-icon-left"><i class="fa-solid fa-calculator"></i></div>
+                    <div class="kpi-content">
+                        <div class="kpi-title">TOTAL POIN BEBAN KERJA</div>
+                        <div class="value">${totalPoints.toLocaleString('id-ID')} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Poin</span></div>
+                        <div class="kpi-subtitle">Avg 3M GD + Bobot CE 2.5x</div>
                     </div>
-                    <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 4px;">Peta Intervensi Asmen & Head Ops</div>
+                    <div class="kpi-chart-right"><i class="fa-solid fa-chart-line"></i></div>
+                </div>
+                <div class="kpi-master-card bg-blue">
+                    <div class="kpi-icon-left"><i class="fa-solid fa-user-check"></i></div>
+                    <div class="kpi-content">
+                        <div class="kpi-title">KEBUTUHAN MIN TEKNISI</div>
+                        <div class="value">${totalMin} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Orang</span></div>
+                        <div class="kpi-subtitle">Norma Samsung + Aturan BOS</div>
+                    </div>
+                    <div class="kpi-chart-right"><i class="fa-solid fa-user-gear"></i></div>
+                </div>
+                <div class="kpi-master-card bg-cyan">
+                    <div class="kpi-icon-left"><i class="fa-solid fa-users"></i></div>
+                    <div class="kpi-content">
+                        <div class="kpi-title">TEKNISI RIIL LAPANGAN</div>
+                        <div class="value">${totalReal} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Teknisi</span></div>
+                        <div class="kpi-subtitle">Aktif di Roster & Fame</div>
+                    </div>
+                    <div class="kpi-chart-right"><i class="fa-solid fa-id-badge"></i></div>
+                </div>
+                <div class="kpi-master-card ${gap < 0 ? 'bg-coral' : 'bg-blue'}">
+                    <div class="kpi-icon-left"><i class="fa-solid fa-scale-unbalanced"></i></div>
+                    <div class="kpi-content">
+                        <div class="kpi-title">GAP DEFISIT NASIONAL</div>
+                        <div class="value">${gap > 0 ? '+' + gap : gap} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Teknisi</span></div>
+                        <div class="kpi-subtitle">${gap < 0 ? 'Defisit Perlu Rebalancing' : 'Kapasitas Terpenuhi'}</div>
+                    </div>
+                    <div class="kpi-chart-right"><i class="fa-solid ${gap < 0 ? 'fa-triangle-exclamation' : 'fa-circle-check'}"></i></div>
+                </div>
+                <div class="kpi-master-card bg-gold">
+                    <div class="kpi-icon-left"><i class="fa-solid fa-map-location-dot"></i></div>
+                    <div class="kpi-content">
+                        <div class="kpi-title">SEBARAN ${capacityData.length} CABANG</div>
+                        <div class="value" style="font-size: 1.35rem !important;">
+                            <span>${kurangCount} Kurang</span> &bull; 
+                            <span>${cukupCount} Cukup</span> &bull; 
+                            <span>${lebihCount} Lebih</span>
+                        </div>
+                        <div class="kpi-subtitle">Peta Intervensi Asmen & Head Ops</div>
+                    </div>
+                    <div class="kpi-chart-right"><i class="fa-solid fa-diagram-project"></i></div>
                 </div>
             </div>
 
             <!-- Controls: Search & Filter Pills -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; background: rgba(30, 41, 59, 0.5); padding: 12px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600; margin-right: 5px;">Filter Status:</span>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'ALL' ? 'active' : ''}" data-val="ALL" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); background: ${currentFilterStatus === 'ALL' ? '#a855f7' : 'transparent'}; color: white;">Semua (${capacityData.length})</button>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'KURANG' ? 'active' : ''}" data-val="KURANG" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; border: 1px solid rgba(239,68,68,0.3); background: ${currentFilterStatus === 'KURANG' ? '#ef4444' : 'transparent'}; color: #f87171;">🔴 Kurang (${kurangCount})</button>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'CUKUP' ? 'active' : ''}" data-val="CUKUP" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; border: 1px solid rgba(16,185,129,0.3); background: ${currentFilterStatus === 'CUKUP' ? '#10b981' : 'transparent'}; color: #34d399;">🟢 Cukup (${cukupCount})</button>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'LEBIH' ? 'active' : ''}" data-val="LEBIH" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; border: 1px solid rgba(56,189,248,0.3); background: ${currentFilterStatus === 'LEBIH' ? '#38bdf8' : 'transparent'}; color: #38bdf8;">🔵 Lebih (${lebihCount})</button>
+                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 700; margin-right: 5px;">Filter Status:</span>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'ALL' ? 'active' : ''}" data-val="ALL" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; border: 1px solid ${currentFilterStatus === 'ALL' ? '#2563eb' : '#cbd5e1'}; background: ${currentFilterStatus === 'ALL' ? '#2563eb' : '#ffffff'}; color: ${currentFilterStatus === 'ALL' ? '#ffffff' : '#475569'}; box-shadow: ${currentFilterStatus === 'ALL' ? '0 2px 4px rgba(37,99,235,0.2)' : 'none'};">Semua (${capacityData.length})</button>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'KURANG' ? 'active' : ''}" data-val="KURANG" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fca5a5'}; background: ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fee2e2'}; color: ${currentFilterStatus === 'KURANG' ? '#ffffff' : '#dc2626'};">🔴 Kurang (${kurangCount})</button>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'CUKUP' ? 'active' : ''}" data-val="CUKUP" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#86efac'}; background: ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#dcfce7'}; color: ${currentFilterStatus === 'CUKUP' ? '#ffffff' : '#16a34a'};">🟢 Cukup (${cukupCount})</button>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'LEBIH' ? 'active' : ''}" data-val="LEBIH" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#7dd3fc'}; background: ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#e0f2fe'}; color: ${currentFilterStatus === 'LEBIH' ? '#ffffff' : '#0284c7'};">🔵 Lebih (${lebihCount})</button>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <div style="position: relative;">
-                        <input type="text" id="cap-search-input" value="${currentSearchTerm}" placeholder="Cari nama cabang..." style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px 6px 30px; border-radius: 6px; font-size: 0.85rem; width: 220px;">
-                        <i class="fa-solid fa-search" style="position: absolute; left: 10px; top: 9px; color: #94a3b8; font-size: 0.8rem;"></i>
+                        <input type="text" id="cap-search-input" value="${currentSearchTerm}" placeholder="Cari nama cabang..." style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 7px 12px 7px 32px; border-radius: 6px; font-size: 0.85rem; width: 220px; outline: none;">
+                        <i class="fa-solid fa-search" style="position: absolute; left: 10px; top: 10px; color: #94a3b8; font-size: 0.8rem;"></i>
                     </div>
                 </div>
             </div>
 
-            <!-- Capacity Data Table -->
-            <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: rgba(15, 23, 42, 0.6);">
+            <!-- Capacity Data Table (Matching BUJM Executive Style) -->
+            <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
                     <thead>
-                        <tr style="background: rgba(30, 41, 59, 0.8); color: #cbd5e1; border-bottom: 2px solid rgba(255,255,255,0.1);">
-                            <th style="padding: 12px 10px; text-align: center; width: 40px;">No</th>
-                            <th style="padding: 12px 10px;">Cabang</th>
-                            <th style="padding: 12px 10px;">Tipe Layanan</th>
-                            <th style="padding: 12px 10px; text-align: right;">Avg 3M GD</th>
-                            <th style="padding: 12px 10px; text-align: right;">Vol HHP</th>
-                            <th style="padding: 12px 10px; text-align: right;">Vol CE (x2.5)</th>
-                            <th style="padding: 12px 10px; text-align: right;">Total Poin</th>
-                            <th style="padding: 12px 10px; text-align: center;">Min Staf</th>
-                            <th style="padding: 12px 10px; text-align: center;">Teknisi Riil</th>
-                            <th style="padding: 12px 10px; text-align: center;">Ratio w/o Admin</th>
-                            <th style="padding: 12px 10px; text-align: center;">Ratio w/ Admin</th>
-                            <th style="padding: 12px 10px; text-align: center;">Status Gap</th>
-                            <th style="padding: 12px 10px; text-align: center;">Aksi</th>
+                        <tr style="background: var(--accent-blue, #2563eb); color: #ffffff; border-bottom: 2px solid #1d4ed8;">
+                            <th style="padding: 10px 8px; text-align: center; width: 40px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">No</th>
+                            <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Cabang</th>
+                            <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Tipe Layanan</th>
+                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Avg 3M GD</th>
+                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol HHP</th>
+                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol CE (x2.5)</th>
+                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Total Poin</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Min Staf</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Teknisi Riil</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Ratio w/o Admin</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Ratio w/ Admin</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Status Gap</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${filtered.length === 0 ? `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>` : ''}
+                        ${filtered.length === 0 ? `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>` : ''}
                         ${filtered.map((r, idx) => {
                             let statusBadge = '';
-                            if (r.status === 'KURANG') statusBadge = `<span style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">KURANG (${r.diff})</span>`;
-                            else if (r.status === 'LEBIH') statusBadge = `<span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">LEBIH (+${r.diff})</span>`;
-                            else statusBadge = `<span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">CUKUP</span>`;
+                            if (r.status === 'KURANG') statusBadge = `<span style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-block;">KURANG (${r.diff})</span>`;
+                            else if (r.status === 'LEBIH') statusBadge = `<span style="background: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-block;">LEBIH (+${r.diff})</span>`;
+                            else statusBadge = `<span style="background: #dcfce7; color: #16a34a; border: 1px solid #86efac; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-block;">CUKUP</span>`;
 
-                            let ratioColor = '#34d399';
-                            if (r.ratioWoAdmin > 115) ratioColor = '#f87171';
-                            else if (r.ratioWoAdmin < 85) ratioColor = '#38bdf8';
+                            let ratioColor = '#16a34a';
+                            if (r.ratioWoAdmin > 115) ratioColor = '#dc2626';
+                            else if (r.ratioWoAdmin < 85) ratioColor = '#0284c7';
 
                             let typeBadge = '';
                             if (r.productType === 'HYBRID (MX+CE)') {
-                                typeBadge = `<span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">HYBRID MX+CE</span>`;
+                                typeBadge = `<span style="background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">HYBRID MX+CE</span>`;
                             } else if (r.productType === 'CE ONLY') {
-                                typeBadge = `<span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">CE IN-HOME</span>`;
+                                typeBadge = `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">CE IN-HOME</span>`;
                             } else {
-                                typeBadge = `<span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">MX COUNTER</span>`;
+                                typeBadge = `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">MX COUNTER</span>`;
                             }
 
                             return `
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-                                    <td style="padding: 10px; text-align: center; color: #64748b;">${idx + 1}</td>
-                                    <td style="padding: 10px; font-weight: 700; color: #f8fafc;">
+                                <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff; color: #0f172a; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                    <td style="padding: 8px 10px; text-align: center; color: #64748b; font-size: 0.8rem;">${idx + 1}</td>
+                                    <td style="padding: 8px 10px; font-weight: 700; color: #0f172a;">
                                         ${r.branch}
-                                        ${r.bosGuardrail ? `<i class="fa-solid fa-shield-halved" title="Aturan Khusus BOS: Hybrid MX+CE Wajib Min 2 Teknisi" style="color: #c084fc; font-size: 0.75rem; margin-left: 5px;"></i>` : ''}
+                                        ${r.bosGuardrail ? `<i class="fa-solid fa-shield-halved" title="Aturan Khusus BOS: Hybrid MX+CE Wajib Min 2 Teknisi" style="color: #7c3aed; font-size: 0.75rem; margin-left: 5px;"></i>` : ''}
                                     </td>
-                                    <td style="padding: 10px;">${typeBadge}</td>
-                                    <td style="padding: 10px; text-align: right; color: #cbd5e1; font-weight: 600;">${r.avg3MonthGd}</td>
-                                    <td style="padding: 10px; text-align: right; color: #94a3b8;">${r.volHhp}</td>
-                                    <td style="padding: 10px; text-align: right; color: #fbbf24; font-weight: 600;">${r.volCe}</td>
-                                    <td style="padding: 10px; text-align: right; color: #c084fc; font-weight: 700;">${r.totalAdjust}</td>
-                                    <td style="padding: 10px; text-align: center; font-weight: 700; color: #38bdf8;">${r.finalMinStaff}</td>
-                                    <td style="padding: 10px; text-align: center; font-weight: 700; color: #ffffff;">${r.realTech}</td>
-                                    <td style="padding: 10px; text-align: center;">
+                                    <td style="padding: 8px 10px;">${typeBadge}</td>
+                                    <td style="padding: 8px 10px; text-align: right; color: #334155; font-weight: 600;">${r.avg3MonthGd}</td>
+                                    <td style="padding: 8px 10px; text-align: right; color: #64748b;">${r.volHhp}</td>
+                                    <td style="padding: 8px 10px; text-align: right; color: #d97706; font-weight: 600;">${r.volCe}</td>
+                                    <td style="padding: 8px 10px; text-align: right; color: #7c3aed; font-weight: 800;">${r.totalAdjust}</td>
+                                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0284c7;">${r.finalMinStaff}</td>
+                                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0f172a;">${r.realTech}</td>
+                                    <td style="padding: 8px 10px; text-align: center;">
                                         <span style="font-weight: 800; color: ${ratioColor}; font-size: 0.9rem;">${r.ratioWoAdmin}</span>
                                     </td>
-                                    <td style="padding: 10px; text-align: center; color: #94a3b8; font-weight: 600;">
+                                    <td style="padding: 8px 10px; text-align: center; color: #64748b; font-weight: 600;">
                                         ${r.ratioWithAdmin > 0 ? r.ratioWithAdmin : '-'}
                                     </td>
-                                    <td style="padding: 10px; text-align: center;">${statusBadge}</td>
-                                    <td style="padding: 10px; text-align: center;">
-                                        <button class="mpm-btn-view-roster" data-branch="${r.branch}" style="background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc; padding: 4px 8px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Lihat & Edit Roster Tim di Cabang ini">
+                                    <td style="padding: 8px 10px; text-align: center;">${statusBadge}</td>
+                                    <td style="padding: 8px 10px; text-align: center;">
+                                        <button class="mpm-btn-view-roster" data-branch="${r.branch}" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Lihat & Edit Roster Tim di Cabang ini">
                                             <i class="fa-solid fa-users"></i> Roster
                                         </button>
                                     </td>
@@ -588,13 +643,13 @@
         const totalResign = mpmEmployees.filter(e => e.status === 'RESIGN').length;
 
         container.innerHTML = `
-            <!-- Controls Bar -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin: 15px 0 20px 0; background: rgba(30, 41, 59, 0.5); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+            <!-- Controls Bar (Executive Light Theme) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin: 15px 0 20px 0; background: #f8fafc; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                 <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                     <!-- Branch Filter -->
                     <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Cabang:</span>
-                        <select id="roster-branch-select" style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;">
+                        <span style="font-size: 0.8rem; color: #64748b; font-weight: 700;">Cabang:</span>
+                        <select id="roster-branch-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; outline: none;">
                             <option value="ALL">Semua Cabang (${branchList.length})</option>
                             ${branchList.map(b => `<option value="${b}" ${currentRosterBranch === b ? 'selected' : ''}>${b}</option>`).join('')}
                         </select>
@@ -602,8 +657,8 @@
 
                     <!-- Work Status Filter -->
                     <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Status:</span>
-                        <select id="roster-work-status-select" style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem;">
+                        <span style="font-size: 0.8rem; color: #64748b; font-weight: 700;">Status:</span>
+                        <select id="roster-work-status-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; outline: none;">
                             <option value="ALL" ${currentRosterWorkStatus === 'ALL' ? 'selected' : ''}>Semua (${mpmEmployees.length})</option>
                             <option value="AKTIF" ${currentRosterWorkStatus === 'AKTIF' ? 'selected' : ''}>🟢 Masih Bekerja (${totalActive})</option>
                             <option value="RESIGN" ${currentRosterWorkStatus === 'RESIGN' ? 'selected' : ''}>🔴 Sudah Resign (${totalResign})</option>
@@ -612,97 +667,97 @@
 
                     <!-- Search Input -->
                     <div style="position: relative;">
-                        <input type="text" id="roster-search-input" value="${currentRosterSearch}" placeholder="Cari Nama, NIK, Posisi..." style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 12px 6px 30px; border-radius: 6px; font-size: 0.85rem; width: 220px;">
+                        <input type="text" id="roster-search-input" value="${currentRosterSearch}" placeholder="Cari Nama, NIK, Posisi..." style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px 6px 30px; border-radius: 6px; font-size: 0.85rem; width: 220px; outline: none;">
                         <i class="fa-solid fa-search" style="position: absolute; left: 10px; top: 9px; color: #94a3b8; font-size: 0.8rem;"></i>
                     </div>
                 </div>
 
                 <!-- Action Button: Add New Employee -->
                 <div style="display: flex; gap: 10px;">
-                    <button id="btn-add-employee" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                    <button id="btn-add-employee" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);">
                         <i class="fa-solid fa-user-plus"></i> Tambah Karyawan Baru
                     </button>
-                    <button id="btn-reset-roster" style="background: rgba(255,255,255,0.05); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;" title="Reset Filter">
+                    <button id="btn-reset-roster" style="background: #ffffff; color: #475569; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;" title="Reset Filter">
                         <i class="fa-solid fa-arrow-rotate-right"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Employee Cards / Table View -->
-            <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; background: rgba(15, 23, 42, 0.6);">
+            <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
                     <thead>
-                        <tr style="background: rgba(30, 41, 59, 0.8); color: #cbd5e1; border-bottom: 2px solid rgba(255,255,255,0.1);">
-                            <th style="padding: 12px 10px; text-align: center; width: 60px;">Foto</th>
-                            <th style="padding: 12px 10px;">NIK & Nama Karyawan</th>
-                            <th style="padding: 12px 10px;">Lokasi / Cabang</th>
-                            <th style="padding: 12px 10px;">Posisi Jabatan</th>
-                            <th style="padding: 12px 10px;">Kategori Peran</th>
-                            <th style="padding: 12px 10px; text-align: center;">Tgl Masuk</th>
-                            <th style="padding: 12px 10px; text-align: center;">Masa Kerja</th>
-                            <th style="padding: 12px 10px; text-align: center;">Status</th>
-                            <th style="padding: 12px 10px; text-align: center; width: 90px;">Aksi</th>
+                        <tr style="background: var(--accent-blue, #2563eb); color: #ffffff; border-bottom: 2px solid #1d4ed8;">
+                            <th style="padding: 10px 8px; text-align: center; width: 60px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Foto</th>
+                            <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">NIK & Nama Karyawan</th>
+                            <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Lokasi / Cabang</th>
+                            <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Posisi Jabatan</th>
+                            <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Kategori Peran</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Tgl Masuk</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Masa Kerja</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Status</th>
+                            <th style="padding: 10px 10px; text-align: center; width: 90px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94a3b8;">Tidak ada data karyawan yang cocok dengan filter.</td></tr>` : ''}
+                        ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 500;">Tidak ada data karyawan yang cocok dengan filter.</td></tr>` : ''}
                         ${filtered.map(emp => {
                             const isResign = emp.status === 'RESIGN';
                             const photoSrc = emp.photo ? emp.photo : `photos/emp_${emp.nik}.jpg`;
 
                             return `
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); opacity: ${isResign ? '0.55' : '1.0'}; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+                                <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff; color: #0f172a; opacity: ${isResign ? '0.6' : '1.0'}; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
                                     <!-- Photo Avatar -->
                                     <td style="padding: 8px 10px; text-align: center;">
-                                        <div style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(168, 85, 247, 0.4); display: inline-flex; align-items: center; justify-content: center; background: #1e293b; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">
-                                            <img src="${photoSrc}" alt="${emp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#c084fc; font-size:0.8rem;\\'>${getInitials(emp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <div style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 2px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                                            <img src="${photoSrc}" alt="${emp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:0.8rem;\\'>${getInitials(emp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">
                                         </div>
                                     </td>
 
                                     <!-- NIK & Name -->
-                                    <td style="padding: 10px;">
-                                        <div style="font-weight: 700; color: #f8fafc; font-size: 0.9rem;">${emp.name}</div>
-                                        <div style="font-family: monospace; color: #94a3b8; font-size: 0.75rem;">NIK: ${emp.nik}</div>
+                                    <td style="padding: 8px 10px;">
+                                        <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">${emp.name}</div>
+                                        <div style="font-family: monospace; color: #64748b; font-size: 0.75rem;">NIK: ${emp.nik}</div>
                                     </td>
 
                                     <!-- Branch -->
-                                    <td style="padding: 10px;">
-                                        <span style="font-weight: 600; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.2);">
+                                    <td style="padding: 8px 10px;">
+                                        <span style="font-weight: 600; color: #1d4ed8; background: #eff6ff; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe;">
                                             ${normalizeBranchName(emp.branch)}
                                         </span>
                                     </td>
 
                                     <!-- Position -->
-                                    <td style="padding: 10px; color: #cbd5e1; font-weight: 500;">
+                                    <td style="padding: 8px 10px; color: #334155; font-weight: 500;">
                                         ${emp.position || '-'}
                                     </td>
 
                                     <!-- Role Category -->
-                                    <td style="padding: 10px;">
+                                    <td style="padding: 8px 10px;">
                                         ${renderRoleBadge(emp.roleStatus || emp.position)}
                                     </td>
 
                                     <!-- Join Date -->
-                                    <td style="padding: 10px; text-align: center; color: #94a3b8; font-size: 0.8rem;">
+                                    <td style="padding: 8px 10px; text-align: center; color: #64748b; font-size: 0.8rem;">
                                         ${emp.joinDate || '-'}
                                     </td>
 
                                     <!-- Tenure -->
-                                    <td style="padding: 10px; text-align: center; color: #cbd5e1; font-size: 0.8rem;">
+                                    <td style="padding: 8px 10px; text-align: center; color: #334155; font-size: 0.8rem;">
                                         ${emp.tenureText || (emp.tenureYears ? emp.tenureYears + ' Thn' : '-')}
                                     </td>
 
                                     <!-- Work Status Badge -->
-                                    <td style="padding: 10px; text-align: center;">
+                                    <td style="padding: 8px 10px; text-align: center;">
                                         ${isResign ? 
-                                            `<span style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700;">RESIGN</span>` : 
-                                            `<span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700;">AKTIF</span>`
+                                            `<span style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700;">RESIGN</span>` : 
+                                            `<span style="background: #dcfce7; color: #16a34a; border: 1px solid #86efac; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700;">AKTIF</span>`
                                         }
                                     </td>
 
                                     <!-- Action Button: Edit -->
-                                    <td style="padding: 10px; text-align: center;">
-                                        <button class="mpm-btn-edit-emp" data-nik="${emp.nik}" style="background: linear-gradient(135deg, #a855f7, #7c3aed); color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);">
+                                    <td style="padding: 8px 10px; text-align: center;">
+                                        <button class="mpm-btn-edit-emp" data-nik="${emp.nik}" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Edit Data Karyawan">
                                             <i class="fa-solid fa-pen-to-square"></i> Edit
                                         </button>
                                     </td>
@@ -764,17 +819,17 @@
         });
     }
 
-    // Helper: Role badge styling
+    // Helper: Role badge styling (Light Theme)
     function renderRoleBadge(role) {
         if (!role) return '-';
         const r = String(role).toUpperCase();
-        if (r.includes('LEADER')) return `<span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">LEADER</span>`;
-        if (r.includes('TECH') && (r.includes('CE') || r.includes('HOME'))) return `<span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">TECH CE (IH)</span>`;
-        if (r.includes('TECH') || r.includes('TEKNISI')) return `<span style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">TECH HHP (MX)</span>`;
-        if (r.includes('CS') || r.includes('CUSTOMER')) return `<span style="background: rgba(236, 72, 153, 0.2); color: #f472b6; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">CS</span>`;
-        if (r.includes('ADMIN')) return `<span style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">ADMIN</span>`;
-        if (r.includes('MANAGER') || r.includes('AM')) return `<span style="background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">MANAGEMENT</span>`;
-        return `<span style="background: rgba(100, 116, 139, 0.2); color: #cbd5e1; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${role}</span>`;
+        if (r.includes('LEADER')) return `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">LEADER</span>`;
+        if (r.includes('TECH') && (r.includes('CE') || r.includes('HOME'))) return `<span style="background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">TECH CE (IH)</span>`;
+        if (r.includes('TECH') || r.includes('TEKNISI')) return `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">TECH HHP (MX)</span>`;
+        if (r.includes('CS') || r.includes('CUSTOMER')) return `<span style="background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">CS</span>`;
+        if (r.includes('ADMIN')) return `<span style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">ADMIN</span>`;
+        if (r.includes('MANAGER') || r.includes('AM')) return `<span style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">MANAGEMENT</span>`;
+        return `<span style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${role}</span>`;
     }
 
     function getInitials(name) {
@@ -785,7 +840,7 @@
     }
 
     // =========================================================================
-    // MODAL EDIT / UPDATE KARYAWAN (BOS BISA EDIT LANGSUNG)
+    // MODAL EDIT / UPDATE KARYAWAN (BOS BISA EDIT LANGSUNG - LIGHT THEME)
     // =========================================================================
     function openEmployeeEditModal(emp) {
         const isNew = !emp;
@@ -811,23 +866,23 @@
         const photoSrc = targetEmp.photo ? targetEmp.photo : `photos/emp_${targetEmp.nik}.jpg`;
 
         box.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 20px;">
-                <h3 style="margin: 0; color: #f8fafc; font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-user-pen" style="color: #c084fc;"></i>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #0f172a; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-user-pen" style="color: var(--accent-blue, #2563eb);"></i>
                     ${isNew ? 'Tambah Karyawan Baru' : 'Edit Profil & Lokasi Karyawan'}
                 </h3>
-                <button id="mpm-modal-close-x" style="background: transparent; border: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer;">&times;</button>
+                <button id="mpm-modal-close-x" style="background: transparent; border: none; color: #64748b; font-size: 1.4rem; cursor: pointer; line-height: 1;">&times;</button>
             </div>
 
             <!-- Profile Summary & Photo Preview -->
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: rgba(30, 41, 59, 0.4); padding: 12px; border-radius: 8px;">
-                <div style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 2px solid #a855f7; flex-shrink: 0; background: #1e293b; display: flex; align-items: center; justify-content: center;">
-                    <img id="mpm-edit-preview-photo" src="${photoSrc}" alt="${targetEmp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#c084fc; font-size:1.1rem;\\'>${getInitials(targetEmp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 2px solid var(--accent-blue, #2563eb); flex-shrink: 0; background: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                    <img id="mpm-edit-preview-photo" src="${photoSrc}" alt="${targetEmp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:1.1rem;\\'>${getInitials(targetEmp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
                 <div>
-                    <div style="font-weight: 700; color: #ffffff; font-size: 1rem;">${targetEmp.name || 'Nama Karyawan'}</div>
-                    <div style="font-family: monospace; color: #94a3b8; font-size: 0.8rem;">NIK: ${targetEmp.nik || 'Belum ada NIK'}</div>
-                    <div style="font-size: 0.75rem; color: #c084fc; margin-top: 2px;">Foto tersinkron dari arsip foto resmi BUJM</div>
+                    <div style="font-weight: 700; color: #0f172a; font-size: 1rem;">${targetEmp.name || 'Nama Karyawan'}</div>
+                    <div style="font-family: monospace; color: #64748b; font-size: 0.8rem;">NIK: ${targetEmp.nik || 'Belum ada NIK'}</div>
+                    <div style="font-size: 0.75rem; color: #2563eb; margin-top: 2px;">Foto tersinkron dari arsip foto resmi BUJM</div>
                 </div>
             </div>
 
@@ -835,34 +890,34 @@
             <form id="mpm-edit-form" style="display: flex; flex-direction: column; gap: 15px;">
                 <!-- NIK -->
                 <div>
-                    <label style="display: block; font-size: 0.8rem; color: #cbd5e1; font-weight: 600; margin-bottom: 5px;">Nomor Induk Karyawan (NIK)</label>
-                    <input type="text" id="edit-nik" value="${targetEmp.nik}" ${!isNew ? 'readonly' : ''} required style="width: 100%; background: ${!isNew ? 'rgba(15, 23, 42, 0.5)' : '#0f172a'}; border: 1px solid rgba(255,255,255,0.15); color: white; padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 0.9rem;">
+                    <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 5px;">Nomor Induk Karyawan (NIK)</label>
+                    <input type="text" id="edit-nik" value="${targetEmp.nik}" ${!isNew ? 'readonly' : ''} required style="width: 100%; background: ${!isNew ? '#f1f5f9' : '#ffffff'}; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 0.9rem; outline: none;">
                 </div>
 
                 <!-- Nama Lengkap -->
                 <div>
-                    <label style="display: block; font-size: 0.8rem; color: #cbd5e1; font-weight: 600; margin-bottom: 5px;">Nama Lengkap Karyawan</label>
-                    <input type="text" id="edit-name" value="${targetEmp.name}" required style="width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                    <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 5px;">Nama Lengkap Karyawan</label>
+                    <input type="text" id="edit-name" value="${targetEmp.name}" required style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
                 </div>
 
                 <!-- Cabang / Lokasi Penempatan (Dropdown) -->
                 <div>
-                    <label style="display: block; font-size: 0.8rem; color: #cbd5e1; font-weight: 600; margin-bottom: 5px;">Lokasi Cabang / Penempatan</label>
-                    <select id="edit-branch" required style="width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                    <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 5px;">Lokasi Cabang / Penempatan</label>
+                    <select id="edit-branch" required style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
                         ${distinctBranches.map(b => `<option value="${b}" ${normalizeBranchName(targetEmp.branch) === b ? 'selected' : ''}>${b}</option>`).join('')}
                     </select>
-                    <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 3px; display: block;">Perubahan cabang otomatis memperbarui headcount & rasio di Capacity Plan.</span>
+                    <span style="font-size: 0.75rem; color: #64748b; margin-top: 3px; display: block;">Perubahan cabang otomatis memperbarui headcount & rasio di Capacity Plan.</span>
                 </div>
 
                 <!-- Posisi Jabatan & Kategori Peran -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                     <div>
-                        <label style="display: block; font-size: 0.8rem; color: #cbd5e1; font-weight: 600; margin-bottom: 5px;">Posisi Jabatan (Deskriptif)</label>
-                        <input type="text" id="edit-position" value="${targetEmp.position || ''}" style="width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                        <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 5px;">Posisi Jabatan (Deskriptif)</label>
+                        <input type="text" id="edit-position" value="${targetEmp.position || ''}" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.8rem; color: #cbd5e1; font-weight: 600; margin-bottom: 5px;">Kategori Peran (Standar Samsung)</label>
-                        <select id="edit-role" style="width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                        <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 5px;">Kategori Peran (Standar Samsung)</label>
+                        <select id="edit-role" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
                             <option value="Tech HHP" ${String(targetEmp.roleStatus).includes('HHP') ? 'selected' : ''}>Tech HHP (Smartphone / MX)</option>
                             <option value="Tech CE" ${String(targetEmp.roleStatus).includes('CE') ? 'selected' : ''}>Tech CE (Elektronik / In-Home)</option>
                             <option value="Leader" ${String(targetEmp.roleStatus).includes('Leader') ? 'selected' : ''}>Service Leader</option>
@@ -875,27 +930,27 @@
                 </div>
 
                 <!-- Status Kerja (Aktif vs Resign) -->
-                <div style="background: rgba(15, 23, 42, 0.7); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                    <label style="display: block; font-size: 0.8rem; color: #cbd5e1; font-weight: 600; margin-bottom: 8px;">Status Hubungan Kerja</label>
+                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 8px;">Status Hubungan Kerja</label>
                     <div style="display: flex; gap: 20px;">
-                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #34d399; font-weight: 600; font-size: 0.85rem;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #16a34a; font-weight: 700; font-size: 0.85rem;">
                             <input type="radio" name="edit-status" value="AKTIF" ${targetEmp.status !== 'RESIGN' ? 'checked' : ''}>
                             <i class="fa-solid fa-circle-check"></i> Masih Bekerja (Aktif)
                         </label>
-                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #f87171; font-weight: 600; font-size: 0.85rem;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: #dc2626; font-weight: 700; font-size: 0.85rem;">
                             <input type="radio" name="edit-status" value="RESIGN" ${targetEmp.status === 'RESIGN' ? 'checked' : ''}>
                             <i class="fa-solid fa-arrow-right-from-bracket"></i> Sudah Resign / Keluar
                         </label>
                     </div>
-                    <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: block;">Jika diubah ke Resign, karyawan tidak lagi dihitung sebagai beban aktif di cabang.</span>
+                    <span style="font-size: 0.75rem; color: #64748b; margin-top: 4px; display: block;">Jika diubah ke Resign, karyawan tidak lagi dihitung sebagai beban aktif di cabang.</span>
                 </div>
 
                 <!-- Action Buttons -->
-                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-                    <button type="button" id="mpm-modal-cancel" style="background: rgba(255,255,255,0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                    <button type="button" id="mpm-modal-cancel" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
                         Batal
                     </button>
-                    <button type="submit" style="background: linear-gradient(135deg, #a855f7, #7c3aed); color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);">
+                    <button type="submit" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
                         <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan
                     </button>
                 </div>
@@ -973,7 +1028,7 @@
     }
 
     // =========================================================================
-    // SUB-TAB 3: SIMULATOR MUTASI (ZERO-COST REBALANCING)
+    // SUB-TAB 3: SIMULATOR MUTASI (ZERO-COST REBALANCING - LIGHT THEME)
     // =========================================================================
     function renderSimulatorSubTab(container) {
         // Find donor branches (Surplus) and recipient branches (Deficit)
@@ -985,14 +1040,14 @@
         let transferCount = 1;
 
         container.innerHTML = `
-            <div style="margin: 15px 0 20px 0; background: rgba(30, 41, 59, 0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(168, 85, 247, 0.3);">
+            <div style="margin: 15px 0 20px 0; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div>
-                        <h3 style="color: #ffffff; margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-scale-balanced" style="color: #c084fc;"></i>
+                        <h3 style="color: #0f172a; margin: 0; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-scale-balanced" style="color: var(--accent-blue, #2563eb);"></i>
                             Simulator Mutasi Taktis & Zero-Cost Rebalancing
                         </h3>
-                        <p style="color: #94a3b8; font-size: 0.85rem; margin: 4px 0 0 0;">
+                        <p style="color: #64748b; font-size: 0.85rem; margin: 4px 0 0 0;">
                             Simulasikan pergeseran teknisi dari cabang donor (kelebihan) ke cabang kritis (kurang) tanpa menambah biaya gaji baru.
                         </p>
                     </div>
@@ -1001,27 +1056,27 @@
                 <!-- Simulation Inputs Form -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
                     <!-- Cabang Asal (Donor) -->
-                    <div style="background: rgba(15, 23, 42, 0.7); padding: 15px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.3);">
-                        <label style="display: block; font-size: 0.8rem; color: #38bdf8; font-weight: 700; margin-bottom: 8px;">1. PILIH CABANG DONOR (SUMBER BANTUAN)</label>
-                        <select id="sim-donor-select" style="width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                    <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #bae6fd; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <label style="display: block; font-size: 0.8rem; color: #0284c7; font-weight: 700; margin-bottom: 8px;">1. PILIH CABANG DONOR (SUMBER BANTUAN)</label>
+                        <select id="sim-donor-select" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
                             ${capacityData.map(c => `<option value="${c.branch}" ${c.branch === selectedDonor ? 'selected' : ''}>${c.branch} (Riil: ${c.realTech}, Min: ${c.finalMinStaff}, ${c.status})</option>`).join('')}
                         </select>
                     </div>
 
                     <!-- Jumlah Teknisi -->
-                    <div style="background: rgba(15, 23, 42, 0.7); padding: 15px; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.3); text-align: center;">
-                        <label style="display: block; font-size: 0.8rem; color: #c084fc; font-weight: 700; margin-bottom: 8px;">2. JUMLAH TEKNISI YANG DIPINDAHKAN</label>
+                    <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <label style="display: block; font-size: 0.8rem; color: #7c3aed; font-weight: 700; margin-bottom: 8px;">2. JUMLAH TEKNISI YANG DIPINDAHKAN</label>
                         <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 5px;">
-                            <button id="sim-btn-minus" style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; font-weight: 700; cursor: pointer;">-</button>
-                            <span id="sim-count-display" style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">${transferCount}</span>
-                            <button id="sim-btn-plus" style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; font-weight: 700; cursor: pointer;">+</button>
+                            <button id="sim-btn-minus" style="width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; border: 1px solid #cbd5e1; color: #0f172a; font-weight: 800; cursor: pointer; font-size: 1.1rem;">-</button>
+                            <span id="sim-count-display" style="font-size: 1.6rem; font-weight: 800; color: #0f172a;">${transferCount}</span>
+                            <button id="sim-btn-plus" style="width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; border: 1px solid #cbd5e1; color: #0f172a; font-weight: 800; cursor: pointer; font-size: 1.1rem;">+</button>
                         </div>
                     </div>
 
                     <!-- Cabang Tujuan (Penerima) -->
-                    <div style="background: rgba(15, 23, 42, 0.7); padding: 15px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3);">
-                        <label style="display: block; font-size: 0.8rem; color: #f87171; font-weight: 700; margin-bottom: 8px;">3. PILIH CABANG PENERIMA (TARGET DEFISIT)</label>
-                        <select id="sim-recipient-select" style="width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;">
+                    <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                        <label style="display: block; font-size: 0.8rem; color: #dc2626; font-weight: 700; margin-bottom: 8px;">3. PILIH CABANG PENERIMA (TARGET DEFISIT)</label>
+                        <select id="sim-recipient-select" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
                             ${capacityData.map(c => `<option value="${c.branch}" ${c.branch === selectedRecipient ? 'selected' : ''}>${c.branch} (Riil: ${c.realTech}, Min: ${c.finalMinStaff}, ${c.status})</option>`).join('')}
                         </select>
                     </div>
@@ -1052,55 +1107,55 @@
             const recipRatioAfter = recipRealAfter > 0 ? (rObj.totalAdjust / recipRealAfter).toFixed(1) : 0;
 
             box.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                     <!-- Donor Card -->
-                    <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                            <span style="font-weight: 700; color: #38bdf8; font-size: 1.1rem;">${dObj.branch} (Cabang Donor)</span>
-                            <span style="font-size: 0.8rem; color: #94a3b8;">Beban: ${dObj.totalAdjust} Poin</span>
+                    <div style="background: #ffffff; border: 1px solid #bae6fd; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                            <span style="font-weight: 700; color: #0284c7; font-size: 1.1rem;">${dObj.branch} (Cabang Donor)</span>
+                            <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Beban: ${dObj.totalAdjust} Poin</span>
                         </div>
                         <div style="display: flex; justify-content: space-around; margin-top: 15px; text-align: center;">
                             <div>
-                                <div style="font-size: 0.75rem; color: #94a3b8;">SEBELUM</div>
-                                <div style="font-size: 1.4rem; font-weight: 800; color: #ffffff;">${donorRealBefore} <span style="font-size: 0.8rem;">Org</span></div>
-                                <div style="font-size: 0.85rem; font-weight: 700; color: #38bdf8;">Rasio: ${donorRatioBefore}</div>
+                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">SEBELUM</div>
+                                <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">${donorRealBefore} <span style="font-size: 0.8rem; color: #64748b;">Org</span></div>
+                                <div style="font-size: 0.85rem; font-weight: 700; color: #0284c7;">Rasio: ${donorRatioBefore}</div>
                             </div>
-                            <div style="display: flex; align-items: center; color: #c084fc; font-size: 1.5rem;">
+                            <div style="display: flex; align-items: center; color: #2563eb; font-size: 1.5rem;">
                                 <i class="fa-solid fa-arrow-right"></i>
                             </div>
                             <div>
-                                <div style="font-size: 0.75rem; color: #34d399; font-weight: 700;">SETELAH PINDAH</div>
-                                <div style="font-size: 1.4rem; font-weight: 800; color: #34d399;">${donorRealAfter} <span style="font-size: 0.8rem;">Org</span></div>
-                                <div style="font-size: 0.85rem; font-weight: 700; color: ${donorRatioAfter > 115 ? '#ef4444' : '#34d399'};">Rasio: ${donorRatioAfter}</div>
+                                <div style="font-size: 0.75rem; color: #16a34a; font-weight: 700;">SETELAH PINDAH</div>
+                                <div style="font-size: 1.4rem; font-weight: 800; color: #16a34a;">${donorRealAfter} <span style="font-size: 0.8rem; color: #64748b;">Org</span></div>
+                                <div style="font-size: 0.85rem; font-weight: 700; color: ${donorRatioAfter > 115 ? '#dc2626' : '#16a34a'};">Rasio: ${donorRatioAfter}</div>
                             </div>
                         </div>
-                        <div style="margin-top: 15px; font-size: 0.8rem; color: #cbd5e1; text-align: center; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
+                        <div style="margin-top: 15px; font-size: 0.8rem; color: #0369a1; text-align: center; background: #f0f9ff; padding: 8px; border-radius: 6px; font-weight: 600;">
                             Status Pasca Mutasi: <b>${donorRealAfter >= dObj.finalMinStaff ? 'AMAN / CUKUP' : 'DEFISIT (Tidak Disarankan)'}</b>
                         </div>
                     </div>
 
                     <!-- Recipient Card -->
-                    <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                            <span style="font-weight: 700; color: #f87171; font-size: 1.1rem;">${rObj.branch} (Cabang Penerima)</span>
-                            <span style="font-size: 0.8rem; color: #94a3b8;">Beban: ${rObj.totalAdjust} Poin</span>
+                    <div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                            <span style="font-weight: 700; color: #dc2626; font-size: 1.1rem;">${rObj.branch} (Cabang Penerima)</span>
+                            <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Beban: ${rObj.totalAdjust} Poin</span>
                         </div>
                         <div style="display: flex; justify-content: space-around; margin-top: 15px; text-align: center;">
                             <div>
-                                <div style="font-size: 0.75rem; color: #94a3b8;">SEBELUM</div>
-                                <div style="font-size: 1.4rem; font-weight: 800; color: #ffffff;">${recipRealBefore} <span style="font-size: 0.8rem;">Org</span></div>
-                                <div style="font-size: 0.85rem; font-weight: 700; color: #f87171;">Rasio: ${recipRatioBefore}</div>
+                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">SEBELUM</div>
+                                <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">${recipRealBefore} <span style="font-size: 0.8rem; color: #64748b;">Org</span></div>
+                                <div style="font-size: 0.85rem; font-weight: 700; color: #dc2626;">Rasio: ${recipRatioBefore}</div>
                             </div>
-                            <div style="display: flex; align-items: center; color: #c084fc; font-size: 1.5rem;">
+                            <div style="display: flex; align-items: center; color: #2563eb; font-size: 1.5rem;">
                                 <i class="fa-solid fa-arrow-right"></i>
                             </div>
                             <div>
-                                <div style="font-size: 0.75rem; color: #34d399; font-weight: 700;">SETELAH DIBANTU</div>
-                                <div style="font-size: 1.4rem; font-weight: 800; color: #34d399;">${recipRealAfter} <span style="font-size: 0.8rem;">Org</span></div>
-                                <div style="font-size: 0.85rem; font-weight: 700; color: ${recipRatioAfter <= 115 ? '#34d399' : '#fbbf24'};">Rasio: ${recipRatioAfter}</div>
+                                <div style="font-size: 0.75rem; color: #16a34a; font-weight: 700;">SETELAH DIBANTU</div>
+                                <div style="font-size: 1.4rem; font-weight: 800; color: #16a34a;">${recipRealAfter} <span style="font-size: 0.8rem; color: #64748b;">Org</span></div>
+                                <div style="font-size: 0.85rem; font-weight: 700; color: ${recipRatioAfter <= 115 ? '#16a34a' : '#d97706'};">Rasio: ${recipRatioAfter}</div>
                             </div>
                         </div>
-                        <div style="margin-top: 15px; font-size: 0.8rem; color: #cbd5e1; text-align: center; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
+                        <div style="margin-top: 15px; font-size: 0.8rem; color: #b91c1c; text-align: center; background: #fef2f2; padding: 8px; border-radius: 6px; font-weight: 600;">
                             Status Pasca Mutasi: <b>${recipRealAfter >= rObj.finalMinStaff ? 'PULIH KE ZONA SEHAT (CUKUP)' : `DEFISIT BERKURANG (${recipRealAfter - rObj.finalMinStaff})`}</b>
                         </div>
                     </div>
@@ -1108,7 +1163,7 @@
 
                 <!-- Executive Justification Copy Button -->
                 <div style="margin-top: 20px; text-align: center;">
-                    <button id="btn-copy-sim-justification" style="background: linear-gradient(135deg, #a855f7, #6366f1); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);">
+                    <button id="btn-copy-sim-justification" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
                         <i class="fa-solid fa-copy"></i> Salin Teks Justifikasi Mutasi untuk Direksi / WA
                     </button>
                 </div>
@@ -1175,11 +1230,11 @@
             toast.style.position = 'fixed';
             toast.style.bottom = '25px';
             toast.style.right = '25px';
-            toast.style.background = '#a855f7';
+            toast.style.background = '#2563eb';
             toast.style.color = 'white';
             toast.style.padding = '10px 18px';
             toast.style.borderRadius = '8px';
-            toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.4)';
+            toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
             toast.style.zIndex = '999999';
             toast.style.fontWeight = '600';
             toast.style.fontSize = '0.85rem';
