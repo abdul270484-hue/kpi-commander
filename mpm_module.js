@@ -324,6 +324,22 @@
                     console.log(`[MPM] Synced ${mpmEmployees.length} employees from Firestore in background.`);
                 }
             }).catch(err => console.warn('[MPM] Firestore background sync warning:', err.message));
+
+            // 4. Background sync photos from Firestore collection 'mpm_photos' (non-blocking)
+            window.db.collection('mpm_photos').get().then(snap => {
+                if (!snap.empty) {
+                    snap.forEach(docSnap => {
+                        const d = docSnap.data();
+                        if (d && d.nik && d.photoData) {
+                            try { localStorage.setItem('bujm_photo_' + d.nik, d.photoData); } catch (_) {}
+                        }
+                    });
+                    console.log(`[MPM] Synced ${snap.size} photos from Firestore 'mpm_photos'.`);
+                    if (currentMpmSubTab === 'roster') {
+                        updateRosterTableRows();
+                    }
+                }
+            }).catch(err => console.warn('[MPM] Firestore photos sync warning:', err.message));
         }
     }
 
@@ -729,7 +745,7 @@
                         <i class="fa-solid fa-chart-pie"></i> Capacity & Load Ratios
                     </button>
                     <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-id-card-clip"></i> Data Manpower Karyawan (${branchStaffCount})
+                        <i class="fa-solid fa-id-card-clip"></i> Data Manpower (${branchStaffCount})
                     </button>
                     <button id="mpm-tab-simulator" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-scale-balanced"></i> Simulator Mutasi (Zero-Cost)
@@ -774,7 +790,7 @@
         const branchStaffCount = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO' && e.status !== 'RESIGN').length || 257;
         const rosterBtn = document.getElementById('mpm-tab-roster');
         if (rosterBtn) {
-            rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Data Manpower Karyawan (${branchStaffCount})`;
+            rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Data Manpower (${branchStaffCount})`;
         }
 
         renderActiveSubTab();
@@ -811,6 +827,9 @@
         const ceCount = capacityData.filter(r => r.productType === 'CE ONLY').length;
         const overriddenCount = capacityData.filter(r => r.isOverridden).length;
 
+        // Distinct branches list for Capacity Branch Filter (Permintaan BOS)
+        const allCapBranches = Array.from(new Set(capacityData.map(r => r.branch))).sort();
+
         // Filter data
         let filtered = capacityData.filter(r => {
             const matchStatus = currentFilterStatus === 'ALL' || r.status === currentFilterStatus;
@@ -821,8 +840,8 @@
             else if (currentFilterType === 'CE') matchType = r.productType === 'CE ONLY';
             else if (currentFilterType === 'REVISI') matchType = r.isOverridden;
 
-            const matchSearch = !currentSearchTerm || r.branch.toLowerCase().includes(currentSearchTerm.toLowerCase());
-            return matchStatus && matchType && matchSearch;
+            const matchBranch = currentFilterBranch === 'ALL' || r.branch === currentFilterBranch;
+            return matchStatus && matchType && matchBranch;
         });
 
         // Always ensure Z-A sort by Ratio w/ Admin (Permintaan BOS)
@@ -913,9 +932,14 @@
                         ` : ''}
                     </div>
 
-                    <div style="position: relative;">
-                        <input type="text" id="cap-search-input" value="${currentSearchTerm}" placeholder="Cari nama cabang..." style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 7px 12px 7px 32px; border-radius: 6px; font-size: 0.85rem; width: 220px; outline: none;">
-                        <i class="fa-solid fa-search" style="position: absolute; left: 10px; top: 10px; color: #94a3b8; font-size: 0.8rem;"></i>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.8rem; color: #475569; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-location-dot" style="color: #2563eb;"></i> Cabang:
+                        </span>
+                        <select id="cap-branch-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; outline: none; cursor: pointer; min-width: 210px;">
+                            <option value="ALL">Semua Cabang (${allCapBranches.length})</option>
+                            ${allCapBranches.map(b => `<option value="${b}" ${currentFilterBranch === b ? 'selected' : ''}>${b}</option>`).join('')}
+                        </select>
                     </div>
                 </div>
 
@@ -971,10 +995,10 @@
             });
         });
 
-        const searchInput = document.getElementById('cap-search-input');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                currentSearchTerm = e.target.value;
+        const branchSelect = document.getElementById('cap-branch-select');
+        if (branchSelect) {
+            branchSelect.addEventListener('change', (e) => {
+                currentFilterBranch = e.target.value;
                 updateCapacityTableRows();
             });
         }
@@ -997,8 +1021,8 @@
             else if (currentFilterType === 'CE') matchType = r.productType === 'CE ONLY';
             else if (currentFilterType === 'REVISI') matchType = r.isOverridden;
 
-            const matchSearch = !currentSearchTerm || r.branch.toLowerCase().includes(currentSearchTerm.toLowerCase());
-            return matchStatus && matchType && matchSearch;
+            const matchBranch = currentFilterBranch === 'ALL' || r.branch === currentFilterBranch;
+            return matchStatus && matchType && matchBranch;
         });
 
         // Always ensure Z-A sort by Ratio w/ Admin (Permintaan BOS)
@@ -1303,7 +1327,7 @@
         // Update tab header badge count dynamically
         const rosterBtn = document.getElementById('mpm-tab-roster');
         if (rosterBtn) {
-            rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Data Manpower Karyawan (${branchEmployees.length})`;
+            rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Data Manpower (${branchEmployees.length})`;
         }
 
         // Collect list of unique branches for filter dropdown (strictly operational branches, no HO)
@@ -1446,7 +1470,7 @@
         }
 
         tbody.innerHTML = filtered.map(emp => {
-            const photoSrc = emp.photo ? emp.photo : `photos/emp_${emp.nik}.jpg`;
+            const photoSrc = getEmployeePhotoSrc(emp);
             const empBranch = normalizeBranchName(emp.branch);
             const branchBadge = empBranch
                 ? `<span style="font-weight: 600; color: #1d4ed8; background: #eff6ff; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe;">${empBranch}</span>`
@@ -1457,7 +1481,7 @@
                     <!-- Photo Avatar -->
                     <td style="padding: 8px 10px; text-align: center;">
                         <div style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 2px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                            <img src="${photoSrc}" alt="${emp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:0.8rem;\\'>${getInitials(emp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">
+                            ${photoSrc ? `<img src="${photoSrc}" alt="${emp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:0.8rem;\\'>${getInitials(emp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-weight:700; color:#2563eb; font-size:0.8rem;">${getInitials(emp.name)}</span>`}
                         </div>
                     </td>
 
@@ -1556,6 +1580,21 @@
         return (parts[0][0] + parts[1][0]).toUpperCase();
     }
 
+    // Helper to get employee photo URL (Firestore base64, LocalStorage cache, or static fallback)
+    function getEmployeePhotoSrc(emp) {
+        if (!emp) return '';
+        if (emp.photo === '' || emp.photo === null) return '';
+        if (emp.photo && (emp.photo.startsWith('data:') || emp.photo.startsWith('http'))) {
+            return emp.photo;
+        }
+        try {
+            const cached = localStorage.getItem('bujm_photo_' + emp.nik);
+            if (cached) return cached;
+        } catch (_) {}
+        if (emp.photo) return emp.photo;
+        return `photos/emp_${emp.nik}.jpg`;
+    }
+
     // =========================================================================
     // MODAL EDIT / UPDATE KARYAWAN (BOS BISA EDIT LANGSUNG - LIGHT THEME)
     // =========================================================================
@@ -1573,6 +1612,9 @@
             photo: null
         };
 
+        let pendingPhotoData = null;
+        let isPhotoRemoved = false;
+
         const backdrop = document.getElementById('mpm-edit-modal-backdrop');
         const box = document.getElementById('mpm-edit-modal-box');
         if (!backdrop || !box) return;
@@ -1587,7 +1629,7 @@
             ? targetEmp.roles 
             : inferEmployeeRoles(targetEmp);
 
-        const photoSrc = targetEmp.photo ? targetEmp.photo : `photos/emp_${targetEmp.nik}.jpg`;
+        const photoSrc = getEmployeePhotoSrc(targetEmp);
 
         box.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px;">
@@ -1598,15 +1640,33 @@
                 <button id="mpm-modal-close-x" style="background: transparent; border: none; color: #64748b; font-size: 1.4rem; cursor: pointer; line-height: 1;">&times;</button>
             </div>
 
-            <!-- Profile Summary & Photo Preview -->
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <div style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 2px solid var(--accent-blue, #2563eb); flex-shrink: 0; background: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                    <img id="mpm-edit-preview-photo" src="${photoSrc}" alt="${targetEmp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:1.1rem;\\'>${getInitials(targetEmp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">
+            <!-- Profile Summary & Interactive Photo Edit (BOS Request) -->
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div id="mpm-avatar-container" style="position: relative; width: 68px; height: 68px; border-radius: 50%; overflow: hidden; border: 2px solid var(--accent-blue, #2563eb); flex-shrink: 0; background: #ffffff; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.1); cursor: pointer;" title="Klik untuk ubah foto">
+                    ${photoSrc ? `<img id="mpm-edit-preview-photo" src="${photoSrc}" alt="${targetEmp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:1.2rem;\\'>${getInitials(targetEmp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">` : `<span id="mpm-avatar-initials" style="font-weight:700; color:#2563eb; font-size:1.2rem;">${getInitials(targetEmp.name)}</span>`}
+                    <div id="mpm-avatar-hover-overlay" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; font-size: 0.65rem; font-weight: 600; opacity: 0; transition: opacity 0.2s;">
+                        <i class="fa-solid fa-camera" style="font-size: 1rem; margin-bottom: 2px;"></i>
+                        <span>Ubah</span>
+                    </div>
                 </div>
-                <div>
-                    <div style="font-weight: 700; color: #0f172a; font-size: 1rem;">${targetEmp.name || 'Nama Karyawan'}</div>
-                    <div style="font-family: monospace; color: #64748b; font-size: 0.8rem;">NIK: ${targetEmp.nik || 'Belum ada NIK'}</div>
-                    <div style="font-size: 0.75rem; color: #2563eb; margin-top: 2px;">Foto tersinkron dari arsip foto resmi BUJM</div>
+
+                <input type="file" id="mpm-file-photo-input" accept="image/jpeg,image/png,image/webp" style="display: none;">
+
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <div style="font-weight: 700; color: #0f172a; font-size: 1rem;">${targetEmp.name || 'Nama Karyawan'}</div>
+                        <span id="photo-status-badge" style="display: none; font-size: 0.7rem; padding: 2px 7px; border-radius: 4px; font-weight: 700;"></span>
+                    </div>
+                    <div style="font-family: monospace; color: #64748b; font-size: 0.8rem; margin-top: 2px;">NIK: ${targetEmp.nik || 'Belum ada NIK'}</div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                        <button type="button" id="btn-change-photo" style="background: #ffffff; border: 1px solid #cbd5e1; color: #1e293b; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s;">
+                            <i class="fa-solid fa-camera" style="color: #2563eb;"></i> Unggah / Ganti Foto
+                        </button>
+                        <button type="button" id="btn-remove-photo" style="background: #fff1f2; border: 1px solid #fecdd3; color: #e11d48; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s;">
+                            <i class="fa-solid fa-trash-can"></i> Hapus Foto
+                        </button>
+                    </div>
+                    <span style="font-size: 0.72rem; color: #64748b; margin-top: 4px; display: block;">Foto otomatis tersimpan di cloud Firestore & tersinkron di semua perangkat.</span>
                 </div>
             </div>
 
@@ -1711,6 +1771,117 @@
         document.getElementById('mpm-modal-cancel').onclick = closeModal;
         backdrop.onclick = (e) => { if (e.target === backdrop) closeModal(); };
 
+        // Photo upload / change / remove event handlers (Mandat BOS)
+        const fileInput = document.getElementById('mpm-file-photo-input');
+        const changePhotoBtn = document.getElementById('btn-change-photo');
+        const removePhotoBtn = document.getElementById('btn-remove-photo');
+        const avatarContainer = document.getElementById('mpm-avatar-container');
+        const photoBadge = document.getElementById('photo-status-badge');
+
+        const attachAvatarHover = () => {
+            const overlay = document.getElementById('mpm-avatar-hover-overlay');
+            if (avatarContainer && overlay) {
+                avatarContainer.onmouseenter = () => { overlay.style.opacity = '1'; };
+                avatarContainer.onmouseleave = () => { overlay.style.opacity = '0'; };
+            }
+        };
+        attachAvatarHover();
+
+        if (avatarContainer) {
+            avatarContainer.addEventListener('click', () => { if (fileInput) fileInput.click(); });
+        }
+        if (changePhotoBtn) {
+            changePhotoBtn.addEventListener('click', () => { if (fileInput) fileInput.click(); });
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+
+                if (!file.type.startsWith('image/')) {
+                    alert('Format file tidak didukung! Harap pilih gambar JPG, PNG, atau WebP.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxDim = 350;
+
+                        if (width > height) {
+                            if (width > maxDim) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            }
+                        } else {
+                            if (height > maxDim) {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        pendingPhotoData = compressedDataUrl;
+                        isPhotoRemoved = false;
+
+                        avatarContainer.innerHTML = `
+                            <img id="mpm-edit-preview-photo" src="${compressedDataUrl}" alt="${targetEmp.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div id="mpm-avatar-hover-overlay" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; font-size: 0.65rem; font-weight: 600; opacity: 0; transition: opacity 0.2s;">
+                                <i class="fa-solid fa-camera" style="font-size: 1rem; margin-bottom: 2px;"></i>
+                                <span>Ubah</span>
+                            </div>
+                        `;
+                        attachAvatarHover();
+
+                        if (photoBadge) {
+                            photoBadge.style.display = 'inline-block';
+                            photoBadge.style.background = '#dcfce7';
+                            photoBadge.style.color = '#16a34a';
+                            photoBadge.style.border = '1px solid #86efac';
+                            photoBadge.innerHTML = '<i class="fa-solid fa-check"></i> Foto Baru Dipilih';
+                        }
+                    };
+                    img.src = re.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (removePhotoBtn) {
+            removePhotoBtn.addEventListener('click', () => {
+                pendingPhotoData = null;
+                isPhotoRemoved = true;
+                if (fileInput) fileInput.value = '';
+
+                avatarContainer.innerHTML = `
+                    <span id="mpm-avatar-initials" style="font-weight:700; color:#2563eb; font-size:1.2rem;">${getInitials(targetEmp.name)}</span>
+                    <div id="mpm-avatar-hover-overlay" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; font-size: 0.65rem; font-weight: 600; opacity: 0; transition: opacity 0.2s;">
+                                <i class="fa-solid fa-camera" style="font-size: 1rem; margin-bottom: 2px;"></i>
+                                <span>Unggah</span>
+                    </div>
+                `;
+                attachAvatarHover();
+
+                if (photoBadge) {
+                    photoBadge.style.display = 'inline-block';
+                    photoBadge.style.background = '#fee2e2';
+                    photoBadge.style.color = '#dc2626';
+                    photoBadge.style.border = '1px solid #fca5a5';
+                    photoBadge.innerHTML = '<i class="fa-solid fa-trash-can"></i> Foto Akan Dihapus';
+                }
+            });
+        }
+
         // Interactive highlighting for role checkboxes
         box.querySelectorAll('input[name="edit-role-checkbox"]').forEach(cb => {
             cb.addEventListener('change', () => {
@@ -1746,6 +1917,28 @@
                 return;
             }
 
+            // Handle photo updates (Save to Firestore mpm_photos & local storage)
+            let finalPhoto = targetEmp.photo || `photos/emp_${newNik}.jpg`;
+            if (pendingPhotoData) {
+                finalPhoto = pendingPhotoData;
+                try { localStorage.setItem('bujm_photo_' + newNik, pendingPhotoData); } catch (_) {}
+                if (window.db) {
+                    window.db.collection('mpm_photos').doc(String(newNik)).set({
+                        nik: String(newNik),
+                        fileName: `emp_${newNik}.jpg`,
+                        photoData: pendingPhotoData,
+                        updatedAt: new Date().toISOString(),
+                        source: 'dashboard_edit'
+                    }, { merge: true }).catch(err => console.warn('[MPM] Firestore save photo warning:', err));
+                }
+            } else if (isPhotoRemoved) {
+                finalPhoto = '';
+                try { localStorage.removeItem('bujm_photo_' + targetEmp.nik); } catch (_) {}
+                if (window.db) {
+                    window.db.collection('mpm_photos').doc(String(targetEmp.nik)).delete().catch(err => console.warn('[MPM] Firestore delete photo warning:', err));
+                }
+            }
+
             if (isNew) {
                 // Add new employee
                 const newEmpObj = {
@@ -1758,7 +1951,7 @@
                     roleStatus: checkedRoles.join(', '),
                     joinDate: new Date().toLocaleDateString('id-ID'),
                     status: newStatus,
-                    photo: `photos/emp_${newNik}.jpg`,
+                    photo: finalPhoto,
                     updatedAt: new Date().toISOString()
                 };
                 mpmEmployees.unshift(newEmpObj);
@@ -1772,6 +1965,7 @@
                     mpmEmployees[existingIdx].roles = checkedRoles;
                     mpmEmployees[existingIdx].roleStatus = checkedRoles.join(', ');
                     mpmEmployees[existingIdx].status = newStatus;
+                    mpmEmployees[existingIdx].photo = finalPhoto;
                     mpmEmployees[existingIdx].updatedAt = new Date().toISOString();
                 }
             }
