@@ -949,66 +949,7 @@
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; width: 170px;">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${filtered.length === 0 ? `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>` : ''}
-                        ${filtered.map((r, idx) => {
-                            let statusBadge = '';
-                            if (r.status === 'KURANG') statusBadge = `<span style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-block;">KURANG (${r.diff})</span>`;
-                            else if (r.status === 'LEBIH') statusBadge = `<span style="background: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-block;">LEBIH (+${r.diff})</span>`;
-                            else statusBadge = `<span style="background: #dcfce7; color: #16a34a; border: 1px solid #86efac; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-block;">CUKUP</span>`;
-
-                            let ratioColor = '#16a34a';
-                            if (r.ratioWoAdmin > 115) ratioColor = '#dc2626';
-                            else if (r.ratioWoAdmin < 85) ratioColor = '#0284c7';
-
-                            let typeBadge = '';
-                            if (r.productType === 'HYBRID (MX+CE)') {
-                                typeBadge = `<span style="background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🟣 HYBRID MX+CE</span>`;
-                            } else if (r.productType === 'CE ONLY') {
-                                typeBadge = `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🟡 CE IN-HOME</span>`;
-                            } else {
-                                typeBadge = `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🔵 MX COUNTER</span>`;
-                            }
-
-                            return `
-                                <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff; color: #0f172a; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                                    <td style="padding: 8px 10px; text-align: center; color: #64748b; font-size: 0.8rem;">${idx + 1}</td>
-                                    <td style="padding: 8px 10px; font-weight: 700; color: #0f172a;">
-                                        ${r.branch}
-                                        ${r.bosGuardrail ? `<i class="fa-solid fa-shield-halved" title="Aturan Khusus BOS: Hybrid MX+CE Wajib Min 2 Teknisi" style="color: #7c3aed; font-size: 0.75rem; margin-left: 5px;"></i>` : ''}
-                                    </td>
-                                    <td style="padding: 8px 10px;">
-                                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                            ${typeBadge}
-                                            ${r.isOverridden ? `<span title="Direvisi manual oleh BOS: ${r.overrideNote || ''}" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; cursor: help;"><i class="fa-solid fa-check"></i> REVISI</span>` : ''}
-                                        </div>
-                                    </td>
-                                    <td style="padding: 8px 10px; text-align: right; color: #334155; font-weight: 600;">${r.avg3MonthGd}</td>
-                                    <td style="padding: 8px 10px; text-align: right; color: #64748b;">${r.volHhp}</td>
-                                    <td style="padding: 8px 10px; text-align: right; color: #d97706; font-weight: 600;">${r.volCe}</td>
-                                    <td style="padding: 8px 10px; text-align: right; color: #7c3aed; font-weight: 800;">${r.totalAdjust}</td>
-                                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0284c7;">${r.finalMinStaff}</td>
-                                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0f172a;">${r.realTech}</td>
-                                    <td style="padding: 8px 10px; text-align: center;">
-                                        <span style="font-weight: 800; color: ${ratioColor}; font-size: 0.9rem;">${r.ratioWoAdmin}</span>
-                                    </td>
-                                    <td style="padding: 8px 10px; text-align: center; color: #64748b; font-weight: 600;">
-                                        ${r.ratioWithAdmin > 0 ? r.ratioWithAdmin : '-'}
-                                    </td>
-                                    <td style="padding: 8px 10px; text-align: center;">${statusBadge}</td>
-                                    <td style="padding: 8px 10px; text-align: center;">
-                                        <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
-                                            <button class="mpm-btn-edit-type" data-branch="${r.branch}" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Revisi Tipe Layanan Cabang ${r.branch}">
-                                                <i class="fa-solid fa-sliders" style="color: #2563eb;"></i> Revisi Layanan
-                                            </button>
-                                            <button class="mpm-btn-view-roster" data-branch="${r.branch}" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Lihat Data Manpower Cabang ${r.branch}">
-                                                <i class="fa-solid fa-users"></i> Manpower
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
+                    <tbody id="cap-table-body">
                     </tbody>
                 </table>
             </div>
@@ -1034,12 +975,105 @@
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 currentSearchTerm = e.target.value;
-                renderCapacitySubTab(container);
+                updateCapacityTableRows();
             });
         }
 
-        // Edit branch service type buttons (BOS Revision)
-        container.querySelectorAll('.mpm-btn-edit-type').forEach(btn => {
+        // Initial render of table rows
+        updateCapacityTableRows();
+    }
+
+    // Update only Capacity table rows to prevent input destruction and focus loss
+    function updateCapacityTableRows() {
+        const tbody = document.getElementById('cap-table-body');
+        if (!tbody) return;
+
+        let filtered = capacityData.filter(r => {
+            const matchStatus = currentFilterStatus === 'ALL' || r.status === currentFilterStatus;
+            
+            let matchType = true;
+            if (currentFilterType === 'HYBRID') matchType = r.productType === 'HYBRID (MX+CE)';
+            else if (currentFilterType === 'MX') matchType = r.productType === 'MX ONLY';
+            else if (currentFilterType === 'CE') matchType = r.productType === 'CE ONLY';
+            else if (currentFilterType === 'REVISI') matchType = r.isOverridden;
+
+            const matchSearch = !currentSearchTerm || r.branch.toLowerCase().includes(currentSearchTerm.toLowerCase());
+            return matchStatus && matchType && matchSearch;
+        });
+
+        // Always ensure Z-A sort by Ratio w/ Admin (Permintaan BOS)
+        filtered.sort((a, b) => {
+            const diff = (b.ratioWithAdmin || 0) - (a.ratioWithAdmin || 0);
+            if (diff !== 0) return diff;
+            return (b.totalAdjust || 0) - (a.totalAdjust || 0);
+        });
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map((r, idx) => {
+            let statusBadge = '';
+            if (r.status === 'KURANG') statusBadge = `<span style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-block;">KURANG (${r.diff})</span>`;
+            else if (r.status === 'LEBIH') statusBadge = `<span style="background: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-block;">LEBIH (+${r.diff})</span>`;
+            else statusBadge = `<span style="background: #dcfce7; color: #16a34a; border: 1px solid #86efac; padding: 3px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-block;">CUKUP</span>`;
+
+            let ratioColor = '#16a34a';
+            if (r.ratioWoAdmin > 115) ratioColor = '#dc2626';
+            else if (r.ratioWoAdmin < 85) ratioColor = '#0284c7';
+
+            let typeBadge = '';
+            if (r.productType === 'HYBRID (MX+CE)') {
+                typeBadge = `<span style="background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🟣 HYBRID MX+CE</span>`;
+            } else if (r.productType === 'CE ONLY') {
+                typeBadge = `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🟡 CE IN-HOME</span>`;
+            } else {
+                typeBadge = `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🔵 MX COUNTER</span>`;
+            }
+
+            return `
+                <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff; color: #0f172a; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                    <td style="padding: 8px 10px; text-align: center; color: #64748b; font-size: 0.8rem;">${idx + 1}</td>
+                    <td style="padding: 8px 10px; font-weight: 700; color: #0f172a;">
+                        ${r.branch}
+                        ${r.bosGuardrail ? `<i class="fa-solid fa-shield-halved" title="Aturan Khusus BOS: Hybrid MX+CE Wajib Min 2 Teknisi" style="color: #7c3aed; font-size: 0.75rem; margin-left: 5px;"></i>` : ''}
+                    </td>
+                    <td style="padding: 8px 10px;">
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            ${typeBadge}
+                            ${r.isOverridden ? `<span title="Direvisi manual oleh BOS: ${r.overrideNote || ''}" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; cursor: help;"><i class="fa-solid fa-check"></i> REVISI</span>` : ''}
+                        </div>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: right; color: #334155; font-weight: 600;">${r.avg3MonthGd}</td>
+                    <td style="padding: 8px 10px; text-align: right; color: #64748b;">${r.volHhp}</td>
+                    <td style="padding: 8px 10px; text-align: right; color: #d97706; font-weight: 600;">${r.volCe}</td>
+                    <td style="padding: 8px 10px; text-align: right; color: #7c3aed; font-weight: 800;">${r.totalAdjust}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0284c7;">${r.finalMinStaff}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0f172a;">${r.realTech}</td>
+                    <td style="padding: 8px 10px; text-align: center;">
+                        <span style="font-weight: 800; color: ${ratioColor}; font-size: 0.9rem;">${r.ratioWoAdmin}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; color: #64748b; font-weight: 600;">
+                        ${r.ratioWithAdmin > 0 ? r.ratioWithAdmin : '-'}
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center;">${statusBadge}</td>
+                    <td style="padding: 8px 10px; text-align: center;">
+                        <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+                            <button class="mpm-btn-edit-type" data-branch="${r.branch}" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Revisi Tipe Layanan Cabang ${r.branch}">
+                                <i class="fa-solid fa-sliders" style="color: #2563eb;"></i> Revisi Layanan
+                            </button>
+                            <button class="mpm-btn-view-roster" data-branch="${r.branch}" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Lihat Data Manpower Cabang ${r.branch}">
+                                <i class="fa-solid fa-users"></i> Manpower
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // Attach click handlers to row buttons
+        tbody.querySelectorAll('.mpm-btn-edit-type').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const branch = btn.dataset.branch;
@@ -1047,8 +1081,7 @@
             });
         });
 
-        // View roster buttons inside table
-        container.querySelectorAll('.mpm-btn-view-roster').forEach(btn => {
+        tbody.querySelectorAll('.mpm-btn-view-roster').forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetBranch = btn.dataset.branch;
                 currentRosterBranch = targetBranch;
@@ -1274,31 +1307,24 @@
         }
 
         // Collect list of unique branches for filter dropdown (strictly operational branches, no HO)
-        const branchList = Array.from(new Set(branchEmployees.map(e => normalizeBranchName(e.branch)).filter(Boolean))).sort();
+        const branchList = Array.from(new Set(branchEmployees.map(e => normalizeBranchName(e.branch)).filter(b => b && b !== 'UNKNOWN' && b !== 'BELUM DITENTUKAN'))).sort();
 
-        // Filter employees
-        let filtered = branchEmployees.filter(e => {
-            const b = normalizeBranchName(e.branch) || 'BELUM DITENTUKAN';
-            const matchBranch = currentRosterBranch === 'ALL' || b === currentRosterBranch;
-            const searchLower = currentRosterSearch.toLowerCase();
-            const matchSearch = !currentRosterSearch || 
-                (e.name && e.name.toLowerCase().includes(searchLower)) ||
-                (e.nik && e.nik.toLowerCase().includes(searchLower)) ||
-                (e.position && e.position.toLowerCase().includes(searchLower)) ||
-                (e.roleStatus && e.roleStatus.toLowerCase().includes(searchLower)) ||
-                (Array.isArray(e.roles) && e.roles.some(r => r.toLowerCase().includes(searchLower)));
-            return matchBranch && matchSearch;
-        });
+        // Unknown count (karyawan yang tidak masuk di cabang manapun)
+        const unknownCount = branchEmployees.filter(e => {
+            const b = normalizeBranchName(e.branch);
+            return !b || b === 'UNKNOWN' || b === 'BELUM DITENTUKAN';
+        }).length;
 
         container.innerHTML = `
             <!-- Controls Bar (Executive Light Theme) -->
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin: 15px 0 20px 0; background: #f8fafc; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
                 <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                    <!-- Branch Filter -->
+                    <!-- Branch Filter (Termasuk pilihan Unknown sesuai instruksi BOS) -->
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.8rem; color: #64748b; font-weight: 700;">Cabang:</span>
                         <select id="roster-branch-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; outline: none;">
                             <option value="ALL">Semua Cabang (${branchList.length})</option>
+                            <option value="Unknown" ${currentRosterBranch === 'Unknown' ? 'selected' : ''}>❓ Unknown (${unknownCount})</option>
                             ${branchList.map(b => `<option value="${b}" ${currentRosterBranch === b ? 'selected' : ''}>${b}</option>`).join('')}
                         </select>
                     </div>
@@ -1336,64 +1362,7 @@
                             <th style="padding: 10px 10px; text-align: center; width: 90px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 500;">Tidak ada data manpower yang cocok dengan filter.</td></tr>` : ''}
-                        ${filtered.map(emp => {
-                            const photoSrc = emp.photo ? emp.photo : `photos/emp_${emp.nik}.jpg`;
-
-                            return `
-                                <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff; color: #0f172a; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
-                                    <!-- Photo Avatar -->
-                                    <td style="padding: 8px 10px; text-align: center;">
-                                        <div style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 2px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                                            <img src="${photoSrc}" alt="${emp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:0.8rem;\\'>${getInitials(emp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">
-                                        </div>
-                                    </td>
-
-                                    <!-- NIK & Name -->
-                                    <td style="padding: 8px 10px;">
-                                        <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">${emp.name}</div>
-                                        <div style="font-family: monospace; color: #64748b; font-size: 0.75rem;">NIK: ${emp.nik}</div>
-                                    </td>
-
-                                    <!-- Branch -->
-                                    <td style="padding: 8px 10px;">
-                                        <span style="font-weight: 600; color: #1d4ed8; background: #eff6ff; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe;">
-                                            ${normalizeBranchName(emp.branch)}
-                                        </span>
-                                    </td>
-
-                                    <!-- Position -->
-                                    <td style="padding: 8px 10px;">
-                                        <span style="font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 4px; display: inline-block; background: ${emp.position === 'TEKNISI' ? '#eff6ff' : (emp.position === 'LEADER/PIC' ? '#fef3c7' : (emp.position === 'ADMIN' ? '#e0f2fe' : '#f1f5f9'))}; color: ${emp.position === 'TEKNISI' ? '#1d4ed8' : (emp.position === 'LEADER/PIC' ? '#b45309' : (emp.position === 'ADMIN' ? '#0284c7' : '#475569'))}; border: 1px solid ${emp.position === 'TEKNISI' ? '#bfdbfe' : (emp.position === 'LEADER/PIC' ? '#fde68a' : (emp.position === 'ADMIN' ? '#bae6fd' : '#cbd5e1'))};">
-                                            ${emp.position || '-'}
-                                        </span>
-                                    </td>
-
-                                    <!-- Role Category (Multi-Role Badges) -->
-                                    <td style="padding: 8px 10px;">
-                                        ${renderRoleBadge(emp.roles || emp.roleStatus || emp.position)}
-                                    </td>
-
-                                    <!-- Join Date -->
-                                    <td style="padding: 8px 10px; text-align: center; color: #64748b; font-size: 0.8rem;">
-                                        ${emp.joinDate || '-'}
-                                    </td>
-
-                                    <!-- Tenure -->
-                                    <td style="padding: 8px 10px; text-align: center; color: #334155; font-size: 0.8rem;">
-                                        ${emp.tenureText || (emp.tenureYears ? emp.tenureYears + ' Thn' : '-')}
-                                    </td>
-
-                                    <!-- Action Button: Edit -->
-                                    <td style="padding: 8px 10px; text-align: center;">
-                                        <button class="mpm-btn-edit-emp" data-nik="${emp.nik}" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Edit Data Karyawan">
-                                            <i class="fa-solid fa-pen-to-square"></i> Edit
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
+                    <tbody id="roster-table-body">
                     </tbody>
                 </table>
             </div>
@@ -1404,7 +1373,7 @@
         if (branchSelect) {
             branchSelect.addEventListener('change', (e) => {
                 currentRosterBranch = e.target.value;
-                renderRosterSubTab(container);
+                updateRosterTableRows();
             });
         }
 
@@ -1412,7 +1381,7 @@
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 currentRosterSearch = e.target.value;
-                renderRosterSubTab(container);
+                updateRosterTableRows();
             });
         }
 
@@ -1421,7 +1390,11 @@
             resetBtn.addEventListener('click', () => {
                 currentRosterBranch = 'ALL';
                 currentRosterSearch = '';
-                renderRosterSubTab(container);
+                const bSel = document.getElementById('roster-branch-select');
+                if (bSel) bSel.value = 'ALL';
+                const sInp = document.getElementById('roster-search-input');
+                if (sInp) sInp.value = '';
+                updateRosterTableRows();
             });
         }
 
@@ -1430,8 +1403,109 @@
             addBtn.addEventListener('click', () => openEmployeeEditModal(null));
         }
 
+        // Render table rows
+        updateRosterTableRows();
+    }
+
+    // Update only Manpower table rows to prevent input destruction & pointer/focus loss
+    function updateRosterTableRows() {
+        const tbody = document.getElementById('roster-table-body');
+        if (!tbody) return;
+
+        const branchEmployees = mpmEmployees.filter(e => {
+            const b = normalizeBranchName(e.branch);
+            return b !== 'HO' && e.status !== 'RESIGN';
+        });
+
+        let filtered = branchEmployees.filter(e => {
+            const b = normalizeBranchName(e.branch);
+            const isUnknown = !b || b === 'UNKNOWN' || b === 'BELUM DITENTUKAN';
+
+            let matchBranch = true;
+            if (currentRosterBranch === 'Unknown') {
+                matchBranch = isUnknown;
+            } else if (currentRosterBranch !== 'ALL') {
+                matchBranch = b === currentRosterBranch;
+            }
+
+            const searchLower = currentRosterSearch.toLowerCase();
+            const matchSearch = !currentRosterSearch || 
+                (e.name && e.name.toLowerCase().includes(searchLower)) ||
+                (e.nik && e.nik.toLowerCase().includes(searchLower)) ||
+                (e.position && e.position.toLowerCase().includes(searchLower)) ||
+                (e.roleStatus && e.roleStatus.toLowerCase().includes(searchLower)) ||
+                (Array.isArray(e.roles) && e.roles.some(r => r.toLowerCase().includes(searchLower))) ||
+                (isUnknown && 'unknown'.includes(searchLower));
+
+            return matchBranch && matchSearch;
+        });
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 500;">Tidak ada data manpower yang cocok dengan filter.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(emp => {
+            const photoSrc = emp.photo ? emp.photo : `photos/emp_${emp.nik}.jpg`;
+            const empBranch = normalizeBranchName(emp.branch);
+            const branchBadge = empBranch
+                ? `<span style="font-weight: 600; color: #1d4ed8; background: #eff6ff; padding: 3px 8px; border-radius: 4px; border: 1px solid #bfdbfe;">${empBranch}</span>`
+                : `<span style="font-weight: 700; color: #dc2626; background: #fee2e2; padding: 3px 8px; border-radius: 4px; border: 1px solid #fca5a5;"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 4px;"></i>Unknown</span>`;
+
+            return `
+                <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff; color: #0f172a; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                    <!-- Photo Avatar -->
+                    <td style="padding: 8px 10px; text-align: center;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 2px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                            <img src="${photoSrc}" alt="${emp.name}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:0.8rem;\\'>${getInitials(emp.name)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                    </td>
+
+                    <!-- NIK & Name -->
+                    <td style="padding: 8px 10px;">
+                        <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem;">${emp.name}</div>
+                        <div style="font-family: monospace; color: #64748b; font-size: 0.75rem;">NIK: ${emp.nik}</div>
+                    </td>
+
+                    <!-- Branch -->
+                    <td style="padding: 8px 10px;">
+                        ${branchBadge}
+                    </td>
+
+                    <!-- Position -->
+                    <td style="padding: 8px 10px;">
+                        <span style="font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 4px; display: inline-block; background: ${emp.position === 'TEKNISI' ? '#eff6ff' : (emp.position === 'LEADER/PIC' ? '#fef3c7' : (emp.position === 'ADMIN' ? '#e0f2fe' : '#f1f5f9'))}; color: ${emp.position === 'TEKNISI' ? '#1d4ed8' : (emp.position === 'LEADER/PIC' ? '#b45309' : (emp.position === 'ADMIN' ? '#0284c7' : '#475569'))}; border: 1px solid ${emp.position === 'TEKNISI' ? '#bfdbfe' : (emp.position === 'LEADER/PIC' ? '#fde68a' : (emp.position === 'ADMIN' ? '#bae6fd' : '#cbd5e1'))};">
+                            ${emp.position || '-'}
+                        </span>
+                    </td>
+
+                    <!-- Role Category (Multi-Role Badges) -->
+                    <td style="padding: 8px 10px;">
+                        ${renderRoleBadge(emp.roles || emp.roleStatus || emp.position)}
+                    </td>
+
+                    <!-- Join Date -->
+                    <td style="padding: 8px 10px; text-align: center; color: #64748b; font-size: 0.8rem;">
+                        ${emp.joinDate || '-'}
+                    </td>
+
+                    <!-- Tenure -->
+                    <td style="padding: 8px 10px; text-align: center; color: #334155; font-size: 0.8rem;">
+                        ${emp.tenureText || (emp.tenureYears ? emp.tenureYears + ' Thn' : '-')}
+                    </td>
+
+                    <!-- Action Button: Edit -->
+                    <td style="padding: 8px 10px; text-align: center;">
+                        <button class="mpm-btn-edit-emp" data-nik="${emp.nik}" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Edit Data Karyawan">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
         // Attach click handlers to Edit buttons
-        container.querySelectorAll('.mpm-btn-edit-emp').forEach(btn => {
+        tbody.querySelectorAll('.mpm-btn-edit-emp').forEach(btn => {
             btn.addEventListener('click', () => {
                 const nik = btn.dataset.nik;
                 const emp = mpmEmployees.find(e => String(e.nik) === String(nik));
@@ -1553,7 +1627,8 @@
                 <!-- Cabang / Lokasi Penempatan (Dropdown) -->
                 <div>
                     <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 5px;">Lokasi Cabang / Penempatan</label>
-                    <select id="edit-branch" required style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
+                    <select id="edit-branch" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
+                        <option value="" ${!targetEmp.branch ? 'selected' : ''}>-- Belum Ditentukan (Unknown) --</option>
                         ${distinctBranches.map(b => `<option value="${b}" ${normalizeBranchName(targetEmp.branch) === b ? 'selected' : ''}>${b}</option>`).join('')}
                     </select>
                     <span style="font-size: 0.75rem; color: #64748b; margin-top: 3px; display: block;">Perubahan cabang otomatis memperbarui headcount & rasio di Capacity Plan.</span>
