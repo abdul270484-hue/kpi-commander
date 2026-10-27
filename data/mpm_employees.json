@@ -6,14 +6,18 @@
     "joinDate": "01/11/2013",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "CHIEF FINANCIAL OFFICER",
+    "position": "ADMIN",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "CFO",
+    "roleStatus": "ADMIN KEUANGAN",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.182Z"
+    "updatedAt": "2026-10-26T10:35:42.182Z",
+    "rawPosition": "CHIEF FINANCIAL OFFICER",
+    "roles": [
+      "ADMIN KEUANGAN"
+    ]
   },
   {
     "id": "10000009",
@@ -22,14 +26,18 @@
     "joinDate": "01/11/2013",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "CHIEF EXECUTIVE OFFICER",
+    "position": "ADMIN",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "CEO",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "CHIEF EXECUTIVE OFFICER",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "13110047",
@@ -38,14 +46,18 @@
     "joinDate": "01/11/2013",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "13110049",
@@ -54,14 +66,18 @@
     "joinDate": "01/11/2013",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "13110055",
@@ -70,14 +86,18 @@
     "joinDate": "01/11/2013",
     "branch": "PANGKAL PINANG",
     "rawBranch": "009-PPG",
-    "position": "CS DAN ADMIN",
+    "position": "ADMIN",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "CS DAN ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "13110060",
@@ -86,14 +106,18 @@
     "joinDate": "01/11/2013",
     "branch": "SINGKAWANG",
     "rawBranch": "012-SKW",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_13110060.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "13110069",
@@ -102,14 +126,19 @@
     "joinDate": "01/11/2013",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "ASS LEADER DAN ADMIN TRACKING",
+    "position": "LEADER/PIC",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "PIC, ADMIN TRACKING HHP",
     "status": "AKTIF",
     "photo": "photos/emp_13110069.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ASS LEADER DAN ADMIN TRACKING",
+    "roles": [
+      "PIC",
+      "ADMIN TRACKING HHP"
+    ]
   },
   {
     "id": "13110080",
@@ -118,14 +147,18 @@
     "joinDate": "01/11/2013",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "AREA MANAGER",
+    "position": "LEADER/PIC",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "AM",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "AREA MANAGER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "13110081",
@@ -134,14 +167,18 @@
     "joinDate": "01/11/2013",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "ASS MANAGER",
+    "position": "LEADER/PIC",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "AM",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_13110081.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ASS MANAGER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "13110092",
@@ -150,14 +187,18 @@
     "joinDate": "01/11/2013",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "ASS LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "13.0",
     "tenureText": "12 tahun, 11 bulan, 25 hari",
-    "roleStatus": "Ass Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ASS LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "13120112",
@@ -166,14 +207,18 @@
     "joinDate": "05/12/2013",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "ASS LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "12.9",
     "tenureText": "12 tahun, 10 bulan, 21 hari",
-    "roleStatus": "Ass Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ASS LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "14010002",
@@ -182,14 +227,18 @@
     "joinDate": "03/01/2014",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "ASS MANAGER",
+    "position": "LEADER/PIC",
     "tenureYears": "12.8",
     "tenureText": "12 tahun, 9 bulan, 23 hari",
-    "roleStatus": "AM",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_14010002.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ASS MANAGER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "14010011",
@@ -198,14 +247,18 @@
     "joinDate": "24/01/2014",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "12.8",
     "tenureText": "12 tahun, 9 bulan, 2 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "14010016",
@@ -214,14 +267,18 @@
     "joinDate": "03/02/2014",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "TECHNICAL SUPPORT",
+    "position": "TEKNISI",
     "tenureYears": "12.7",
     "tenureText": "12 tahun, 8 bulan, 23 hari",
-    "roleStatus": "TS",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_14010016.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TECHNICAL SUPPORT",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "14020020",
@@ -230,14 +287,18 @@
     "joinDate": "18/02/2014",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "ASS MANAGER",
+    "position": "LEADER/PIC",
     "tenureYears": "12.7",
     "tenureText": "12 tahun, 8 bulan, 8 hari",
-    "roleStatus": "AM",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_14020020.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ASS MANAGER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "14050050",
@@ -246,14 +307,20 @@
     "joinDate": "13/05/2014",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "COORDINATOR IN HOME",
+    "position": "LEADER/PIC",
     "tenureYears": "12.5",
     "tenureText": "12 tahun, 5 bulan, 13 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "PIC, CUSTOMER SERVICE, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "COORDINATOR IN HOME",
+    "roles": [
+      "PIC",
+      "CUSTOMER SERVICE",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "15020008",
@@ -262,14 +329,18 @@
     "joinDate": "16/02/2015",
     "branch": "BERAU",
     "rawBranch": "049-BRU",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "11.7",
     "tenureText": "11 tahun, 8 bulan, 10 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "15030020",
@@ -278,14 +349,18 @@
     "joinDate": "30/03/2015",
     "branch": "TANJUNGPINANG",
     "rawBranch": "011-TPG",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "11.6",
     "tenureText": "11 tahun, 6 bulan, 26 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "15080060",
@@ -294,14 +369,19 @@
     "joinDate": "10/08/2015",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "TEKNISI UB",
+    "position": "TEKNISI",
     "tenureYears": "11.2",
     "tenureText": "11 tahun, 2 bulan, 16 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI UB, TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_15080060.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI UB",
+    "roles": [
+      "TEKNISI UB",
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "15080065",
@@ -310,14 +390,18 @@
     "joinDate": "13/08/2015",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "CDM SUPERVISOR",
+    "position": "LEADER/PIC",
     "tenureYears": "11.2",
     "tenureText": "11 tahun, 2 bulan, 13 hari",
-    "roleStatus": "CDM",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "CDM SUPERVISOR",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "16070039",
@@ -326,14 +410,18 @@
     "joinDate": "27/07/2016",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "TECHNICAL SUPPORT",
+    "position": "TEKNISI",
     "tenureYears": "10.3",
     "tenureText": "10 tahun, 2 bulan, 29 hari",
-    "roleStatus": "TS",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_16070039.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TECHNICAL SUPPORT",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "17020001",
@@ -342,14 +430,18 @@
     "joinDate": "01/02/2017",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "ASS MANAGER",
+    "position": "LEADER/PIC",
     "tenureYears": "9.7",
     "tenureText": "9 tahun, 8 bulan, 25 hari",
-    "roleStatus": "AM",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_17020001.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ASS MANAGER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "17070038",
@@ -358,14 +450,18 @@
     "joinDate": "17/07/2017",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "CDM SUPERVISOR",
+    "position": "LEADER/PIC",
     "tenureYears": "9.3",
     "tenureText": "9 tahun, 3 bulan, 9 hari",
-    "roleStatus": "CDM",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "CDM SUPERVISOR",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "17090059",
@@ -374,14 +470,18 @@
     "joinDate": "27/09/2017",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "9.1",
     "tenureText": "9 tahun, 0 bulan, 29 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_17090059.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "17100064",
@@ -390,14 +490,18 @@
     "joinDate": "11/10/2017",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "HRD SUPERVISOR",
+    "position": "LEADER/PIC",
     "tenureYears": "9.0",
     "tenureText": "9 tahun, 0 bulan, 15 hari",
-    "roleStatus": "HRD",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "HRD SUPERVISOR",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "18090038",
@@ -406,14 +510,18 @@
     "joinDate": "03/09/2018",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "Leader",
+    "position": "LEADER/PIC",
     "tenureYears": "8.2",
     "tenureText": "8 tahun, 1 bulan, 23 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "Leader",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "18120048",
@@ -422,14 +530,18 @@
     "joinDate": "10/12/2018",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "ASS MANAGER",
+    "position": "LEADER/PIC",
     "tenureYears": "7.9",
     "tenureText": "7 tahun, 10 bulan, 16 hari",
-    "roleStatus": "AM",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_18120048.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ASS MANAGER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23040232",
@@ -438,14 +550,18 @@
     "joinDate": "12/04/2023",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.5",
     "tenureText": "3 tahun, 6 bulan, 14 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23040232.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "20030005",
@@ -454,14 +570,18 @@
     "joinDate": "02/03/2020",
     "branch": "TANJUNGPINANG",
     "rawBranch": "011-TPG",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "6.7",
     "tenureText": "6 tahun, 7 bulan, 24 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "20060006",
@@ -470,14 +590,18 @@
     "joinDate": "22/06/2020",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "TECHNICAL SUPPORT",
+    "position": "TEKNISI",
     "tenureYears": "6.3",
     "tenureText": "6 tahun, 4 bulan, 4 hari",
-    "roleStatus": "TS",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TECHNICAL SUPPORT",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "20070012",
@@ -486,14 +610,18 @@
     "joinDate": "20/07/2020",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "6.3",
     "tenureText": "6 tahun, 3 bulan, 6 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_20070012.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "20070013",
@@ -502,14 +630,18 @@
     "joinDate": "20/07/2020",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "6.3",
     "tenureText": "6 tahun, 3 bulan, 6 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "20100025",
@@ -518,14 +650,18 @@
     "joinDate": "16/10/2020",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "6.0",
     "tenureText": "6 tahun, 0 bulan, 10 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "20110038",
@@ -534,14 +670,18 @@
     "joinDate": "23/11/2020",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "DRIVER",
+    "position": "HELPER",
     "tenureYears": "5.9",
     "tenureText": "5 tahun, 11 bulan, 3 hari",
-    "roleStatus": "Driver",
+    "roleStatus": "DRIVER",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "DRIVER",
+    "roles": [
+      "DRIVER"
+    ]
   },
   {
     "id": "21060008",
@@ -550,14 +690,19 @@
     "joinDate": "10/06/2021",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "TEKNISI UB",
+    "position": "TEKNISI",
     "tenureYears": "5.4",
     "tenureText": "5 tahun, 4 bulan, 16 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI UB, TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI UB",
+    "roles": [
+      "TEKNISI UB",
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "21070014",
@@ -566,14 +711,18 @@
     "joinDate": "05/07/2021",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "5.3",
     "tenureText": "5 tahun, 3 bulan, 21 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_21070014.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "21070017",
@@ -582,14 +731,18 @@
     "joinDate": "28/07/2021",
     "branch": "PATI",
     "rawBranch": "019-PTI",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "5.3",
     "tenureText": "5 tahun, 2 bulan, 28 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_21070017.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "21090021",
@@ -598,14 +751,18 @@
     "joinDate": "27/09/2021",
     "branch": "PAMEKASAN",
     "rawBranch": "014-PKS",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "5.1",
     "tenureText": "5 tahun, 0 bulan, 29 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_21090021.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "22010002",
@@ -614,14 +771,18 @@
     "joinDate": "10/01/2022",
     "branch": "BOJONEGORO",
     "rawBranch": "023-BJN",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "4.8",
     "tenureText": "4 tahun, 9 bulan, 16 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "22060014",
@@ -630,14 +791,18 @@
     "joinDate": "06/06/2022",
     "branch": "PALANGKARAYA",
     "rawBranch": "004-PKY",
-    "position": "PIC",
+    "position": "LEADER/PIC",
     "tenureYears": "4.4",
     "tenureText": "4 tahun, 4 bulan, 20 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_22060014.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "PIC",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "20110034",
@@ -646,14 +811,18 @@
     "joinDate": "09/11/2020",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "6.0",
     "tenureText": "5 tahun, 11 bulan, 17 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_20110034.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "22060018",
@@ -662,14 +831,18 @@
     "joinDate": "27/06/2022",
     "branch": "PANGKAL PINANG",
     "rawBranch": "009-PPG",
-    "position": "TEKNISI IN HOME TOUR SERVICE",
+    "position": "TEKNISI",
     "tenureYears": "4.3",
     "tenureText": "4 tahun, 3 bulan, 29 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME TOUR SERVICE",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010213",
@@ -678,14 +851,18 @@
     "joinDate": "06/02/2023",
     "branch": "BENGKULU",
     "rawBranch": "010-BKL",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.7",
     "tenureText": "3 tahun, 8 bulan, 20 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "22070025",
@@ -694,14 +871,18 @@
     "joinDate": "25/07/2022",
     "branch": "TANJUNGPINANG",
     "rawBranch": "011-TPG",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "4.3",
     "tenureText": "4 tahun, 3 bulan, 1 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_22070025.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "19060017",
@@ -710,14 +891,18 @@
     "joinDate": "17/06/2019",
     "branch": "PAMEKASAN",
     "rawBranch": "014-PKS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "7.4",
     "tenureText": "7 tahun, 4 bulan, 9 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_19060017.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "19020011",
@@ -726,14 +911,18 @@
     "joinDate": "25/02/2019",
     "branch": "KARAWANG",
     "rawBranch": "015-KRW",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "7.7",
     "tenureText": "7 tahun, 8 bulan, 1 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "22100035",
@@ -742,14 +931,18 @@
     "joinDate": "06/10/2022",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "CS DAN ADMIN",
+    "position": "ADMIN",
     "tenureYears": "4.1",
     "tenureText": "4 tahun, 0 bulan, 20 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "CS DAN ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "22110037",
@@ -758,14 +951,18 @@
     "joinDate": "07/11/2022",
     "branch": "KARAWANG",
     "rawBranch": "015-KRW",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "4.0",
     "tenureText": "3 tahun, 11 bulan, 19 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_22110037.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "22110041",
@@ -774,14 +971,18 @@
     "joinDate": "23/11/2022",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "AUDIT SUPERVISOR",
+    "position": "LEADER/PIC",
     "tenureYears": "3.9",
     "tenureText": "3 tahun, 11 bulan, 3 hari",
-    "roleStatus": "Audit",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_22110041.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "AUDIT SUPERVISOR",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "22110044",
@@ -790,14 +991,18 @@
     "joinDate": "21/12/2022",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "ACCOUNTING",
+    "position": "ADMIN",
     "tenureYears": "3.9",
     "tenureText": "3 tahun, 10 bulan, 5 hari",
-    "roleStatus": "ACCT",
+    "roleStatus": "ADMIN KEUANGAN",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ACCOUNTING",
+    "roles": [
+      "ADMIN KEUANGAN"
+    ]
   },
   {
     "id": "23010004",
@@ -806,14 +1011,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010005",
@@ -822,14 +1031,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_23010005.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010006",
@@ -838,14 +1051,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "23010008",
@@ -854,14 +1071,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "ADMIN SERVICE",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ADMIN SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010011",
@@ -870,14 +1091,19 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "TEKNISI UB",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI UB, TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23010011.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI UB",
+    "roles": [
+      "TEKNISI UB",
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010012",
@@ -886,14 +1112,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010018",
@@ -902,14 +1132,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "ADMIN TRACKING",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN TRACKING HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23010018.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ADMIN TRACKING",
+    "roles": [
+      "ADMIN TRACKING HHP"
+    ]
   },
   {
     "id": "23010021",
@@ -918,14 +1152,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010023",
@@ -934,14 +1172,19 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI WELDER",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI WELDER, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010023.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI WELDER",
+    "roles": [
+      "TEKNISI WELDER",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010025",
@@ -950,14 +1193,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010026",
@@ -966,14 +1213,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010031",
@@ -982,14 +1233,18 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010031.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010046",
@@ -998,14 +1253,19 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI WELDER",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI WELDER, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010046.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI WELDER",
+    "roles": [
+      "TEKNISI WELDER",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010065",
@@ -1014,14 +1274,18 @@
     "joinDate": "26/12/2022",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010065.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010195",
@@ -1030,14 +1294,19 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME B2B",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI B2B, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME B2B",
+    "roles": [
+      "TEKNISI B2B",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010197",
@@ -1046,14 +1315,19 @@
     "joinDate": "26/12/2022",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME B2B",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI B2B, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME B2B",
+    "roles": [
+      "TEKNISI B2B",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23070264",
@@ -1062,14 +1336,18 @@
     "joinDate": "03/07/2023",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "Leader",
+    "position": "LEADER/PIC",
     "tenureYears": "3.3",
     "tenureText": "3 tahun, 3 bulan, 23 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "Leader",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23070265",
@@ -1078,14 +1356,18 @@
     "joinDate": "03/07/2023",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "3.3",
     "tenureText": "3 tahun, 3 bulan, 23 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23070265.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "23010035",
@@ -1094,14 +1376,18 @@
     "joinDate": "26/12/2022",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23010037",
@@ -1110,14 +1396,18 @@
     "joinDate": "26/12/2022",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "CS DAN ADMIN",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_23010037.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "CS DAN ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010038",
@@ -1126,14 +1416,18 @@
     "joinDate": "26/12/2022",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "23010039",
@@ -1142,14 +1436,18 @@
     "joinDate": "26/12/2022",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010040",
@@ -1158,14 +1456,18 @@
     "joinDate": "26/12/2022",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010045",
@@ -1174,14 +1476,18 @@
     "joinDate": "26/12/2022",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010047",
@@ -1190,14 +1496,18 @@
     "joinDate": "26/12/2022",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "DRIVER",
+    "position": "HELPER",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Driver",
+    "roleStatus": "DRIVER",
     "status": "AKTIF",
     "photo": "photos/emp_23010047.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "DRIVER",
+    "roles": [
+      "DRIVER"
+    ]
   },
   {
     "id": "23010041",
@@ -1206,14 +1516,18 @@
     "joinDate": "26/12/2022",
     "branch": "PROBOLINGGO",
     "rawBranch": "025-PBO",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.185Z"
+    "updatedAt": "2026-10-26T10:35:42.185Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010048",
@@ -1222,14 +1536,18 @@
     "joinDate": "26/12/2022",
     "branch": "PROBOLINGGO",
     "rawBranch": "025-PBO",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23010050",
@@ -1238,14 +1556,18 @@
     "joinDate": "26/12/2022",
     "branch": "PROBOLINGGO",
     "rawBranch": "025-PBO",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "22100034",
@@ -1254,14 +1576,19 @@
     "joinDate": "03/10/2022",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI UB",
+    "position": "TEKNISI",
     "tenureYears": "4.1",
     "tenureText": "4 tahun, 0 bulan, 23 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI UB, TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_22100034.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI UB",
+    "roles": [
+      "TEKNISI UB",
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010061",
@@ -1270,14 +1597,18 @@
     "joinDate": "26/12/2022",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN",
     "status": "AKTIF",
     "photo": "photos/emp_23010061.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN"
+    ]
   },
   {
     "id": "23010062",
@@ -1286,14 +1617,18 @@
     "joinDate": "26/12/2022",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010062.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010063",
@@ -1302,14 +1637,18 @@
     "joinDate": "26/12/2022",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010063.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010071",
@@ -1318,14 +1657,18 @@
     "joinDate": "26/12/2022",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "SECURITY",
+    "position": "HELPER",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Security",
+    "roleStatus": "SECURITY",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "SECURITY",
+    "roles": [
+      "SECURITY"
+    ]
   },
   {
     "id": "23010072",
@@ -1334,14 +1677,18 @@
     "joinDate": "26/12/2022",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "DRIVER",
+    "position": "HELPER",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Driver",
+    "roleStatus": "DRIVER",
     "status": "AKTIF",
     "photo": "photos/emp_23010072.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "DRIVER",
+    "roles": [
+      "DRIVER"
+    ]
   },
   {
     "id": "23070273",
@@ -1350,14 +1697,18 @@
     "joinDate": "24/07/2023",
     "branch": "DENPASAR - PLANET GADGET",
     "rawBranch": "027-DPG",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.3",
     "tenureText": "3 tahun, 3 bulan, 2 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_23070273.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23010090",
@@ -1366,14 +1717,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "ADMIN SERVICE",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_23010090.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010091",
@@ -1382,14 +1737,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_23010091.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23010098",
@@ -1398,14 +1757,19 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI IN HOME B2B",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI B2B, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010098.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME B2B",
+    "roles": [
+      "TEKNISI B2B",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010099",
@@ -1414,14 +1778,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010099.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010101",
@@ -1430,14 +1798,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010101.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010104",
@@ -1446,14 +1818,19 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI WELDER",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI WELDER, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010104.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI WELDER",
+    "roles": [
+      "TEKNISI WELDER",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010106",
@@ -1462,14 +1839,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "DRIVER",
+    "position": "HELPER",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Driver",
+    "roleStatus": "DRIVER",
     "status": "AKTIF",
     "photo": "photos/emp_23010106.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "DRIVER",
+    "roles": [
+      "DRIVER"
+    ]
   },
   {
     "id": "23010109",
@@ -1478,14 +1859,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "ASS LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Ass Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_23010109.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ASS LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23010131",
@@ -1494,14 +1879,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "CS DAN ADMIN",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_23010131.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CS DAN ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010110",
@@ -1510,14 +1899,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "CS DAN ADMIN",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CS DAN ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010111",
@@ -1526,14 +1919,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "ADMIN PART HHP",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23010111.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART HHP",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "23010113",
@@ -1542,14 +1939,18 @@
     "joinDate": "26/12/2022",
     "branch": "KENDARI",
     "rawBranch": "032-KDI",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_23010113.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23010115",
@@ -1558,14 +1959,18 @@
     "joinDate": "26/12/2022",
     "branch": "PALU",
     "rawBranch": "035-PLU",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_23010115.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23010126",
@@ -1574,14 +1979,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAMUJU",
     "rawBranch": "034-MMJ",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_23010126.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23010128",
@@ -1590,14 +1999,19 @@
     "joinDate": "26/12/2022",
     "branch": "MAMUJU",
     "rawBranch": "034-MMJ",
-    "position": "TEKNISI CE & HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI HHP, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_23010128.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI CE & HHP",
+    "roles": [
+      "TEKNISI HHP",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010132",
@@ -1606,14 +2020,18 @@
     "joinDate": "26/12/2022",
     "branch": "PALU",
     "rawBranch": "035-PLU",
-    "position": "CS DAN ADMIN",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_23010132.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CS DAN ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010133",
@@ -1622,14 +2040,18 @@
     "joinDate": "26/12/2022",
     "branch": "PALU",
     "rawBranch": "035-PLU",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010161",
@@ -1638,14 +2060,18 @@
     "joinDate": "26/12/2022",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "ASS MANAGER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "AM",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_23010161.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ASS MANAGER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23010164",
@@ -1654,14 +2080,19 @@
     "joinDate": "26/12/2022",
     "branch": "AMBON",
     "rawBranch": "041-ABN",
-    "position": "LEADER BACK UP CS",
+    "position": "LEADER/PIC",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC, CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_23010164.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER BACK UP CS",
+    "roles": [
+      "PIC",
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010166",
@@ -1670,14 +2101,18 @@
     "joinDate": "26/12/2022",
     "branch": "AMBON",
     "rawBranch": "041-ABN",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23010166.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23020216",
@@ -1686,14 +2121,18 @@
     "joinDate": "13/02/2023",
     "branch": "SAMPIT",
     "rawBranch": "016-SPT",
-    "position": "PIC",
+    "position": "LEADER/PIC",
     "tenureYears": "3.7",
     "tenureText": "3 tahun, 8 bulan, 13 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "PIC",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23030226",
@@ -1702,14 +2141,18 @@
     "joinDate": "23/03/2023",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "3.6",
     "tenureText": "3 tahun, 7 bulan, 3 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010145",
@@ -1718,14 +2161,18 @@
     "joinDate": "26/12/2022",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "CS DAN ADMIN",
+    "position": "ADMIN",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_23010145.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CS DAN ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23050242",
@@ -1734,14 +2181,18 @@
     "joinDate": "24/05/2023",
     "branch": "BONTANG",
     "rawBranch": "013-BTG",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.4",
     "tenureText": "3 tahun, 5 bulan, 2 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23050242.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23060255",
@@ -1750,14 +2201,18 @@
     "joinDate": "05/06/2023",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.4",
     "tenureText": "3 tahun, 4 bulan, 21 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23060256",
@@ -1766,14 +2221,18 @@
     "joinDate": "05/06/2023",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.4",
     "tenureText": "3 tahun, 4 bulan, 21 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010154",
@@ -1782,14 +2241,18 @@
     "joinDate": "26/12/2022",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23010154.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010173",
@@ -1798,14 +2261,18 @@
     "joinDate": "26/12/2022",
     "branch": "KUPANG",
     "rawBranch": "042-KPG",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23010173.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010167",
@@ -1814,14 +2281,19 @@
     "joinDate": "26/12/2022",
     "branch": "JAYAPURA",
     "rawBranch": "045-JYP",
-    "position": "TEKNISI IN HOME DAN CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME DAN CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "18110043",
@@ -1830,14 +2302,18 @@
     "joinDate": "14/11/2018",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "TECHNICAL SUPPORT",
+    "position": "TEKNISI",
     "tenureYears": "8.0",
     "tenureText": "7 tahun, 11 bulan, 12 hari",
-    "roleStatus": "TS",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_18110043.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TECHNICAL SUPPORT",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23010100",
@@ -1846,14 +2322,18 @@
     "joinDate": "26/12/2022",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "TECHNICAL SUPPORT",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "TS",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23010100.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TECHNICAL SUPPORT",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23090290",
@@ -1862,14 +2342,18 @@
     "joinDate": "11/09/2023",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "IT",
+    "position": "ADMIN",
     "tenureYears": "3.1",
     "tenureText": "3 tahun, 1 bulan, 15 hari",
-    "roleStatus": "IT",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "IT",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23090292",
@@ -1878,14 +2362,18 @@
     "joinDate": "18/09/2023",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.1",
     "tenureText": "3 tahun, 1 bulan, 8 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23090293",
@@ -1894,14 +2382,18 @@
     "joinDate": "20/09/2023",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "Leader",
+    "position": "LEADER/PIC",
     "tenureYears": "3.1",
     "tenureText": "3 tahun, 1 bulan, 6 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_23090293.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "Leader",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23090295",
@@ -1910,14 +2402,18 @@
     "joinDate": "20/09/2023",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.1",
     "tenureText": "3 tahun, 1 bulan, 6 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23090296",
@@ -1926,14 +2422,18 @@
     "joinDate": "21/09/2023",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "ACCOUNTING",
+    "position": "ADMIN",
     "tenureYears": "3.1",
     "tenureText": "3 tahun, 1 bulan, 5 hari",
-    "roleStatus": "ACCT",
+    "roleStatus": "ADMIN KEUANGAN",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ACCOUNTING",
+    "roles": [
+      "ADMIN KEUANGAN"
+    ]
   },
   {
     "id": "23110310",
@@ -1942,14 +2442,18 @@
     "joinDate": "06/10/2023",
     "branch": "BENGKULU",
     "rawBranch": "010-BKL",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "3.1",
     "tenureText": "3 tahun, 0 bulan, 20 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_23110310.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "23100302",
@@ -1958,14 +2462,18 @@
     "joinDate": "09/10/2023",
     "branch": "PAMEKASAN",
     "rawBranch": "014-PKS",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.1",
     "tenureText": "3 tahun, 0 bulan, 17 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23100302.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23100305",
@@ -1974,14 +2482,18 @@
     "joinDate": "23/10/2023",
     "branch": "KARAWANG",
     "rawBranch": "015-KRW",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.0",
     "tenureText": "3 tahun, 0 bulan, 3 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23100305.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23110307",
@@ -1990,14 +2502,18 @@
     "joinDate": "01/11/2023",
     "branch": "BENGKULU",
     "rawBranch": "010-BKL",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "3.0",
     "tenureText": "2 tahun, 11 bulan, 25 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23120318",
@@ -2006,14 +2522,18 @@
     "joinDate": "06/12/2023",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "CS DAN ADMIN",
+    "position": "ADMIN",
     "tenureYears": "2.9",
     "tenureText": "2 tahun, 10 bulan, 20 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_23120318.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CS DAN ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23120321",
@@ -2022,14 +2542,18 @@
     "joinDate": "18/12/2023",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "TECHNICAL SUPPORT",
+    "position": "TEKNISI",
     "tenureYears": "2.9",
     "tenureText": "2 tahun, 10 bulan, 8 hari",
-    "roleStatus": "TS",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23120321.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TECHNICAL SUPPORT",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "23120322",
@@ -2038,14 +2562,19 @@
     "joinDate": "18/12/2023",
     "branch": "KARAWANG",
     "rawBranch": "015-KRW",
-    "position": "TEKNISI UB",
+    "position": "TEKNISI",
     "tenureYears": "2.9",
     "tenureText": "2 tahun, 10 bulan, 8 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI UB, TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23120322.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI UB",
+    "roles": [
+      "TEKNISI UB",
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24010005",
@@ -2054,14 +2583,18 @@
     "joinDate": "15/01/2024",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.8",
     "tenureText": "2 tahun, 9 bulan, 11 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24010005.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24020013",
@@ -2070,14 +2603,18 @@
     "joinDate": "05/02/2024",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.7",
     "tenureText": "2 tahun, 8 bulan, 21 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24020013.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24020014",
@@ -2086,14 +2623,19 @@
     "joinDate": "05/02/2024",
     "branch": "AMBON",
     "rawBranch": "041-ABN",
-    "position": "TEKNISI IN HOME DAN CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "2.7",
     "tenureText": "2 tahun, 8 bulan, 21 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_24020014.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME DAN CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24020015",
@@ -2102,14 +2644,18 @@
     "joinDate": "12/02/2024",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.7",
     "tenureText": "2 tahun, 8 bulan, 14 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24030024",
@@ -2118,14 +2664,18 @@
     "joinDate": "13/03/2024",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.6",
     "tenureText": "2 tahun, 7 bulan, 13 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24040034",
@@ -2134,14 +2684,18 @@
     "joinDate": "17/04/2024",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "ADMIN PART CE",
+    "position": "ADMIN",
     "tenureYears": "2.5",
     "tenureText": "2 tahun, 6 bulan, 9 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART CE",
     "status": "AKTIF",
     "photo": "photos/emp_24040034.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART CE",
+    "roles": [
+      "ADMIN PART CE"
+    ]
   },
   {
     "id": "24040039",
@@ -2150,14 +2704,18 @@
     "joinDate": "24/04/2024",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.5",
     "tenureText": "2 tahun, 6 bulan, 2 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24040040",
@@ -2166,14 +2724,18 @@
     "joinDate": "25/04/2024",
     "branch": "PANGKALAN BUN",
     "rawBranch": "017-PBN",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "2.5",
     "tenureText": "2 tahun, 6 bulan, 1 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_24040040.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24050042",
@@ -2182,14 +2744,18 @@
     "joinDate": "02/05/2024",
     "branch": "SORONG",
     "rawBranch": "044-SRO",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.5",
     "tenureText": "2 tahun, 5 bulan, 24 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24050042.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24050043",
@@ -2198,14 +2764,19 @@
     "joinDate": "06/05/2024",
     "branch": "TERNATE",
     "rawBranch": "040-TNT",
-    "position": "TEKNISI CE DAN TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.5",
     "tenureText": "2 tahun, 5 bulan, 20 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI HHP, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_24050043.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI CE DAN TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24050047",
@@ -2214,14 +2785,18 @@
     "joinDate": "13/05/2024",
     "branch": "PALANGKARAYA",
     "rawBranch": "004-PKY",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.5",
     "tenureText": "2 tahun, 5 bulan, 13 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24050047.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24050049",
@@ -2230,14 +2805,19 @@
     "joinDate": "13/05/2024",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "TEKNISI UB",
+    "position": "TEKNISI",
     "tenureYears": "2.5",
     "tenureText": "2 tahun, 5 bulan, 13 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI UB, TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI UB",
+    "roles": [
+      "TEKNISI UB",
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24050050",
@@ -2246,14 +2826,19 @@
     "joinDate": "15/05/2024",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "ACCOUNTING SUPERVISOR",
+    "position": "LEADER/PIC",
     "tenureYears": "2.5",
     "tenureText": "2 tahun, 5 bulan, 11 hari",
-    "roleStatus": "ACCT",
+    "roleStatus": "PIC, ADMIN KEUANGAN",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ACCOUNTING SUPERVISOR",
+    "roles": [
+      "PIC",
+      "ADMIN KEUANGAN"
+    ]
   },
   {
     "id": "24050051",
@@ -2262,14 +2847,18 @@
     "joinDate": "16/05/2024",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.4",
     "tenureText": "2 tahun, 5 bulan, 10 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24050051.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24050055",
@@ -2278,14 +2867,18 @@
     "joinDate": "20/05/2024",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "2.4",
     "tenureText": "2 tahun, 5 bulan, 6 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_24050055.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "24060061",
@@ -2294,14 +2887,18 @@
     "joinDate": "03/06/2024",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "2.4",
     "tenureText": "2 tahun, 4 bulan, 23 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24060061.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "24060063",
@@ -2310,14 +2907,18 @@
     "joinDate": "03/06/2024",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.4",
     "tenureText": "2 tahun, 4 bulan, 23 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24060063.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24060068",
@@ -2326,14 +2927,18 @@
     "joinDate": "24/06/2024",
     "branch": "PANGKAL PINANG",
     "rawBranch": "009-PPG",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.3",
     "tenureText": "2 tahun, 4 bulan, 2 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24060068.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24060069",
@@ -2345,11 +2950,15 @@
     "position": "ADMIN",
     "tenureYears": "2.3",
     "tenureText": "2 tahun, 4 bulan, 2 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "24060073",
@@ -2361,11 +2970,15 @@
     "position": "ADMIN",
     "tenureYears": "2.3",
     "tenureText": "2 tahun, 4 bulan, 0 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "24070075",
@@ -2374,14 +2987,18 @@
     "joinDate": "01/07/2024",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.3",
     "tenureText": "2 tahun, 3 bulan, 25 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24070075.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24070082",
@@ -2390,14 +3007,18 @@
     "joinDate": "08/07/2024",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.3",
     "tenureText": "2 tahun, 3 bulan, 18 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24070082.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24070084",
@@ -2406,14 +3027,18 @@
     "joinDate": "10/07/2024",
     "branch": "BENGKULU",
     "rawBranch": "010-BKL",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "2.3",
     "tenureText": "2 tahun, 3 bulan, 16 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_24070084.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "24070087",
@@ -2422,14 +3047,18 @@
     "joinDate": "22/07/2024",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "AUDIT",
+    "position": "ADMIN",
     "tenureYears": "2.3",
     "tenureText": "2 tahun, 3 bulan, 4 hari",
-    "roleStatus": "Audit",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "AUDIT",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "24070088",
@@ -2438,14 +3067,18 @@
     "joinDate": "24/07/2024",
     "branch": "SINGARAJA",
     "rawBranch": "029-SGJ",
-    "position": "PIC",
+    "position": "LEADER/PIC",
     "tenureYears": "2.3",
     "tenureText": "2 tahun, 3 bulan, 2 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "PIC",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "24080091",
@@ -2454,14 +3087,18 @@
     "joinDate": "01/08/2024",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "2.2",
     "tenureText": "2 tahun, 2 bulan, 25 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24080094",
@@ -2470,14 +3107,19 @@
     "joinDate": "07/08/2024",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "Koordinator IH dan Teknisi CE Carry IN",
+    "position": "LEADER/PIC",
     "tenureYears": "2.2",
     "tenureText": "2 tahun, 2 bulan, 19 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "PIC, TEKNISI CE CARRY IN",
     "status": "AKTIF",
     "photo": "photos/emp_24080094.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "Koordinator IH dan Teknisi CE Carry IN",
+    "roles": [
+      "PIC",
+      "TEKNISI CE CARRY IN"
+    ]
   },
   {
     "id": "24080099",
@@ -2486,14 +3128,18 @@
     "joinDate": "26/08/2024",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "2.2",
     "tenureText": "2 tahun, 2 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24080100",
@@ -2502,14 +3148,18 @@
     "joinDate": "26/08/2024",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "OFFICE BOY",
+    "position": "HELPER",
     "tenureYears": "2.2",
     "tenureText": "2 tahun, 2 bulan, 0 hari",
     "roleStatus": "OB",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "OFFICE BOY",
+    "roles": [
+      "OB"
+    ]
   },
   {
     "id": "24090103",
@@ -2518,14 +3168,18 @@
     "joinDate": "04/09/2024",
     "branch": "KARAWANG",
     "rawBranch": "015-KRW",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 22 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_24090103.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24090104",
@@ -2534,14 +3188,18 @@
     "joinDate": "09/09/2024",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 17 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_24090104.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24090105",
@@ -2550,14 +3208,19 @@
     "joinDate": "09/09/2024",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI UB",
+    "position": "TEKNISI",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 17 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI UB, TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24090105.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI UB",
+    "roles": [
+      "TEKNISI UB",
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24090106",
@@ -2566,14 +3229,18 @@
     "joinDate": "11/09/2024",
     "branch": "PALOPO",
     "rawBranch": "033-PLP",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 15 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24090106.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24090107",
@@ -2582,14 +3249,19 @@
     "joinDate": "18/09/2024",
     "branch": "PALANGKARAYA",
     "rawBranch": "004-PKY",
-    "position": "TEKNISI INHOME DAN CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 8 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_24090107.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI INHOME DAN CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24090108",
@@ -2598,14 +3270,18 @@
     "joinDate": "18/09/2024",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 8 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24090108.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24090109",
@@ -2614,14 +3290,18 @@
     "joinDate": "18/09/2024",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 8 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24090109.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24090110",
@@ -2630,14 +3310,18 @@
     "joinDate": "18/09/2024",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "SERVICE TRACKING",
+    "position": "ADMIN",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 8 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN TRACKING HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24090110.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "SERVICE TRACKING",
+    "roles": [
+      "ADMIN TRACKING HHP"
+    ]
   },
   {
     "id": "24090111",
@@ -2646,14 +3330,18 @@
     "joinDate": "23/09/2024",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 3 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24090111.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24090118",
@@ -2662,14 +3350,18 @@
     "joinDate": "24/09/2024",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 2 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_24090118.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "24090112",
@@ -2678,14 +3370,18 @@
     "joinDate": "25/09/2024",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 1 bulan, 1 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24090112.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "24100114",
@@ -2694,14 +3390,18 @@
     "joinDate": "07/10/2024",
     "branch": "SERPONG ITC-BSD",
     "rawBranch": "021-SRT",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "2.1",
     "tenureText": "2 tahun, 0 bulan, 19 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "24100116",
@@ -2710,14 +3410,18 @@
     "joinDate": "14/10/2024",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "2.0",
     "tenureText": "2 tahun, 0 bulan, 12 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_24100116.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "24100120",
@@ -2726,14 +3430,18 @@
     "joinDate": "23/10/2024",
     "branch": "KENDARI",
     "rawBranch": "032-KDI",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "2.0",
     "tenureText": "2 tahun, 0 bulan, 3 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24110125",
@@ -2742,14 +3450,18 @@
     "joinDate": "25/11/2024",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.9",
     "tenureText": "1 tahun, 11 bulan, 1 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_24110125.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24120129",
@@ -2758,14 +3470,18 @@
     "joinDate": "16/12/2024",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "1.9",
     "tenureText": "1 tahun, 10 bulan, 10 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_24120129.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "24120133",
@@ -2774,14 +3490,18 @@
     "joinDate": "18/12/2024",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "1.9",
     "tenureText": "1 tahun, 10 bulan, 8 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_24120133.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "24120135",
@@ -2790,14 +3510,18 @@
     "joinDate": "23/12/2024",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "1.8",
     "tenureText": "1 tahun, 10 bulan, 3 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_24120135.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "25001001",
@@ -2806,14 +3530,18 @@
     "joinDate": "02/01/2025",
     "branch": "KENDARI",
     "rawBranch": "032-KDI",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "1.8",
     "tenureText": "1 tahun, 9 bulan, 24 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25001001.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "25001002",
@@ -2822,14 +3550,18 @@
     "joinDate": "02/01/2025",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "ADMIN TRACKING HHP",
+    "position": "ADMIN",
     "tenureYears": "1.8",
     "tenureText": "1 tahun, 9 bulan, 24 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN TRACKING HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25001002.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN TRACKING HHP",
+    "roles": [
+      "ADMIN TRACKING HHP"
+    ]
   },
   {
     "id": "25001004",
@@ -2838,14 +3570,18 @@
     "joinDate": "02/01/2025",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.8",
     "tenureText": "1 tahun, 9 bulan, 24 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25001006",
@@ -2854,14 +3590,18 @@
     "joinDate": "13/01/2025",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.8",
     "tenureText": "1 tahun, 9 bulan, 13 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25001007",
@@ -2870,14 +3610,18 @@
     "joinDate": "15/01/2025",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.8",
     "tenureText": "1 tahun, 9 bulan, 11 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25001008",
@@ -2886,14 +3630,18 @@
     "joinDate": "16/01/2025",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "1.8",
     "tenureText": "1 tahun, 9 bulan, 10 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_25001008.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "25001011",
@@ -2902,14 +3650,18 @@
     "joinDate": "30/01/2025",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.7",
     "tenureText": "1 tahun, 8 bulan, 26 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25001011.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25001013",
@@ -2918,14 +3670,18 @@
     "joinDate": "30/01/2025",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.7",
     "tenureText": "1 tahun, 8 bulan, 26 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25001015",
@@ -2934,14 +3690,18 @@
     "joinDate": "28/04/2025",
     "branch": "TIMIKA",
     "rawBranch": "046-TMK",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 5 bulan, 28 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25001015.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25001017",
@@ -2950,14 +3710,18 @@
     "joinDate": "26/02/2025",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.7",
     "tenureText": "1 tahun, 8 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25001017.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25001018",
@@ -2966,14 +3730,18 @@
     "joinDate": "10/04/2025",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 6 bulan, 16 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_25001018.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "25001020",
@@ -2982,14 +3750,18 @@
     "joinDate": "26/02/2025",
     "branch": "BERAU",
     "rawBranch": "049-BRU",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.7",
     "tenureText": "1 tahun, 8 bulan, 0 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25001020.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25002023",
@@ -2998,14 +3770,18 @@
     "joinDate": "12/02/2025",
     "branch": "GORONTALO",
     "rawBranch": "037-GTO",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.7",
     "tenureText": "1 tahun, 8 bulan, 14 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "02011045",
@@ -3014,14 +3790,18 @@
     "joinDate": "17/07/2024",
     "branch": "SIDOARJO",
     "rawBranch": "024-SDJ",
-    "position": "TECHNICAL SUPPORT",
+    "position": "TEKNISI",
     "tenureYears": "2.3",
     "tenureText": "2 tahun, 3 bulan, 9 hari",
-    "roleStatus": "TS",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_02011045.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TECHNICAL SUPPORT",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25002027",
@@ -3030,14 +3810,19 @@
     "joinDate": "17/02/2025",
     "branch": "GORONTALO",
     "rawBranch": "037-GTO",
-    "position": "TEKNISI INHOME DAN CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "1.7",
     "tenureText": "1 tahun, 8 bulan, 9 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25002027.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI INHOME DAN CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25002028",
@@ -3046,14 +3831,18 @@
     "joinDate": "24/02/2025",
     "branch": "BONTANG",
     "rawBranch": "013-BTG",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "1.7",
     "tenureText": "1 tahun, 8 bulan, 2 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_25002028.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "25002029",
@@ -3062,14 +3851,19 @@
     "joinDate": "26/02/2025",
     "branch": "TERNATE",
     "rawBranch": "040-TNT",
-    "position": "LEADER DAN TEKNISI CE",
+    "position": "LEADER/PIC",
     "tenureYears": "1.7",
     "tenureText": "1 tahun, 8 bulan, 0 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25002029.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER DAN TEKNISI CE",
+    "roles": [
+      "PIC",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "24060064",
@@ -3078,14 +3872,18 @@
     "joinDate": "10/06/2024",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "2.4",
     "tenureText": "2 tahun, 4 bulan, 16 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25002030",
@@ -3094,14 +3892,18 @@
     "joinDate": "14/04/2025",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "ADMIN TRACKING",
+    "position": "ADMIN",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 6 bulan, 12 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN TRACKING HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25002030.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN TRACKING",
+    "roles": [
+      "ADMIN TRACKING HHP"
+    ]
   },
   {
     "id": "25002032",
@@ -3110,14 +3912,18 @@
     "joinDate": "07/05/2025",
     "branch": "DENPASAR - CELLULAR WORLD",
     "rawBranch": "028-DCW",
-    "position": "PIC",
+    "position": "LEADER/PIC",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 5 bulan, 19 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_25002032.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "PIC",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "25002033",
@@ -3126,14 +3932,18 @@
     "joinDate": "11/04/2025",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 6 bulan, 15 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25002033.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25004039",
@@ -3142,14 +3952,18 @@
     "joinDate": "07/06/2025",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.4",
     "tenureText": "1 tahun, 4 bulan, 19 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25004040",
@@ -3158,14 +3972,18 @@
     "joinDate": "01/07/2025",
     "branch": "LUWUK",
     "rawBranch": "036-LWK",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.3",
     "tenureText": "1 tahun, 3 bulan, 25 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25004041",
@@ -3174,14 +3992,18 @@
     "joinDate": "01/10/2025",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.1",
     "tenureText": "1 tahun, 0 bulan, 25 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25004043",
@@ -3190,14 +4012,18 @@
     "joinDate": "25/09/2025",
     "branch": "LUWUK",
     "rawBranch": "036-LWK",
-    "position": "PIC",
+    "position": "LEADER/PIC",
     "tenureYears": "1.1",
     "tenureText": "1 tahun, 1 bulan, 1 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "PIC",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "25004044",
@@ -3206,14 +4032,18 @@
     "joinDate": "25/09/2025",
     "branch": "PALOPO",
     "rawBranch": "033-PLP",
-    "position": "ADMIN SERVICE",
+    "position": "ADMIN",
     "tenureYears": "1.1",
     "tenureText": "1 tahun, 1 bulan, 1 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "25004045",
@@ -3222,14 +4052,18 @@
     "joinDate": "24/07/2025",
     "branch": "DENPASAR - CELLULAR WORLD",
     "rawBranch": "028-DCW",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.3",
     "tenureText": "1 tahun, 3 bulan, 2 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25004048",
@@ -3238,14 +4072,18 @@
     "joinDate": "07/08/2025",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.2",
     "tenureText": "1 tahun, 2 bulan, 19 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25004049",
@@ -3254,14 +4092,18 @@
     "joinDate": "29/09/2025",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.1",
     "tenureText": "1 tahun, 0 bulan, 27 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25004051",
@@ -3270,14 +4112,19 @@
     "joinDate": "04/08/2025",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI WELDER",
+    "position": "TEKNISI",
     "tenureYears": "1.2",
     "tenureText": "1 tahun, 2 bulan, 22 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI WELDER, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI WELDER",
+    "roles": [
+      "TEKNISI WELDER",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25005052",
@@ -3286,14 +4133,18 @@
     "joinDate": "05/05/2025",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 5 bulan, 21 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25005052.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "25005055",
@@ -3302,14 +4153,18 @@
     "joinDate": "05/05/2025",
     "branch": "PALOPO",
     "rawBranch": "033-PLP",
-    "position": "PIC",
+    "position": "LEADER/PIC",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 5 bulan, 21 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_25005055.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "PIC",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "25005057",
@@ -3318,14 +4173,18 @@
     "joinDate": "14/05/2025",
     "branch": "BANDAR LAMPUNG",
     "rawBranch": "007-LPG",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 5 bulan, 12 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25005057.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25005058",
@@ -3334,14 +4193,18 @@
     "joinDate": "14/05/2025",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 5 bulan, 12 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25005058.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25005059",
@@ -3350,14 +4213,18 @@
     "joinDate": "15/05/2025",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 5 bulan, 11 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25005059.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25006065",
@@ -3366,14 +4233,19 @@
     "joinDate": "09/06/2025",
     "branch": "JAYAPURA",
     "rawBranch": "045-JYP",
-    "position": "LEADER BACK UP ADMIN PART",
+    "position": "LEADER/PIC",
     "tenureYears": "1.4",
     "tenureText": "1 tahun, 4 bulan, 17 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC, ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25006065.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER BACK UP ADMIN PART",
+    "roles": [
+      "PIC",
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "25006068",
@@ -3382,14 +4254,18 @@
     "joinDate": "16/06/2025",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "ADMIN TRACKING",
+    "position": "ADMIN",
     "tenureYears": "1.4",
     "tenureText": "1 tahun, 4 bulan, 10 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN TRACKING HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN TRACKING",
+    "roles": [
+      "ADMIN TRACKING HHP"
+    ]
   },
   {
     "id": "25006070",
@@ -3398,14 +4274,18 @@
     "joinDate": "23/06/2025",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.3",
     "tenureText": "1 tahun, 4 bulan, 3 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25006071",
@@ -3414,14 +4294,18 @@
     "joinDate": "23/06/2025",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.3",
     "tenureText": "1 tahun, 4 bulan, 3 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25006072",
@@ -3430,14 +4314,18 @@
     "joinDate": "23/06/2025",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.3",
     "tenureText": "1 tahun, 4 bulan, 3 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25006072.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25007075",
@@ -3446,14 +4334,18 @@
     "joinDate": "09/07/2025",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "1.3",
     "tenureText": "1 tahun, 3 bulan, 17 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN"
+    ]
   },
   {
     "id": "25007076",
@@ -3462,14 +4354,19 @@
     "joinDate": "14/07/2025",
     "branch": "PALU",
     "rawBranch": "035-PLU",
-    "position": "TEKNISI INHOME DAN CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "1.3",
     "tenureText": "1 tahun, 3 bulan, 12 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25007076.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI INHOME DAN CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25007080",
@@ -3478,14 +4375,19 @@
     "joinDate": "08/09/2025",
     "branch": "PALOPO",
     "rawBranch": "033-PLP",
-    "position": "TEKNISI INHOME DAN CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "1.1",
     "tenureText": "1 tahun, 1 bulan, 18 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI INHOME DAN CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25007081",
@@ -3494,14 +4396,18 @@
     "joinDate": "20/09/2025",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.1",
     "tenureText": "1 tahun, 1 bulan, 6 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25007082",
@@ -3510,14 +4416,18 @@
     "joinDate": "25/10/2025",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.0",
     "tenureText": "1 tahun, 0 bulan, 1 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25007083",
@@ -3526,14 +4436,18 @@
     "joinDate": "01/09/2025",
     "branch": "BONTANG",
     "rawBranch": "013-BTG",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.2",
     "tenureText": "1 tahun, 1 bulan, 25 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25011203",
@@ -3542,14 +4456,19 @@
     "joinDate": "15/11/2025",
     "branch": "SORONG",
     "rawBranch": "044-SRO",
-    "position": "LEADER DAN TEKNISI CE",
+    "position": "LEADER/PIC",
     "tenureYears": "0.9",
     "tenureText": "0 tahun, 11 bulan, 11 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER DAN TEKNISI CE",
+    "roles": [
+      "PIC",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25007085",
@@ -3558,14 +4477,18 @@
     "joinDate": "20/10/2025",
     "branch": "DENPASAR - CELLULAR WORLD",
     "rawBranch": "028-DCW",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.0",
     "tenureText": "1 tahun, 0 bulan, 6 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25007086",
@@ -3574,14 +4497,18 @@
     "joinDate": "28/07/2025",
     "branch": "BANDAR JAYA",
     "rawBranch": "018-BDJ",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.2",
     "tenureText": "1 tahun, 2 bulan, 28 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25007086.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25007087",
@@ -3590,14 +4517,18 @@
     "joinDate": "01/07/2025",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.3",
     "tenureText": "1 tahun, 3 bulan, 25 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25007087.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25008089",
@@ -3606,14 +4537,18 @@
     "joinDate": "13/08/2025",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "1.2",
     "tenureText": "1 tahun, 2 bulan, 13 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25008089.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "25008090",
@@ -3622,14 +4557,18 @@
     "joinDate": "18/08/2025",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.2",
     "tenureText": "1 tahun, 2 bulan, 8 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_25008090.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25009092",
@@ -3638,14 +4577,18 @@
     "joinDate": "18/09/2025",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "1.1",
     "tenureText": "1 tahun, 1 bulan, 8 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25009092.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25010093",
@@ -3654,14 +4597,18 @@
     "joinDate": "09/10/2025",
     "branch": "KARAWANG",
     "rawBranch": "015-KRW",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.0",
     "tenureText": "1 tahun, 0 bulan, 17 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25010094",
@@ -3670,14 +4617,18 @@
     "joinDate": "29/10/2025",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "1.0",
     "tenureText": "0 tahun, 11 bulan, 27 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25012098",
@@ -3686,14 +4637,18 @@
     "joinDate": "08/12/2025",
     "branch": "KARAWANG",
     "rawBranch": "015-KRW",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "0.9",
     "tenureText": "0 tahun, 10 bulan, 18 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26001001",
@@ -3702,14 +4657,20 @@
     "joinDate": "07/01/2026",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "COORDINATOR IN HOME",
+    "position": "LEADER/PIC",
     "tenureYears": "0.8",
     "tenureText": "0 tahun, 9 bulan, 19 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "PIC, CUSTOMER SERVICE, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "COORDINATOR IN HOME",
+    "roles": [
+      "PIC",
+      "CUSTOMER SERVICE",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26001002",
@@ -3718,14 +4679,18 @@
     "joinDate": "12/01/2026",
     "branch": "AMBON",
     "rawBranch": "041-ABN",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.8",
     "tenureText": "0 tahun, 9 bulan, 14 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_26001002.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26001003",
@@ -3734,14 +4699,18 @@
     "joinDate": "26/01/2026",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "0.7",
     "tenureText": "0 tahun, 9 bulan, 0 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_26001003.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26001004",
@@ -3750,14 +4719,18 @@
     "joinDate": "28/01/2026",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "0.7",
     "tenureText": "0 tahun, 8 bulan, 28 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_26001004.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "26001005",
@@ -3766,14 +4739,18 @@
     "joinDate": "29/01/2026",
     "branch": "HO",
     "rawBranch": "HO",
-    "position": "CDM",
+    "position": "ADMIN",
     "tenureYears": "0.7",
     "tenureText": "0 tahun, 8 bulan, 27 hari",
-    "roleStatus": "CDM",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CDM",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26010101",
@@ -3782,14 +4759,18 @@
     "joinDate": "26/01/2026",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.7",
     "tenureText": "0 tahun, 9 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "25012099",
@@ -3798,14 +4779,18 @@
     "joinDate": "15/12/2025",
     "branch": "BANJARMASIN",
     "rawBranch": "003-BJM",
-    "position": "OFFICE BOY",
+    "position": "HELPER",
     "tenureYears": "0.9",
     "tenureText": "0 tahun, 10 bulan, 11 hari",
     "roleStatus": "OB",
     "status": "AKTIF",
     "photo": "photos/emp_25012099.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "OFFICE BOY",
+    "roles": [
+      "OB"
+    ]
   },
   {
     "id": "26002006",
@@ -3814,14 +4799,18 @@
     "joinDate": "20/02/2026",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "0.7",
     "tenureText": "0 tahun, 8 bulan, 6 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_26002006.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "23010107",
@@ -3830,14 +4819,18 @@
     "joinDate": "26/12/2022",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "OFFICE BOY",
+    "position": "HELPER",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
     "roleStatus": "OB",
     "status": "AKTIF",
     "photo": "photos/emp_23010107.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "OFFICE BOY",
+    "roles": [
+      "OB"
+    ]
   },
   {
     "id": "25004047",
@@ -3846,14 +4839,18 @@
     "joinDate": "24/04/2025",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "1.5",
     "tenureText": "1 tahun, 6 bulan, 2 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN"
+    ]
   },
   {
     "id": "25011206",
@@ -3862,14 +4859,18 @@
     "joinDate": "10/02/2026",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.7",
     "tenureText": "0 tahun, 8 bulan, 16 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26003011",
@@ -3878,14 +4879,19 @@
     "joinDate": "06/03/2026",
     "branch": "TIMIKA",
     "rawBranch": "046-TMK",
-    "position": "TEKNISI IN HOME DAN CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 20 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_26003011.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME DAN CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26003012",
@@ -3894,14 +4900,18 @@
     "joinDate": "09/03/2026",
     "branch": "GORONTALO",
     "rawBranch": "037-GTO",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 17 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_26003012.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "26010102",
@@ -3910,14 +4920,18 @@
     "joinDate": "02/03/2026",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.7",
     "tenureText": "0 tahun, 7 bulan, 24 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_26010102.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "26030014",
@@ -3926,14 +4940,18 @@
     "joinDate": "25/03/2026",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 1 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": "photos/emp_26030014.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "26030015",
@@ -3942,14 +4960,18 @@
     "joinDate": "25/03/2026",
     "branch": "SERPONG",
     "rawBranch": "022-SRP",
-    "position": "DRIVER",
+    "position": "HELPER",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 1 hari",
-    "roleStatus": "Driver",
+    "roleStatus": "DRIVER",
     "status": "AKTIF",
     "photo": "photos/emp_26030015.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "DRIVER",
+    "roles": [
+      "DRIVER"
+    ]
   },
   {
     "id": "26020104",
@@ -3958,14 +4980,18 @@
     "joinDate": "25/02/2026",
     "branch": "SINGKAWANG",
     "rawBranch": "012-SKW",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.7",
     "tenureText": "0 tahun, 8 bulan, 1 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_26020104.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "26020105",
@@ -3974,14 +5000,18 @@
     "joinDate": "06/04/2026",
     "branch": "BOJONEGORO",
     "rawBranch": "023-BJN",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 6 bulan, 20 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26030106",
@@ -3990,14 +5020,18 @@
     "joinDate": "04/03/2026",
     "branch": "PATI",
     "rawBranch": "019-PTI",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 22 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26030108",
@@ -4006,14 +5040,18 @@
     "joinDate": "04/03/2026",
     "branch": "KENDARI",
     "rawBranch": "032-KDI",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 22 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_26030108.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26030109",
@@ -4022,14 +5060,18 @@
     "joinDate": "04/03/2026",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 22 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_26030109.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "26030110",
@@ -4038,14 +5080,19 @@
     "joinDate": "04/03/2026",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI INHOME DAN CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 22 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_26030110.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI INHOME DAN CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26030111",
@@ -4054,14 +5101,18 @@
     "joinDate": "04/03/2026",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 22 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_26030111.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26030112",
@@ -4070,14 +5121,18 @@
     "joinDate": "04/03/2026",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.6",
     "tenureText": "0 tahun, 7 bulan, 22 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_26030112.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26040018",
@@ -4086,14 +5141,18 @@
     "joinDate": "04/05/2026",
     "branch": "KUPANG",
     "rawBranch": "042-KPG",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "0.5",
     "tenureText": "0 tahun, 5 bulan, 22 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_26040018.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.186Z"
+    "updatedAt": "2026-10-26T10:35:42.186Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "26050020",
@@ -4102,14 +5161,18 @@
     "joinDate": "11/05/2026",
     "branch": "PONTIANAK",
     "rawBranch": "002-PNK",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.5",
     "tenureText": "0 tahun, 5 bulan, 15 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "26050021",
@@ -4118,14 +5181,18 @@
     "joinDate": "18/05/2026",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.4",
     "tenureText": "0 tahun, 5 bulan, 8 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "23010158",
@@ -4134,14 +5201,18 @@
     "joinDate": "26/12/2022",
     "branch": "KUPANG",
     "rawBranch": "042-KPG",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "3.8",
     "tenureText": "3 tahun, 10 bulan, 0 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_23010158.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "24010009",
@@ -4150,14 +5221,19 @@
     "joinDate": "22/01/2024",
     "branch": "KUPANG",
     "rawBranch": "042-KPG",
-    "position": "TEKNISI IN HOME DAN CARRY IN",
+    "position": "TEKNISI",
     "tenureYears": "2.8",
     "tenureText": "2 tahun, 9 bulan, 4 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE CARRY IN, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_24010009.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI IN HOME DAN CARRY IN",
+    "roles": [
+      "TEKNISI CE CARRY IN",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "25011204",
@@ -4166,14 +5242,18 @@
     "joinDate": "06/02/2026",
     "branch": "DENPASAR - PLANET GADGET",
     "rawBranch": "027-DPG",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.7",
     "tenureText": "0 tahun, 8 bulan, 20 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_25011204.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "26060022",
@@ -4182,14 +5262,19 @@
     "joinDate": "02/06/2026",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI IN HOME B2B",
+    "position": "TEKNISI",
     "tenureYears": "0.4",
     "tenureText": "0 tahun, 4 bulan, 24 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI B2B, TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_26060022.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI IN HOME B2B",
+    "roles": [
+      "TEKNISI B2B",
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26060023",
@@ -4198,14 +5283,18 @@
     "joinDate": "03/06/2026",
     "branch": "",
     "rawBranch": "",
-    "position": "",
+    "position": "ADMIN",
     "tenureYears": "0.4",
     "tenureText": "0 tahun, 4 bulan, 23 hari",
-    "roleStatus": "",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26060024",
@@ -4214,14 +5303,18 @@
     "joinDate": "03/06/2026",
     "branch": "SRAGEN",
     "rawBranch": "020-SRG",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.4",
     "tenureText": "0 tahun, 4 bulan, 23 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_26060024.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "26060025",
@@ -4230,14 +5323,18 @@
     "joinDate": "03/06/2026",
     "branch": "",
     "rawBranch": "",
-    "position": "",
+    "position": "ADMIN",
     "tenureYears": "0.4",
     "tenureText": "0 tahun, 4 bulan, 23 hari",
-    "roleStatus": "",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26060026",
@@ -4246,14 +5343,18 @@
     "joinDate": "08/06/2026",
     "branch": "DENPASAR",
     "rawBranch": "026-DPS",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.4",
     "tenureText": "0 tahun, 4 bulan, 18 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "26070028",
@@ -4262,14 +5363,18 @@
     "joinDate": "06/07/2026",
     "branch": "PANGKAL PINANG",
     "rawBranch": "009-PPG",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 20 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_26070028.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "26070029",
@@ -4278,14 +5383,18 @@
     "joinDate": "13/07/2026",
     "branch": "",
     "rawBranch": "",
-    "position": "",
+    "position": "ADMIN",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 13 hari",
-    "roleStatus": "",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_26070029.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26070030",
@@ -4294,14 +5403,18 @@
     "joinDate": "13/07/2026",
     "branch": "",
     "rawBranch": "",
-    "position": "",
+    "position": "ADMIN",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 13 hari",
-    "roleStatus": "",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26070031",
@@ -4310,14 +5423,18 @@
     "joinDate": "13/07/2026",
     "branch": "",
     "rawBranch": "",
-    "position": "",
+    "position": "ADMIN",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 13 hari",
-    "roleStatus": "",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26070032",
@@ -4326,14 +5443,18 @@
     "joinDate": "13/07/2026",
     "branch": "",
     "rawBranch": "",
-    "position": "",
+    "position": "ADMIN",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 13 hari",
-    "roleStatus": "",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_26070032.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26070033",
@@ -4342,14 +5463,18 @@
     "joinDate": "13/07/2026",
     "branch": "AMBON",
     "rawBranch": "041-ABN",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 13 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_26070033.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26070034",
@@ -4358,14 +5483,18 @@
     "joinDate": "13/07/2026",
     "branch": "AMBON",
     "rawBranch": "041-ABN",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 13 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26070036",
@@ -4374,14 +5503,18 @@
     "joinDate": "23/07/2026",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 3 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_26070036.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "26070037",
@@ -4390,14 +5523,18 @@
     "joinDate": "23/07/2026",
     "branch": "MANADO",
     "rawBranch": "038-MND",
-    "position": "TEKNISI HHP",
+    "position": "TEKNISI",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 3 hari",
-    "roleStatus": "Tech HHP",
+    "roleStatus": "TEKNISI HHP",
     "status": "AKTIF",
     "photo": "photos/emp_26070037.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI HHP",
+    "roles": [
+      "TEKNISI HHP"
+    ]
   },
   {
     "id": "26070038",
@@ -4406,14 +5543,18 @@
     "joinDate": "24/07/2026",
     "branch": "PANGKALAN BUN",
     "rawBranch": "017-PBN",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "0.3",
     "tenureText": "0 tahun, 3 bulan, 2 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": "photos/emp_26070038.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "26080039",
@@ -4422,14 +5563,18 @@
     "joinDate": "03/08/2026",
     "branch": "MAKASSAR",
     "rawBranch": "030-MKS",
-    "position": "TEKNISI IN HOME",
+    "position": "TEKNISI",
     "tenureYears": "0.2",
     "tenureText": "0 tahun, 2 bulan, 23 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TEKNISI IN HOME",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   },
   {
     "id": "26080040",
@@ -4438,14 +5583,18 @@
     "joinDate": "03/08/2026",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "CUSTOMER SERVICE",
+    "position": "ADMIN",
     "tenureYears": "0.2",
     "tenureText": "0 tahun, 2 bulan, 23 hari",
-    "roleStatus": "CS",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "CUSTOMER SERVICE",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26080041",
@@ -4454,14 +5603,18 @@
     "joinDate": "03/08/2026",
     "branch": "BANDAR JAYA",
     "rawBranch": "018-BDJ",
-    "position": "LEADER",
+    "position": "LEADER/PIC",
     "tenureYears": "0.2",
     "tenureText": "0 tahun, 2 bulan, 23 hari",
-    "roleStatus": "Leader",
+    "roleStatus": "PIC",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "LEADER",
+    "roles": [
+      "PIC"
+    ]
   },
   {
     "id": "26080042",
@@ -4470,14 +5623,18 @@
     "joinDate": "10/08/2026",
     "branch": "SAMARINDA",
     "rawBranch": "005-SMD",
-    "position": "ADMIN PART",
+    "position": "ADMIN",
     "tenureYears": "0.2",
     "tenureText": "0 tahun, 2 bulan, 16 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN PART HHP",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "ADMIN PART",
+    "roles": [
+      "ADMIN PART HHP"
+    ]
   },
   {
     "id": "26090045",
@@ -4486,14 +5643,18 @@
     "joinDate": "23/09/2026",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "ADMIN TRACKING",
+    "position": "ADMIN",
     "tenureYears": "0.1",
     "tenureText": "0 tahun, 1 bulan, 3 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "ADMIN TRACKING HHP",
     "status": "AKTIF",
     "photo": "photos/emp_26090045.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "ADMIN TRACKING",
+    "roles": [
+      "ADMIN TRACKING HHP"
+    ]
   },
   {
     "id": "26090046",
@@ -4502,14 +5663,18 @@
     "joinDate": "23/09/2026",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "ADMIN CS",
+    "position": "ADMIN",
     "tenureYears": "0.1",
     "tenureText": "0 tahun, 1 bulan, 3 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": "photos/emp_26090046.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "ADMIN CS",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26090047",
@@ -4518,14 +5683,18 @@
     "joinDate": "07/09/2026",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "ADMIN CS",
+    "position": "ADMIN",
     "tenureYears": "0.1",
     "tenureText": "0 tahun, 1 bulan, 19 hari",
-    "roleStatus": "Admin",
+    "roleStatus": "CUSTOMER SERVICE",
     "status": "AKTIF",
     "photo": null,
     "hasPhoto": false,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "ADMIN CS",
+    "roles": [
+      "CUSTOMER SERVICE"
+    ]
   },
   {
     "id": "26090048",
@@ -4534,13 +5703,17 @@
     "joinDate": "30/09/2026",
     "branch": "BATAM",
     "rawBranch": "008-BTM",
-    "position": "TECHNICIAN CE",
+    "position": "TEKNISI",
     "tenureYears": "0.1",
     "tenureText": "0 tahun, 0 bulan, 26 hari",
-    "roleStatus": "Tech CE",
+    "roleStatus": "TEKNISI CE IN HOME",
     "status": "AKTIF",
     "photo": "photos/emp_26090048.jpg",
     "hasPhoto": true,
-    "updatedAt": "2026-10-26T10:35:42.187Z"
+    "updatedAt": "2026-10-26T10:35:42.187Z",
+    "rawPosition": "TECHNICIAN CE",
+    "roles": [
+      "TEKNISI CE IN HOME"
+    ]
   }
 ]

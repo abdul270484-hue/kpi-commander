@@ -75,6 +75,125 @@
         'BERAU'
     ]);
 
+    // =========================================================================
+    // STANDAR SAMSUNG ROLES & MAPPING HELPERS (MANDAT RESMI BOS 27 OKT 2026)
+    // =========================================================================
+    const SAMSUNG_ROLES_LIST = [
+        'PIC',
+        'CUSTOMER SERVICE',
+        'ADMIN KEUANGAN',
+        'TEKNISI HHP',
+        'TEKNISI UB',
+        'TEKNISI CE IN HOME',
+        'TEKNISI CE CARRY IN',
+        'TEKNISI B2B',
+        'TEKNISI WELDER',
+        'ADMIN TRACKING HHP',
+        'ADMIN TRACKING CE',
+        'ADMIN PART HHP',
+        'ADMIN PART CE',
+        'DRIVER',
+        'OB',
+        'SECURITY'
+    ];
+
+    function inferEmployeeRoles(emp) {
+        if (!emp) return ['CUSTOMER SERVICE'];
+        if (Array.isArray(emp.roles) && emp.roles.length > 0) return emp.roles;
+        const text = ((emp.position || '') + ' ' + (emp.roleStatus || '')).toUpperCase();
+        const roles = new Set();
+        if (/\b(LEADER|PIC|HEAD|MANAGER|AM|SUPERVISOR|SPV|KOORDINATOR|COORDINATOR)\b/.test(text)) roles.add('PIC');
+        if (/\b(CS|CUSTOMER)\b/.test(text)) roles.add('CUSTOMER SERVICE');
+        if (/\b(KEUANGAN|FINANCE|ACCOUNTING|ACCT|CFO)\b/.test(text)) roles.add('ADMIN KEUANGAN');
+        if (/\bTRACKING\b/.test(text)) {
+            if (/\bCE\b/.test(text)) roles.add('ADMIN TRACKING CE');
+            else roles.add('ADMIN TRACKING HHP');
+        }
+        if (/\bPART\b/.test(text)) {
+            if (/\bCE\b/.test(text)) roles.add('ADMIN PART CE');
+            else roles.add('ADMIN PART HHP');
+        }
+        if (/\bADMIN\b/.test(text) && !roles.has('ADMIN KEUANGAN') && !roles.has('ADMIN TRACKING HHP') && !roles.has('ADMIN PART HHP') && !roles.has('ADMIN TRACKING CE') && !roles.has('ADMIN PART CE')) {
+            roles.add('CUSTOMER SERVICE');
+        }
+        if (/\bUB\b/.test(text)) roles.add('TEKNISI UB');
+        if (/\bWELDER\b/.test(text)) roles.add('TEKNISI WELDER');
+        if (/\bB2B\b/.test(text)) roles.add('TEKNISI B2B');
+        if (/\b(CARRY IN|CARRY-IN)\b/.test(text)) roles.add('TEKNISI CE CARRY IN');
+        if (/\b(IN HOME|INHOME|TOUR SERVICE|HOME SERVICE)\b/.test(text)) roles.add('TEKNISI CE IN HOME');
+        if (/\b(HHP|MOBILE|SMARTPHONE|MX)\b/.test(text) && /\b(TECH|TEKNISI)\b/.test(text)) roles.add('TEKNISI HHP');
+        if (/\b(TECH|TEKNISI|TECHNICIAN)\b/.test(text) && /\bCE\b/.test(text) && !roles.has('TEKNISI CE CARRY IN') && !roles.has('TEKNISI CE IN HOME')) roles.add('TEKNISI CE IN HOME');
+        if (/\b(TECH|TEKNISI|TECHNICIAN|TS)\b/.test(text) && !Array.from(roles).some(r => r.startsWith('TEKNISI'))) roles.add('TEKNISI HHP');
+        if (/\bDRIVER\b/.test(text)) roles.add('DRIVER');
+        if (/\b(OB|OFFICE BOY)\b/.test(text)) roles.add('OB');
+        if (/\bSECURITY\b/.test(text)) roles.add('SECURITY');
+        if (roles.size === 0) roles.add('CUSTOMER SERVICE');
+        return Array.from(roles);
+    }
+
+    function inferPositionCategory(pos, roles) {
+        if (['LEADER/PIC', 'ADMIN', 'TEKNISI', 'HELPER'].includes(pos)) return pos;
+        const up = String(pos || '').toUpperCase();
+        if (roles.includes('DRIVER') || roles.includes('OB') || roles.includes('SECURITY') || up.includes('DRIVER') || up.includes('OB') || up.includes('SECURITY')) {
+            return 'HELPER';
+        }
+        if (roles.some(r => r.startsWith('TEKNISI')) || up.includes('TECH') || up.includes('TEKNISI') || up.includes('WELDER')) {
+            if (roles.includes('PIC') || up.includes('LEADER') || up.includes('PIC')) {
+                return 'LEADER/PIC';
+            }
+            return 'TEKNISI';
+        }
+        if (roles.includes('PIC') || up.includes('LEADER') || up.includes('PIC') || up.includes('AM') || up.includes('MANAGER')) {
+            return 'LEADER/PIC';
+        }
+        return 'ADMIN';
+    }
+
+    function normalizeEmployeeFields(emp) {
+        if (!emp) return;
+        emp.branch = normalizeBranchName(emp.branch);
+        if (!emp.roles || !Array.isArray(emp.roles) || emp.roles.length === 0) {
+            emp.roles = inferEmployeeRoles(emp);
+        }
+        if (!['LEADER/PIC', 'ADMIN', 'TEKNISI', 'HELPER'].includes(emp.position)) {
+            emp.position = inferPositionCategory(emp.position, emp.roles);
+        }
+        emp.roleStatus = emp.roles.join(', ');
+    }
+
+    // MANDAT RESMI BOS:
+    // "saat peran ada tercek list teknisi, posisi itu penentu masuk di perhitungan 'Ratio w/o Admin' (ratio tanpa admin)"
+    function isEmployeeTechnician(emp) {
+        if (!emp) return false;
+        if (Array.isArray(emp.roles) && emp.roles.length > 0) {
+            return emp.roles.some(r => {
+                const up = String(r).toUpperCase();
+                return up.includes('TEKNISI') || up.includes('TECH') || up.includes('WELDER');
+            });
+        }
+        if (emp.roleStatus) {
+            const up = String(emp.roleStatus).toUpperCase();
+            if (up.includes('TEKNISI') || up.includes('TECH') || up.includes('WELDER')) return true;
+        }
+        if (emp.position) {
+            const up = String(emp.position).toUpperCase();
+            if (up === 'TEKNISI' || up.includes('TEKNISI') || up.includes('TECH') || up.includes('WELDER')) return true;
+        }
+        return false;
+    }
+
+    function isEmployeeCe(emp) {
+        if (!emp) return false;
+        const combined = ((emp.roles ? emp.roles.join(' ') : '') + ' ' + (emp.roleStatus || '') + ' ' + (emp.position || '')).toUpperCase();
+        return /\b(CE|IN HOME|INHOME|CARRY IN|WELDER|B2B)\b/.test(combined);
+    }
+
+    function isEmployeeMx(emp) {
+        if (!emp) return false;
+        const combined = ((emp.roles ? emp.roles.join(' ') : '') + ' ' + (emp.roleStatus || '') + ' ' + (emp.position || '')).toUpperCase();
+        return /\b(HHP|UB|MX|MOBILE|SMARTPHONE)\b/.test(combined);
+    }
+
     // Initialize module when DOM is ready or called
     window.initMpmModule = async function () {
         console.log('[MPM] Initializing Manpower Management Module (Executive Light Theme)...');
@@ -175,7 +294,7 @@
             try {
                 mpmEmployees = JSON.parse(localCached);
                 if (mpmEmployees && mpmEmployees.length > 0) {
-                    mpmEmployees.forEach(e => { e.branch = normalizeBranchName(e.branch); });
+                    mpmEmployees.forEach(normalizeEmployeeFields);
                     localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
                     console.log(`[MPM] Loaded & normalized ${mpmEmployees.length} employees from LocalStorage.`);
                     return;
@@ -188,7 +307,7 @@
             const res = await fetch('./data/mpm_employees.json');
             if (res.ok) {
                 mpmEmployees = await res.json();
-                mpmEmployees.forEach(e => { e.branch = normalizeBranchName(e.branch); });
+                mpmEmployees.forEach(normalizeEmployeeFields);
                 localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
                 console.log(`[MPM] Loaded ${mpmEmployees.length} employees from JSON fallback.`);
             }
@@ -201,7 +320,7 @@
             window.db.collection('dashboard_data').doc('mpm_employees').get().then(snap => {
                 if (snap.exists && snap.data().employees) {
                     mpmEmployees = snap.data().employees;
-                    mpmEmployees.forEach(e => { e.branch = normalizeBranchName(e.branch); });
+                    mpmEmployees.forEach(normalizeEmployeeFields);
                     localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
                     console.log(`[MPM] Synced ${mpmEmployees.length} employees from Firestore in background.`);
                 }
@@ -260,15 +379,16 @@
         }
 
         // Count real technicians from live edited mpmEmployees for real-time reactive sync!
+        // Mandat BOS: Jika ada peran teknisi tercentang, masuk ke hitungan Teknisi Riil (Ratio w/o Admin)
         const rosterBranchStats = {};
         mpmEmployees.filter(e => e.status !== 'RESIGN').forEach(e => {
             const b = normalizeBranchName(e.branch);
             if (!rosterBranchStats[b]) rosterBranchStats[b] = { techs: 0, allStaff: 0, techHhp: 0, techCe: 0 };
             rosterBranchStats[b].allStaff++;
-            const pos = (e.roleStatus || e.position || '').toUpperCase();
-            if (pos.includes('TECH') || pos.includes('TEKNISI')) {
+
+            if (isEmployeeTechnician(e)) {
                 rosterBranchStats[b].techs++;
-                if (pos.includes('CE') || pos.includes('HOME') || pos.includes('IN HOME')) rosterBranchStats[b].techCe++;
+                if (isEmployeeCe(e)) rosterBranchStats[b].techCe++;
                 else rosterBranchStats[b].techHhp++;
             }
         });
@@ -1160,7 +1280,8 @@
                 (e.name && e.name.toLowerCase().includes(searchLower)) ||
                 (e.nik && e.nik.toLowerCase().includes(searchLower)) ||
                 (e.position && e.position.toLowerCase().includes(searchLower)) ||
-                (e.roleStatus && e.roleStatus.toLowerCase().includes(searchLower));
+                (e.roleStatus && e.roleStatus.toLowerCase().includes(searchLower)) ||
+                (Array.isArray(e.roles) && e.roles.some(r => r.toLowerCase().includes(searchLower)));
             return matchBranch && matchWork && matchSearch;
         });
 
@@ -1253,13 +1374,15 @@
                                     </td>
 
                                     <!-- Position -->
-                                    <td style="padding: 8px 10px; color: #334155; font-weight: 500;">
-                                        ${emp.position || '-'}
+                                    <td style="padding: 8px 10px;">
+                                        <span style="font-weight: 700; font-size: 0.78rem; padding: 3px 8px; border-radius: 4px; display: inline-block; background: ${emp.position === 'TEKNISI' ? '#eff6ff' : (emp.position === 'LEADER/PIC' ? '#fef3c7' : (emp.position === 'ADMIN' ? '#e0f2fe' : '#f1f5f9'))}; color: ${emp.position === 'TEKNISI' ? '#1d4ed8' : (emp.position === 'LEADER/PIC' ? '#b45309' : (emp.position === 'ADMIN' ? '#0284c7' : '#475569'))}; border: 1px solid ${emp.position === 'TEKNISI' ? '#bfdbfe' : (emp.position === 'LEADER/PIC' ? '#fde68a' : (emp.position === 'ADMIN' ? '#bae6fd' : '#cbd5e1'))};">
+                                            ${emp.position || '-'}
+                                        </span>
                                     </td>
 
-                                    <!-- Role Category -->
+                                    <!-- Role Category (Multi-Role Badges) -->
                                     <td style="padding: 8px 10px;">
-                                        ${renderRoleBadge(emp.roleStatus || emp.position)}
+                                        ${renderRoleBadge(emp.roles || emp.roleStatus || emp.position)}
                                     </td>
 
                                     <!-- Join Date -->
@@ -1344,17 +1467,39 @@
         });
     }
 
-    // Helper: Role badge styling (Light Theme)
-    function renderRoleBadge(role) {
-        if (!role) return '-';
-        const r = String(role).toUpperCase();
-        if (r.includes('LEADER')) return `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">LEADER</span>`;
-        if (r.includes('TECH') && (r.includes('CE') || r.includes('HOME'))) return `<span style="background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">TECH CE (IH)</span>`;
-        if (r.includes('TECH') || r.includes('TEKNISI')) return `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">TECH HHP (MX)</span>`;
-        if (r.includes('CS') || r.includes('CUSTOMER')) return `<span style="background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">CS</span>`;
-        if (r.includes('ADMIN')) return `<span style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">ADMIN</span>`;
-        if (r.includes('MANAGER') || r.includes('AM')) return `<span style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">MANAGEMENT</span>`;
-        return `<span style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${role}</span>`;
+    // Helper: Role badge styling (Light Theme - Multi-Role Support)
+    function renderRoleBadge(roleInput) {
+        if (!roleInput) return '-';
+        let list = [];
+        if (Array.isArray(roleInput)) {
+            list = roleInput;
+        } else {
+            list = String(roleInput).split(/[,;+/|]\s*/).filter(Boolean);
+        }
+        if (!list.length) return '-';
+
+        return `<div style="display: flex; flex-wrap: wrap; gap: 4px;">` + list.map(r => {
+            const role = String(r).trim().toUpperCase();
+            if (role === 'PIC' || role.includes('LEADER') || role.includes('HEAD') || role.includes('MANAGER')) {
+                return `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">${r}</span>`;
+            }
+            if (role.includes('CE') || role.includes('HOME') || role.includes('WELDER') || role.includes('CARRY IN') || role.includes('B2B')) {
+                return `<span style="background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">${r}</span>`;
+            }
+            if (role.includes('HHP') || role.includes('UB') || role.includes('TECH') || role.includes('TEKNISI')) {
+                return `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">${r}</span>`;
+            }
+            if (role.includes('CS') || role.includes('CUSTOMER')) {
+                return `<span style="background: #fdf2f8; color: #be185d; border: 1px solid #fbcfe8; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">${r}</span>`;
+            }
+            if (role.includes('KEUANGAN') || role.includes('FINANCE') || role.includes('ACCT')) {
+                return `<span style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">${r}</span>`;
+            }
+            if (role.includes('TRACKING') || role.includes('PART') || role.includes('ADMIN')) {
+                return `<span style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">${r}</span>`;
+            }
+            return `<span style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 600;">${r}</span>`;
+        }).join('') + `</div>`;
     }
 
     function getInitials(name) {
@@ -1387,6 +1532,13 @@
 
         // Distinct branches list for dropdown (strictly operational branches, no HO)
         const distinctBranches = Array.from(new Set(capacityData.map(c => c.branch))).sort();
+
+        const currentPosCategory = ['LEADER/PIC', 'ADMIN', 'TEKNISI', 'HELPER'].includes(targetEmp.position)
+            ? targetEmp.position 
+            : inferPositionCategory(targetEmp.position, targetEmp.roles || inferEmployeeRoles(targetEmp));
+        const currentRoles = (Array.isArray(targetEmp.roles) && targetEmp.roles.length > 0)
+            ? targetEmp.roles 
+            : inferEmployeeRoles(targetEmp);
 
         const photoSrc = targetEmp.photo ? targetEmp.photo : `photos/emp_${targetEmp.nik}.jpg`;
 
@@ -1434,24 +1586,45 @@
                     <span style="font-size: 0.75rem; color: #64748b; margin-top: 3px; display: block;">Perubahan cabang otomatis memperbarui headcount & rasio di Capacity Plan.</span>
                 </div>
 
-                <!-- Posisi Jabatan & Kategori Peran -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div>
-                        <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 5px;">Posisi Jabatan (Deskriptif)</label>
-                        <input type="text" id="edit-position" value="${targetEmp.position || ''}" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
+                <!-- Posisi Jabatan (Deskriptif) Mandat BOS: LEADER/PIC, ADMIN, TEKNISI, HELPER -->
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: #0f172a; font-weight: 700; margin-bottom: 6px;">
+                        Posisi Jabatan (Deskriptif)
+                    </label>
+                    <select id="edit-position" required style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; outline: none;">
+                        <option value="LEADER/PIC" ${currentPosCategory === 'LEADER/PIC' ? 'selected' : ''}>LEADER/PIC</option>
+                        <option value="ADMIN" ${currentPosCategory === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
+                        <option value="TEKNISI" ${currentPosCategory === 'TEKNISI' ? 'selected' : ''}>TEKNISI</option>
+                        <option value="HELPER" ${currentPosCategory === 'HELPER' ? 'selected' : ''}>HELPER</option>
+                    </select>
+                </div>
+
+                <!-- Kategori Peran (Standar Samsung - Ceklist Mandat BOS Multi-Role) -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                        <label style="font-size: 0.8rem; color: #0f172a; font-weight: 700;">
+                            Kategori Peran (Standar Samsung - Ceklist Double Job)
+                        </label>
+                        <span style="font-size: 0.72rem; color: #2563eb; font-weight: 600; background: #eff6ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bfdbfe;">
+                            <i class="fa-solid fa-calculator"></i> Ceklist Teknisi = Masuk Teknisi Riil (Ratio w/o Admin)
+                        </span>
                     </div>
-                    <div>
-                        <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 5px;">Kategori Peran (Standar Samsung)</label>
-                        <select id="edit-role" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
-                            <option value="Tech HHP" ${String(targetEmp.roleStatus).includes('HHP') ? 'selected' : ''}>Tech HHP (Smartphone / MX)</option>
-                            <option value="Tech CE" ${String(targetEmp.roleStatus).includes('CE') ? 'selected' : ''}>Tech CE (Elektronik / In-Home)</option>
-                            <option value="Leader" ${String(targetEmp.roleStatus).includes('Leader') ? 'selected' : ''}>Service Leader</option>
-                            <option value="CS" ${String(targetEmp.roleStatus).includes('CS') ? 'selected' : ''}>Customer Service (CS)</option>
-                            <option value="Admin" ${String(targetEmp.roleStatus).includes('Admin') ? 'selected' : ''}>Admin Part / Tracking</option>
-                            <option value="AM" ${String(targetEmp.roleStatus).includes('AM') || String(targetEmp.roleStatus).includes('Manager') ? 'selected' : ''}>Area Manager / Head</option>
-                            <option value="Non Staff" ${String(targetEmp.roleStatus).includes('Driver') || String(targetEmp.roleStatus).includes('OB') ? 'selected' : ''}>Non Staff (Driver / OB / Security)</option>
-                        </select>
+
+                    <div id="edit-roles-container" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; max-height: 220px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px;">
+                        ${SAMSUNG_ROLES_LIST.map(role => {
+                            const isChecked = currentRoles.includes(role);
+                            const isTech = role.startsWith('TEKNISI');
+                            return `
+                                <label class="role-checkbox-item" style="display: flex; align-items: center; gap: 8px; background: ${isChecked ? (isTech ? '#eff6ff' : '#f1f5f9') : '#ffffff'}; border: 1px solid ${isChecked ? (isTech ? '#3b82f6' : '#94a3b8') : '#e2e8f0'}; padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; font-size: 0.8rem;">
+                                    <input type="checkbox" name="edit-role-checkbox" value="${role}" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 16px; height: 16px; accent-color: #2563eb;">
+                                    <span style="font-weight: ${isChecked ? '700' : '500'}; color: ${isChecked ? (isTech ? '#1d4ed8' : '#0f172a') : '#475569'};">${role}</span>
+                                </label>
+                            `;
+                        }).join('')}
                     </div>
+                    <span style="font-size: 0.73rem; color: #64748b; margin-top: 4px; display: block;">
+                        Centang satu atau lebih peran sesuai penugasan riil karyawan.
+                    </span>
                 </div>
 
                 <!-- Status Kerja (Aktif vs Resign) -->
@@ -1490,6 +1663,25 @@
         document.getElementById('mpm-modal-cancel').onclick = closeModal;
         backdrop.onclick = (e) => { if (e.target === backdrop) closeModal(); };
 
+        // Interactive highlighting for role checkboxes
+        box.querySelectorAll('input[name="edit-role-checkbox"]').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const label = cb.closest('label');
+                const isTech = cb.value.startsWith('TEKNISI');
+                if (cb.checked) {
+                    label.style.background = isTech ? '#eff6ff' : '#f1f5f9';
+                    label.style.borderColor = isTech ? '#3b82f6' : '#94a3b8';
+                    label.querySelector('span').style.fontWeight = '700';
+                    label.querySelector('span').style.color = isTech ? '#1d4ed8' : '#0f172a';
+                } else {
+                    label.style.background = '#ffffff';
+                    label.style.borderColor = '#e2e8f0';
+                    label.querySelector('span').style.fontWeight = '500';
+                    label.querySelector('span').style.color = '#475569';
+                }
+            });
+        });
+
         // Submit handler
         document.getElementById('mpm-edit-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -1497,9 +1689,14 @@
             const newNik = document.getElementById('edit-nik').value.trim();
             const newName = document.getElementById('edit-name').value.trim().toUpperCase();
             const newBranch = document.getElementById('edit-branch').value.trim();
-            const newPosition = document.getElementById('edit-position').value.trim();
-            const newRole = document.getElementById('edit-role').value.trim();
+            const newPosition = document.getElementById('edit-position').value;
+            const checkedRoles = Array.from(document.querySelectorAll('input[name="edit-role-checkbox"]:checked')).map(cb => cb.value);
             const newStatus = document.querySelector('input[name="edit-status"]:checked').value;
+
+            if (checkedRoles.length === 0) {
+                alert('Pilih minimal satu Kategori Peran (Standar Samsung)!');
+                return;
+            }
 
             if (isNew) {
                 // Add new employee
@@ -1509,7 +1706,8 @@
                     name: newName,
                     branch: newBranch,
                     position: newPosition,
-                    roleStatus: newRole,
+                    roles: checkedRoles,
+                    roleStatus: checkedRoles.join(', '),
                     joinDate: new Date().toLocaleDateString('id-ID'),
                     status: newStatus,
                     photo: `photos/emp_${newNik}.jpg`,
@@ -1523,7 +1721,8 @@
                     mpmEmployees[existingIdx].name = newName;
                     mpmEmployees[existingIdx].branch = newBranch;
                     mpmEmployees[existingIdx].position = newPosition;
-                    mpmEmployees[existingIdx].roleStatus = newRole;
+                    mpmEmployees[existingIdx].roles = checkedRoles;
+                    mpmEmployees[existingIdx].roleStatus = checkedRoles.join(', ');
                     mpmEmployees[existingIdx].status = newStatus;
                     mpmEmployees[existingIdx].updatedAt = new Date().toISOString();
                 }
