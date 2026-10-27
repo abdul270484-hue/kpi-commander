@@ -435,12 +435,11 @@
             });
         });
 
-        // Sort: KURANG first (defisit terparah di atas), lalu LEBIH, lalu CUKUP
+        // Sort: Z-A (Descending) by Ratio w/ Admin (Permintaan BOS)
         results.sort((a, b) => {
-            if (a.status === 'KURANG' && b.status !== 'KURANG') return -1;
-            if (a.status !== 'KURANG' && b.status === 'KURANG') return 1;
-            if (a.status === 'KURANG' && b.status === 'KURANG') return a.diff - b.diff;
-            return b.totalAdjust - a.totalAdjust;
+            const diff = (b.ratioWithAdmin || 0) - (a.ratioWithAdmin || 0);
+            if (diff !== 0) return diff;
+            return (b.totalAdjust || 0) - (a.totalAdjust || 0);
         });
 
         // Only update if we calculated valid branches, otherwise keep preloaded cache
@@ -554,6 +553,7 @@
 
     // Render base shell with navigation tabs & containers
     function renderMpmShell(container) {
+        const branchStaffCount = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO').length || 257;
         container.innerHTML = `
             <!-- MPM Header Bar (Executive Light Theme) -->
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
@@ -573,7 +573,7 @@
                         <i class="fa-solid fa-chart-pie"></i> Capacity & Load Ratios
                     </button>
                     <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-id-card-clip"></i> Master Roster Karyawan (${mpmEmployees.length || 284})
+                        <i class="fa-solid fa-id-card-clip"></i> Master Roster Karyawan (${branchStaffCount})
                     </button>
                     <button id="mpm-tab-simulator" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-scale-balanced"></i> Simulator Mutasi (Zero-Cost)
@@ -627,6 +627,14 @@
             activeBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.06)';
             activeBtn.style.fontWeight = '700';
         }
+
+        // Dynamically update Roster tab label to show branch staff count (excl HO)
+        const branchStaffCount = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO').length || 257;
+        const rosterBtn = document.getElementById('mpm-tab-roster');
+        if (rosterBtn) {
+            rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Master Roster Karyawan (${branchStaffCount})`;
+        }
+
         renderActiveSubTab();
     }
 
@@ -673,6 +681,13 @@
 
             const matchSearch = !currentSearchTerm || r.branch.toLowerCase().includes(currentSearchTerm.toLowerCase());
             return matchStatus && matchType && matchSearch;
+        });
+
+        // Always ensure Z-A sort by Ratio w/ Admin (Permintaan BOS)
+        filtered.sort((a, b) => {
+            const diff = (b.ratioWithAdmin || 0) - (a.ratioWithAdmin || 0);
+            if (diff !== 0) return diff;
+            return (b.totalAdjust || 0) - (a.totalAdjust || 0);
         });
 
         container.innerHTML = `
@@ -787,7 +802,7 @@
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Min Staf</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Teknisi Riil</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Ratio w/o Admin</th>
-                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Ratio w/ Admin</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e40af; border-left: 1px solid #3b82f6; border-right: 1px solid #3b82f6;">Ratio w/ Admin <i class="fa-solid fa-arrow-down-wide-short" style="color: #93c5fd; margin-left: 4px;" title="Sorted Z-A (Tertinggi ke Terendah)"></i></th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Status Gap</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; width: 170px;">Aksi</th>
                         </tr>
@@ -1099,15 +1114,21 @@
     }
 
     // =========================================================================
-    // SUB-TAB 2: MASTER ROSTER KARYAWAN (SHEET DATA 284 STAF + EDIT MODAL)
+    // SUB-TAB 2: MASTER ROSTER KARYAWAN (SHEET DATA STAF CABANG + EDIT MODAL)
     // =========================================================================
     function renderRosterSubTab(container) {
-        // Collect list of unique branches for filter dropdown
-        const branchList = Array.from(new Set(mpmEmployees.map(e => normalizeBranchName(e.branch)))).filter(Boolean).sort();
+        // Filter out employees at "HO" as instructed by BOS (no correlation with branch capacity plan)
+        const branchEmployees = mpmEmployees.filter(e => {
+            const b = normalizeBranchName(e.branch);
+            return b !== 'HO';
+        });
+
+        // Collect list of unique branches for filter dropdown (strictly operational branches, no HO)
+        const branchList = Array.from(new Set(branchEmployees.map(e => normalizeBranchName(e.branch)).filter(Boolean))).sort();
 
         // Filter employees
-        let filtered = mpmEmployees.filter(e => {
-            const b = normalizeBranchName(e.branch);
+        let filtered = branchEmployees.filter(e => {
+            const b = normalizeBranchName(e.branch) || 'BELUM DITENTUKAN';
             const matchBranch = currentRosterBranch === 'ALL' || b === currentRosterBranch;
             const matchWork = currentRosterWorkStatus === 'ALL' || (currentRosterWorkStatus === 'AKTIF' ? e.status !== 'RESIGN' : e.status === 'RESIGN');
             const searchLower = currentRosterSearch.toLowerCase();
@@ -1119,8 +1140,8 @@
             return matchBranch && matchWork && matchSearch;
         });
 
-        const totalActive = mpmEmployees.filter(e => e.status !== 'RESIGN').length;
-        const totalResign = mpmEmployees.filter(e => e.status === 'RESIGN').length;
+        const totalActive = branchEmployees.filter(e => e.status !== 'RESIGN').length;
+        const totalResign = branchEmployees.filter(e => e.status === 'RESIGN').length;
 
         container.innerHTML = `
             <!-- Controls Bar (Executive Light Theme) -->
@@ -1139,7 +1160,7 @@
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.8rem; color: #64748b; font-weight: 700;">Status:</span>
                         <select id="roster-work-status-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; outline: none;">
-                            <option value="ALL" ${currentRosterWorkStatus === 'ALL' ? 'selected' : ''}>Semua (${mpmEmployees.length})</option>
+                            <option value="ALL" ${currentRosterWorkStatus === 'ALL' ? 'selected' : ''}>Semua (${branchEmployees.length})</option>
                             <option value="AKTIF" ${currentRosterWorkStatus === 'AKTIF' ? 'selected' : ''}>🟢 Masih Bekerja (${totalActive})</option>
                             <option value="RESIGN" ${currentRosterWorkStatus === 'RESIGN' ? 'selected' : ''}>🔴 Sudah Resign (${totalResign})</option>
                         </select>
@@ -1327,7 +1348,7 @@
         const targetEmp = emp || {
             nik: '',
             name: '',
-            branch: 'HO',
+            branch: capacityData[0] ? capacityData[0].branch : 'PONTIANAK',
             position: 'TEKNISI HHP',
             roleStatus: 'Tech HHP',
             joinDate: new Date().toLocaleDateString('id-ID'),
@@ -1339,9 +1360,8 @@
         const box = document.getElementById('mpm-edit-modal-box');
         if (!backdrop || !box) return;
 
-        // Distinct branches list for dropdown
+        // Distinct branches list for dropdown (strictly operational branches, no HO)
         const distinctBranches = Array.from(new Set(capacityData.map(c => c.branch))).sort();
-        if (!distinctBranches.includes('HO')) distinctBranches.unshift('HO');
 
         const photoSrc = targetEmp.photo ? targetEmp.photo : `photos/emp_${targetEmp.nik}.jpg`;
 
