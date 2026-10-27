@@ -272,9 +272,12 @@
                     r.bosGuardrail = false;
                 }
 
-                r.diff = r.realTech - r.finalMinStaff;
-                if (r.realTech < r.finalMinStaff) r.status = 'KURANG';
-                else if (r.realTech > r.finalMinStaff) r.status = 'LEBIH';
+                // Formula Kolom BJ Excel (Real Person vs Min Staff) tapi HELPER DIKELUARKAN (Count = 0 di sheet 1)
+                const effectiveStaff = (r.allStaff || 0) - (r.helperCount || 0);
+                r.effectiveStaff = effectiveStaff;
+                r.diff = effectiveStaff - r.finalMinStaff;
+                if (effectiveStaff < r.finalMinStaff) r.status = 'KURANG';
+                else if (effectiveStaff > r.finalMinStaff) r.status = 'LEBIH';
                 else r.status = 'CUKUP';
             } else {
                 r.isOverridden = false;
@@ -464,17 +467,20 @@
                     r.leaderCount = rData.leaderCount || 0;
                     r.adminCount = rData.adminCount || 0;
                     r.helperCount = rData.helperCount || 0;
+                    const effectiveStaff = (r.allStaff || 0) - (r.helperCount || 0);
+                    r.effectiveStaff = effectiveStaff;
                     r.totalCancel = (r.cancelHhp || 0) + (r.cancelCe || 0);
                     r.ratioWoAdmin = r.realTech > 0 ? parseFloat((r.totalAdjust / r.realTech).toFixed(1)) : 0;
                     r.ratioWithAdmin = r.allStaff > 0 ? parseFloat((r.totalAdjust / r.allStaff).toFixed(1)) : 0;
-                    r.diff = r.realTech - r.finalMinStaff;
-                    if (r.realTech < r.finalMinStaff) r.status = 'KURANG';
-                    else if (r.realTech > r.finalMinStaff) r.status = 'LEBIH';
+                    r.diff = effectiveStaff - r.finalMinStaff;
+                    if (effectiveStaff < r.finalMinStaff) r.status = 'KURANG';
+                    else if (effectiveStaff > r.finalMinStaff) r.status = 'LEBIH';
                     else r.status = 'CUKUP';
                 } else {
                     r.leaderCount = r.leaderCount || 0;
                     r.adminCount = r.adminCount || 0;
                     r.helperCount = r.helperCount || 0;
+                    r.effectiveStaff = (r.allStaff || 0) - (r.helperCount || 0);
                     r.totalCancel = (r.cancelHhp || 0) + (r.cancelCe || 0);
                 }
             });
@@ -607,11 +613,14 @@
             const realTech = rData.techs > 0 ? rData.techs : (fameStats[branch] ? 1 : 0);
             const ratioWoAdmin = realTech > 0 ? (totalAdjust / realTech) : 0;
             const ratioWithAdmin = rData.allStaff > 0 ? (totalAdjust / rData.allStaff) : 0;
-            const diff = realTech - finalMinStaff;
+
+            // Formula Kolom BJ Excel (Real Person vs Min Staff) tapi HELPER DIKELUARKAN (Count = 0 di sheet 1)
+            const effectiveStaff = (rData.allStaff || 0) - (rData.helperCount || 0);
+            const diff = effectiveStaff - finalMinStaff;
 
             let status = 'CUKUP';
-            if (realTech < finalMinStaff) status = 'KURANG';
-            else if (realTech > finalMinStaff) status = 'LEBIH';
+            if (effectiveStaff < finalMinStaff) status = 'KURANG';
+            else if (effectiveStaff > finalMinStaff) status = 'LEBIH';
 
             results.push({
                 branch,
@@ -627,11 +636,13 @@
                 cancelHhp,
                 cancelCe,
                 totalAdjust,
+                pureMinStaff,
                 finalMinStaff,
                 leaderCount: rData.leaderCount || 0,
                 realTech,
                 adminCount: rData.adminCount || 0,
                 helperCount: rData.helperCount || 0,
+                effectiveStaff,
                 allStaff: rData.allStaff,
                 ratioWoAdmin: parseFloat(ratioWoAdmin.toFixed(1)),
                 ratioWithAdmin: parseFloat(ratioWithAdmin.toFixed(1)),
@@ -884,7 +895,8 @@
         const totalPoints = capacityData.reduce((s, r) => s + r.totalAdjust, 0);
         const totalMin = capacityData.reduce((s, r) => s + r.finalMinStaff, 0);
         const totalReal = capacityData.reduce((s, r) => s + r.realTech, 0);
-        const gap = totalReal - totalMin;
+        const totalEffective = capacityData.reduce((s, r) => s + (r.effectiveStaff || (r.allStaff - (r.helperCount || 0))), 0);
+        const gap = totalEffective - totalMin;
         const kurangCount = capacityData.filter(r => r.status === 'KURANG').length;
         const cukupCount = capacityData.filter(r => r.status === 'CUKUP').length;
         const lebihCount = capacityData.filter(r => r.status === 'LEBIH').length;
@@ -952,9 +964,9 @@
                 <div class="kpi-master-card ${gap < 0 ? 'bg-coral' : 'bg-blue'}">
                     <div class="kpi-icon-left"><i class="fa-solid fa-scale-unbalanced"></i></div>
                     <div class="kpi-content">
-                        <div class="kpi-title">GAP DEFISIT NASIONAL</div>
-                        <div class="value">${gap > 0 ? '+' + gap : gap} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Teknisi</span></div>
-                        <div class="kpi-subtitle">${gap < 0 ? 'Defisit Perlu Rebalancing' : 'Kapasitas Terpenuhi'}</div>
+                        <div class="kpi-title">GAP KAPASITAS NASIONAL</div>
+                        <div class="value">${gap > 0 ? '+' + gap : gap} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Orang</span></div>
+                        <div class="kpi-subtitle">${gap < 0 ? 'Defisit Perlu Rebalancing' : 'Staf Operasional Terpenuhi'}</div>
                     </div>
                     <div class="kpi-chart-right"><i class="fa-solid ${gap < 0 ? 'fa-triangle-exclamation' : 'fa-circle-check'}"></i></div>
                 </div>
