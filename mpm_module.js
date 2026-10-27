@@ -16,12 +16,14 @@
     let capacityData = [];
     let currentMpmSubTab = 'capacity'; // 'capacity' | 'roster' | 'simulator'
     let currentFilterStatus = 'ALL';
+    let currentFilterType = 'ALL'; // 'ALL' | 'HYBRID' | 'MX' | 'CE' | 'REVISI'
     let currentFilterBranch = 'ALL';
     let currentFilterRole = 'ALL';
     let currentSearchTerm = '';
     let currentRosterBranch = 'ALL';
     let currentRosterWorkStatus = 'ALL'; // 'ALL' | 'AKTIF' | 'RESIGN'
     let currentRosterSearch = '';
+    let branchOverrides = {}; // { [branch]: { productType: string, note: string, updatedAt: string, updatedBy: string } }
 
     // Official operating branches present in Capacity Plan sheet "Summary" (Summ)
     const SUMMARY_ALLOWED_BRANCHES = new Set([
@@ -99,6 +101,7 @@
 
         // Load data in parallel with immediate fallback support
         await Promise.all([
+            loadBranchOverrides(),
             loadEmployeesData(),
             calculateMpmCapacityData()
         ]);
@@ -107,6 +110,62 @@
         console.log(`[MPM] Ready! Rendering active view with ${capacityData.length} branches and ${mpmEmployees.length} employees.`);
         renderActiveSubTab();
     };
+
+    // Load branch service type overrides (BOS Revisions)
+    async function loadBranchOverrides() {
+        const localCached = localStorage.getItem('bujm_mpm_branch_overrides');
+        if (localCached) {
+            try {
+                branchOverrides = JSON.parse(localCached) || {};
+                console.log(`[MPM] Loaded ${Object.keys(branchOverrides).length} branch service overrides from LocalStorage.`);
+            } catch (_) {}
+        }
+        if (window.db) {
+            window.db.collection('dashboard_data').doc('mpm_branch_overrides').get().then(snap => {
+                if (snap.exists && snap.data().overrides) {
+                    branchOverrides = snap.data().overrides;
+                    localStorage.setItem('bujm_mpm_branch_overrides', JSON.stringify(branchOverrides));
+                    console.log(`[MPM] Synced ${Object.keys(branchOverrides).length} branch service overrides from Firestore.`);
+                    applyOverridesToCapacityData();
+                    if (currentMpmSubTab === 'capacity') renderActiveSubTab();
+                }
+            }).catch(err => console.warn('[MPM] Firestore overrides sync warning:', err.message));
+        }
+    }
+
+    // Apply BOS service type overrides to capacityData
+    function applyOverridesToCapacityData() {
+        if (!capacityData || !capacityData.length) return;
+        capacityData.forEach(r => {
+            const ovr = branchOverrides[r.branch];
+            if (ovr && ovr.productType) {
+                r.productType = ovr.productType;
+                r.isOverridden = true;
+                r.overrideNote = ovr.note || '';
+
+                let pureMinStaff = 1;
+                if (r.totalAdjust < 100) pureMinStaff = 1;
+                else if (r.totalAdjust < 200) pureMinStaff = 2;
+                else pureMinStaff = Math.round(r.totalAdjust / 100);
+
+                if (r.productType === 'HYBRID (MX+CE)') {
+                    r.finalMinStaff = Math.max(pureMinStaff, 2);
+                    r.bosGuardrail = pureMinStaff < 2;
+                } else {
+                    r.finalMinStaff = pureMinStaff;
+                    r.bosGuardrail = false;
+                }
+
+                r.diff = r.realTech - r.finalMinStaff;
+                if (r.realTech < r.finalMinStaff) r.status = 'KURANG';
+                else if (r.realTech > r.finalMinStaff) r.status = 'LEBIH';
+                else r.status = 'CUKUP';
+            } else {
+                r.isOverridden = false;
+                r.overrideNote = '';
+            }
+        });
+    }
 
     // Load employee roster from LocalStorage, JSON fallback, or Firestore
     async function loadEmployeesData() {
@@ -162,6 +221,7 @@
                         capacityData = json.branches
                             .map(b => ({ ...b, branch: normalizeBranchName(b.branch) }))
                             .filter(b => SUMMARY_ALLOWED_BRANCHES.has(b.branch));
+                        applyOverridesToCapacityData();
                         console.log(`[MPM] Instantly pre-loaded ${capacityData.length} branches from mpm_capacity.json.`);
                     }
                 }
@@ -231,6 +291,7 @@
                     else r.status = 'CUKUP';
                 }
             });
+            applyOverridesToCapacityData();
             return;
         }
 
@@ -311,13 +372,22 @@
             // 2. Murni MX -> Murni rasio volume
             const hasCe = volCe > 0 || rData.techCe > 0 || fData.repairCe > 0;
             const hasMx = volHhp > 0 || rData.techHhp > 0 || fData.repairHhp > 0;
-            const productType = (hasMx && hasCe) ? 'HYBRID (MX+CE)' : (hasCe ? 'CE ONLY' : 'MX ONLY');
+            const autoProductType = (hasMx && hasCe) ? 'HYBRID (MX+CE)' : (hasCe ? 'CE ONLY' : 'MX ONLY');
+
+            // Cek apakah ada revisi tipe layanan manual dari BOS
+            const ovr = branchOverrides[branch];
+            const productType = (ovr && ovr.productType) ? ovr.productType : autoProductType;
+            const isOverridden = !!(ovr && ovr.productType);
+            const overrideNote = ovr ? (ovr.note || '') : '';
 
             let finalMinStaff = pureMinStaff;
             let bosGuardrail = false;
-            if (hasMx && hasCe && finalMinStaff < 2) {
+            if (productType === 'HYBRID (MX+CE)' && finalMinStaff < 2) {
                 finalMinStaff = 2;
                 bosGuardrail = true;
+            } else if (productType !== 'HYBRID (MX+CE)') {
+                finalMinStaff = pureMinStaff;
+                bosGuardrail = false;
             }
 
             const realTech = rData.techs > 0 ? rData.techs : (fameStats[branch] ? 1 : 0);
@@ -332,6 +402,8 @@
             results.push({
                 branch,
                 productType,
+                isOverridden,
+                overrideNote,
                 hasCe,
                 hasMx,
                 avg3MonthGd,
@@ -511,6 +583,13 @@
                     <!-- Modal body injected dynamically -->
                 </div>
             </div>
+
+            <!-- Modal Revisi Tipe Layanan Cabang (BOS Request) -->
+            <div id="mpm-type-modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 99999; backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+                <div id="mpm-type-modal-box" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; width: 95%; max-width: 540px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); max-height: 90vh; overflow-y: auto; color: #0f172a;">
+                    <!-- Modal body injected dynamically -->
+                </div>
+            </div>
         `;
 
         // Sub-Tab Switcher Event Handlers
@@ -564,11 +643,24 @@
         const cukupCount = capacityData.filter(r => r.status === 'CUKUP').length;
         const lebihCount = capacityData.filter(r => r.status === 'LEBIH').length;
 
+        // Breakdown counts by Tipe Layanan (BOS Request)
+        const hybridCount = capacityData.filter(r => r.productType === 'HYBRID (MX+CE)').length;
+        const mxCount = capacityData.filter(r => r.productType === 'MX ONLY').length;
+        const ceCount = capacityData.filter(r => r.productType === 'CE ONLY').length;
+        const overriddenCount = capacityData.filter(r => r.isOverridden).length;
+
         // Filter data
         let filtered = capacityData.filter(r => {
             const matchStatus = currentFilterStatus === 'ALL' || r.status === currentFilterStatus;
+            
+            let matchType = true;
+            if (currentFilterType === 'HYBRID') matchType = r.productType === 'HYBRID (MX+CE)';
+            else if (currentFilterType === 'MX') matchType = r.productType === 'MX ONLY';
+            else if (currentFilterType === 'CE') matchType = r.productType === 'CE ONLY';
+            else if (currentFilterType === 'REVISI') matchType = r.isOverridden;
+
             const matchSearch = !currentSearchTerm || r.branch.toLowerCase().includes(currentSearchTerm.toLowerCase());
-            return matchStatus && matchSearch;
+            return matchStatus && matchType && matchSearch;
         });
 
         container.innerHTML = `
@@ -625,20 +717,46 @@
                 </div>
             </div>
 
-            <!-- Controls: Search & Filter Pills -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 12px 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 700; margin-right: 5px;">Filter Status:</span>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'ALL' ? 'active' : ''}" data-val="ALL" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; border: 1px solid ${currentFilterStatus === 'ALL' ? '#2563eb' : '#cbd5e1'}; background: ${currentFilterStatus === 'ALL' ? '#2563eb' : '#ffffff'}; color: ${currentFilterStatus === 'ALL' ? '#ffffff' : '#475569'}; box-shadow: ${currentFilterStatus === 'ALL' ? '0 2px 4px rgba(37,99,235,0.2)' : 'none'};">Semua (${capacityData.length})</button>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'KURANG' ? 'active' : ''}" data-val="KURANG" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fca5a5'}; background: ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fee2e2'}; color: ${currentFilterStatus === 'KURANG' ? '#ffffff' : '#dc2626'};">🔴 Kurang (${kurangCount})</button>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'CUKUP' ? 'active' : ''}" data-val="CUKUP" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#86efac'}; background: ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#dcfce7'}; color: ${currentFilterStatus === 'CUKUP' ? '#ffffff' : '#16a34a'};">🟢 Cukup (${cukupCount})</button>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'LEBIH' ? 'active' : ''}" data-val="LEBIH" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#7dd3fc'}; background: ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#e0f2fe'}; color: ${currentFilterStatus === 'LEBIH' ? '#ffffff' : '#0284c7'};">🔵 Lebih (${lebihCount})</button>
-                </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
+            <!-- Controls: Filter Tipe Layanan & Filter Status Gap (Executive Light Theme) -->
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; background: #f8fafc; padding: 14px 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <!-- Row 1: Filter Tipe Layanan (Permintaan BOS) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <span style="font-size: 0.8rem; color: #475569; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-layer-group" style="color: #2563eb;"></i> Tipe Layanan:
+                        </span>
+                        <button class="cap-type-filter-btn ${currentFilterType === 'ALL' ? 'active' : ''}" data-val="ALL" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'ALL' ? '#2563eb' : '#cbd5e1'}; background: ${currentFilterType === 'ALL' ? '#2563eb' : '#ffffff'}; color: ${currentFilterType === 'ALL' ? '#ffffff' : '#475569'}; box-shadow: ${currentFilterType === 'ALL' ? '0 2px 4px rgba(37,99,235,0.2)' : 'none'};">
+                            Semua Layanan (${capacityData.length})
+                        </button>
+                        <button class="cap-type-filter-btn ${currentFilterType === 'HYBRID' ? 'active' : ''}" data-val="HYBRID" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'HYBRID' ? '#7c3aed' : '#d8b4fe'}; background: ${currentFilterType === 'HYBRID' ? '#7c3aed' : '#f5f3ff'}; color: ${currentFilterType === 'HYBRID' ? '#ffffff' : '#6d28d9'}; box-shadow: ${currentFilterType === 'HYBRID' ? '0 2px 4px rgba(124,58,237,0.2)' : 'none'};">
+                            🟣 HYBRID MX+CE (${hybridCount})
+                        </button>
+                        <button class="cap-type-filter-btn ${currentFilterType === 'MX' ? 'active' : ''}" data-val="MX" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'MX' ? '#0284c7' : '#bae6fd'}; background: ${currentFilterType === 'MX' ? '#0284c7' : '#eff6ff'}; color: ${currentFilterType === 'MX' ? '#ffffff' : '#0369a1'}; box-shadow: ${currentFilterType === 'MX' ? '0 2px 4px rgba(2,132,199,0.2)' : 'none'};">
+                            🔵 MX ONLY (${mxCount})
+                        </button>
+                        <button class="cap-type-filter-btn ${currentFilterType === 'CE' ? 'active' : ''}" data-val="CE" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'CE' ? '#d97706' : '#fde68a'}; background: ${currentFilterType === 'CE' ? '#d97706' : '#fffbeb'}; color: ${currentFilterType === 'CE' ? '#ffffff' : '#b45309'}; box-shadow: ${currentFilterType === 'CE' ? '0 2px 4px rgba(217,119,6,0.2)' : 'none'};">
+                            🟡 CE ONLY (${ceCount})
+                        </button>
+                        ${overriddenCount > 0 ? `
+                            <button class="cap-type-filter-btn ${currentFilterType === 'REVISI' ? 'active' : ''}" data-val="REVISI" style="padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'REVISI' ? '#059669' : '#a7f3d0'}; background: ${currentFilterType === 'REVISI' ? '#059669' : '#ecfdf5'}; color: ${currentFilterType === 'REVISI' ? '#ffffff' : '#047857'};">
+                                ✏️ Direvisi (${overriddenCount})
+                            </button>
+                        ` : ''}
+                    </div>
+
                     <div style="position: relative;">
                         <input type="text" id="cap-search-input" value="${currentSearchTerm}" placeholder="Cari nama cabang..." style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 7px 12px 7px 32px; border-radius: 6px; font-size: 0.85rem; width: 220px; outline: none;">
                         <i class="fa-solid fa-search" style="position: absolute; left: 10px; top: 10px; color: #94a3b8; font-size: 0.8rem;"></i>
                     </div>
+                </div>
+
+                <!-- Row 2: Filter Status Gap (Kurang, Cukup, Lebih) -->
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-top: 1px dashed #e2e8f0; padding-top: 10px;">
+                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 700; margin-right: 5px;">Filter Status:</span>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'ALL' ? 'active' : ''}" data-val="ALL" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; border: 1px solid ${currentFilterStatus === 'ALL' ? '#2563eb' : '#cbd5e1'}; background: ${currentFilterStatus === 'ALL' ? '#2563eb' : '#ffffff'}; color: ${currentFilterStatus === 'ALL' ? '#ffffff' : '#475569'};">Semua (${capacityData.length})</button>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'KURANG' ? 'active' : ''}" data-val="KURANG" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fca5a5'}; background: ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fee2e2'}; color: ${currentFilterStatus === 'KURANG' ? '#ffffff' : '#dc2626'};">🔴 Kurang (${kurangCount})</button>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'CUKUP' ? 'active' : ''}" data-val="CUKUP" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#86efac'}; background: ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#dcfce7'}; color: ${currentFilterStatus === 'CUKUP' ? '#ffffff' : '#16a34a'};">🟢 Cukup (${cukupCount})</button>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'LEBIH' ? 'active' : ''}" data-val="LEBIH" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#7dd3fc'}; background: ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#e0f2fe'}; color: ${currentFilterStatus === 'LEBIH' ? '#ffffff' : '#0284c7'};">🔵 Lebih (${lebihCount})</button>
                 </div>
             </div>
 
@@ -659,7 +777,7 @@
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Ratio w/o Admin</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Ratio w/ Admin</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Status Gap</th>
-                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Aksi</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; width: 170px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -676,11 +794,11 @@
 
                             let typeBadge = '';
                             if (r.productType === 'HYBRID (MX+CE)') {
-                                typeBadge = `<span style="background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">HYBRID MX+CE</span>`;
+                                typeBadge = `<span style="background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🟣 HYBRID MX+CE</span>`;
                             } else if (r.productType === 'CE ONLY') {
-                                typeBadge = `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">CE IN-HOME</span>`;
+                                typeBadge = `<span style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🟡 CE IN-HOME</span>`;
                             } else {
-                                typeBadge = `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">MX COUNTER</span>`;
+                                typeBadge = `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 3px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">🔵 MX COUNTER</span>`;
                             }
 
                             return `
@@ -690,7 +808,12 @@
                                         ${r.branch}
                                         ${r.bosGuardrail ? `<i class="fa-solid fa-shield-halved" title="Aturan Khusus BOS: Hybrid MX+CE Wajib Min 2 Teknisi" style="color: #7c3aed; font-size: 0.75rem; margin-left: 5px;"></i>` : ''}
                                     </td>
-                                    <td style="padding: 8px 10px;">${typeBadge}</td>
+                                    <td style="padding: 8px 10px;">
+                                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                            ${typeBadge}
+                                            ${r.isOverridden ? `<span title="Direvisi manual oleh BOS: ${r.overrideNote || ''}" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; cursor: help;"><i class="fa-solid fa-check"></i> REVISI</span>` : ''}
+                                        </div>
+                                    </td>
                                     <td style="padding: 8px 10px; text-align: right; color: #334155; font-weight: 600;">${r.avg3MonthGd}</td>
                                     <td style="padding: 8px 10px; text-align: right; color: #64748b;">${r.volHhp}</td>
                                     <td style="padding: 8px 10px; text-align: right; color: #d97706; font-weight: 600;">${r.volCe}</td>
@@ -705,9 +828,14 @@
                                     </td>
                                     <td style="padding: 8px 10px; text-align: center;">${statusBadge}</td>
                                     <td style="padding: 8px 10px; text-align: center;">
-                                        <button class="mpm-btn-view-roster" data-branch="${r.branch}" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Lihat & Edit Roster Tim di Cabang ini">
-                                            <i class="fa-solid fa-users"></i> Roster
-                                        </button>
+                                        <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
+                                            <button class="mpm-btn-edit-type" data-branch="${r.branch}" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Revisi Tipe Layanan Cabang ${r.branch}">
+                                                <i class="fa-solid fa-sliders" style="color: #2563eb;"></i> Revisi Layanan
+                                            </button>
+                                            <button class="mpm-btn-view-roster" data-branch="${r.branch}" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Lihat & Edit Roster Tim di Cabang ini">
+                                                <i class="fa-solid fa-users"></i> Roster
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             `;
@@ -717,7 +845,15 @@
             </div>
         `;
 
-        // Event Listeners for Filters
+        // Event Listeners for Tipe Layanan Filter (BOS Request)
+        container.querySelectorAll('.cap-type-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentFilterType = btn.dataset.val;
+                renderCapacitySubTab(container);
+            });
+        });
+
+        // Event Listeners for Status Filter
         container.querySelectorAll('.cap-filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 currentFilterStatus = btn.dataset.val;
@@ -733,6 +869,15 @@
             });
         }
 
+        // Edit branch service type buttons (BOS Revision)
+        container.querySelectorAll('.mpm-btn-edit-type').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const branch = btn.dataset.branch;
+                openBranchTypeModal(branch);
+            });
+        });
+
         // View roster buttons inside table
         container.querySelectorAll('.mpm-btn-view-roster').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -741,6 +886,204 @@
                 switchMpmSubTab('roster');
             });
         });
+    }
+
+    // =========================================================================
+    // MODAL REVISI TIPE LAYANAN CABANG (BOS REVISION MODAL)
+    // =========================================================================
+    function openBranchTypeModal(branchName) {
+        const branchData = capacityData.find(c => c.branch === branchName);
+        if (!branchData) return;
+
+        const ovr = branchOverrides[branchName];
+        const currentType = (ovr && ovr.productType) ? ovr.productType : branchData.productType;
+
+        const backdrop = document.getElementById('mpm-type-modal-backdrop');
+        const box = document.getElementById('mpm-type-modal-box');
+        if (!backdrop || !box) return;
+
+        box.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 16px;">
+                <div>
+                    <h3 style="margin: 0; color: #0f172a; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-sliders" style="color: var(--accent-blue, #2563eb);"></i>
+                        Revisi Tipe Layanan Operasional
+                    </h3>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-top: 2px;">
+                        Cabang: <strong style="color: #1d4ed8; font-size: 0.95rem;">${branchName}</strong>
+                    </div>
+                </div>
+                <button id="mpm-type-modal-close-x" style="background: transparent; border: none; color: #64748b; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Current Summary Stats -->
+            <div style="background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
+                <div>
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Avg 3M GD</div>
+                    <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a;">${branchData.avg3MonthGd}</div>
+                    <div style="font-size: 0.7rem; color: #64748b;">HHP: ${branchData.volHhp} | CE: ${branchData.volCe}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Teknisi Riil</div>
+                    <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a;">${branchData.realTech} Org</div>
+                    <div style="font-size: 0.7rem; color: #64748b;">Total Staf: ${branchData.allStaff}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Status Gap</div>
+                    <div style="font-size: 1.05rem; font-weight: 800; color: ${branchData.status === 'KURANG' ? '#dc2626' : (branchData.status === 'LEBIH' ? '#0284c7' : '#16a34a')};">
+                        ${branchData.status} (${branchData.diff > 0 ? '+' + branchData.diff : branchData.diff})
+                    </div>
+                    <div style="font-size: 0.7rem; color: #64748b;">Kebutuhan: ${branchData.finalMinStaff} Org</div>
+                </div>
+            </div>
+
+            <form id="mpm-type-form" style="display: flex; flex-direction: column; gap: 12px;">
+                <label style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">Pilih Tipe Layanan Operasional:</label>
+
+                <!-- Option 1: HYBRID MX+CE -->
+                <label class="type-option-card" style="border: 2px solid ${currentType === 'HYBRID (MX+CE)' ? '#7c3aed' : '#e2e8f0'}; background: ${currentType === 'HYBRID (MX+CE)' ? '#faf5ff' : '#ffffff'}; padding: 12px 14px; border-radius: 8px; cursor: pointer; display: flex; gap: 12px; align-items: flex-start; transition: all 0.2s;">
+                    <input type="radio" name="branch-type" value="HYBRID (MX+CE)" ${currentType === 'HYBRID (MX+CE)' ? 'checked' : ''} style="margin-top: 3px;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                            <span style="font-weight: 800; color: #6d28d9; font-size: 0.95rem;">🟣 HYBRID (MX + CE)</span>
+                            <span style="background: #ede9fe; color: #6d28d9; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px solid #ddd6fe;">Aturan Emas BOS</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #475569; margin-top: 3px;">
+                            Melayani Counter Handphone (MX) dan In-Home Service Elektronik (CE/VD/DA).
+                        </div>
+                        <div style="font-size: 0.75rem; color: #7c3aed; font-weight: 700; margin-top: 4px;">
+                            <i class="fa-solid fa-shield-halved"></i> Wajib minimal 2 teknisi (1 counter MX + 1 teknisi mobile CE keluar kantor).
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Option 2: MX ONLY -->
+                <label class="type-option-card" style="border: 2px solid ${currentType === 'MX ONLY' ? '#2563eb' : '#e2e8f0'}; background: ${currentType === 'MX ONLY' ? '#eff6ff' : '#ffffff'}; padding: 12px 14px; border-radius: 8px; cursor: pointer; display: flex; gap: 12px; align-items: flex-start; transition: all 0.2s;">
+                    <input type="radio" name="branch-type" value="MX ONLY" ${currentType === 'MX ONLY' ? 'checked' : ''} style="margin-top: 3px;">
+                    <div style="flex: 1;">
+                        <span style="font-weight: 800; color: #1d4ed8; font-size: 0.95rem;">🔵 MX ONLY (Khusus Counter HP)</span>
+                        <div style="font-size: 0.8rem; color: #475569; margin-top: 3px;">
+                            Hanya perbaikan Smartphone/Tablet counter. Tidak ada perbaikan unit CE keluar kantor.
+                        </div>
+                        <div style="font-size: 0.75rem; color: #2563eb; font-weight: 700; margin-top: 4px;">
+                            <i class="fa-solid fa-calculator"></i> Kebutuhan teknisi mengikuti rasio murni volume (1 teknisi per ~100 unit/bln).
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Option 3: CE ONLY -->
+                <label class="type-option-card" style="border: 2px solid ${currentType === 'CE ONLY' ? '#d97706' : '#e2e8f0'}; background: ${currentType === 'CE ONLY' ? '#fffbeb' : '#ffffff'}; padding: 12px 14px; border-radius: 8px; cursor: pointer; display: flex; gap: 12px; align-items: flex-start; transition: all 0.2s;">
+                    <input type="radio" name="branch-type" value="CE ONLY" ${currentType === 'CE ONLY' ? 'checked' : ''} style="margin-top: 3px;">
+                    <div style="flex: 1;">
+                        <span style="font-weight: 800; color: #b45309; font-size: 0.95rem;">🟡 CE ONLY (Khusus In-Home Elektronik)</span>
+                        <div style="font-size: 0.8rem; color: #475569; margin-top: 3px;">
+                            Khusus perbaikan TV, Kulkas, AC, Mesin Cuci panggilan rumah konsumen.
+                        </div>
+                        <div style="font-size: 0.75rem; color: #b45309; font-weight: 700; margin-top: 4px;">
+                            <i class="fa-solid fa-weight-hanging"></i> Bobot beban kerja dikalikan 2.5x per unit servis.
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Note / Reason -->
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: #334155; font-weight: 600; margin-bottom: 4px;">Alasan / Catatan Revisi (Opsional)</label>
+                    <input type="text" id="type-override-note" value="${ovr ? (ovr.note || '') : ''}" placeholder="Contoh: Mulai melayani In-Home CE, penugasan teknisi baru..." style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; outline: none;">
+                </div>
+
+                <!-- Footer Buttons -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 14px;">
+                    <div>
+                        ${ovr ? `
+                            <button type="button" id="btn-reset-type-override" style="background: transparent; color: #dc2626; border: 1px solid #fca5a5; padding: 7px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                                <i class="fa-solid fa-rotate-left"></i> Reset ke Otomatis
+                            </button>
+                        ` : ''}
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" id="mpm-type-modal-cancel" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                            Batal
+                        </button>
+                        <button type="submit" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+                            <i class="fa-solid fa-floppy-disk"></i> Simpan Revisi
+                        </button>
+                    </div>
+                </div>
+            </form>
+        `;
+
+        backdrop.style.display = 'flex';
+
+        // Close handlers
+        const closeModal = () => { backdrop.style.display = 'none'; };
+        document.getElementById('mpm-type-modal-close-x').onclick = closeModal;
+        document.getElementById('mpm-type-modal-cancel').onclick = closeModal;
+        backdrop.onclick = (e) => { if (e.target === backdrop) closeModal(); };
+
+        // Card click triggers radio check and highlights
+        box.querySelectorAll('.type-option-card').forEach(card => {
+            card.onclick = (e) => {
+                const radio = card.querySelector('input[type="radio"]');
+                if (radio && e.target !== radio) {
+                    radio.checked = true;
+                }
+            };
+        });
+
+        // Reset button handler
+        const resetBtn = document.getElementById('btn-reset-type-override');
+        if (resetBtn) {
+            resetBtn.onclick = async () => {
+                delete branchOverrides[branchName];
+                localStorage.setItem('bujm_mpm_branch_overrides', JSON.stringify(branchOverrides));
+
+                if (window.db) {
+                    window.db.collection('dashboard_data').doc('mpm_branch_overrides').set({
+                        updatedAt: new Date().toISOString(),
+                        overrides: branchOverrides
+                    }, { merge: true }).catch(err => console.warn('Firestore reset override warning:', err));
+                }
+
+                closeModal();
+                showToast(`Tipe layanan ${branchName} dikembalikan ke deteksi otomatis.`);
+                applyOverridesToCapacityData();
+                await calculateMpmCapacityData();
+                renderActiveSubTab();
+            };
+        }
+
+        // Submit handler
+        document.getElementById('mpm-type-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const selectedType = document.querySelector('input[name="branch-type"]:checked').value;
+            const note = document.getElementById('type-override-note').value.trim();
+
+            branchOverrides[branchName] = {
+                productType: selectedType,
+                note,
+                updatedAt: new Date().toISOString(),
+                updatedBy: 'BOS'
+            };
+
+            // Save to localStorage
+            localStorage.setItem('bujm_mpm_branch_overrides', JSON.stringify(branchOverrides));
+
+            // Sync to Firestore
+            if (window.db) {
+                window.db.collection('dashboard_data').doc('mpm_branch_overrides').set({
+                    updatedAt: new Date().toISOString(),
+                    overrides: branchOverrides
+                }, { merge: true }).catch(err => console.warn('Firestore sync override warning:', err));
+            }
+
+            closeModal();
+            showToast(`Tipe layanan ${branchName} berhasil diubah ke ${selectedType}!`);
+
+            // Recalculate capacity to immediately reflect new guardrails & staff requirements!
+            applyOverridesToCapacityData();
+            await calculateMpmCapacityData();
+            renderActiveSubTab();
+        };
     }
 
     // =========================================================================
