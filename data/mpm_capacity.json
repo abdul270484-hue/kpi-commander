@@ -27,7 +27,9 @@
       "ratioWithAdmin": 106.2,
       "diff": -2,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 16,
+      "techCount": 13
     },
     {
       "branch": "KENDARI",
@@ -54,7 +56,9 @@
       "ratioWithAdmin": 94.8,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 4,
+      "techCount": 2
     },
     {
       "branch": "SAMARINDA",
@@ -81,7 +85,9 @@
       "ratioWithAdmin": 89.9,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 12,
+      "techCount": 8
     },
     {
       "branch": "TERNATE",
@@ -108,7 +114,9 @@
       "ratioWithAdmin": 89,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "SIDOARJO",
@@ -135,7 +143,9 @@
       "ratioWithAdmin": 76.2,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 8,
+      "techCount": 6
     },
     {
       "branch": "BANJARMASIN",
@@ -162,7 +172,9 @@
       "ratioWithAdmin": 74,
       "diff": 3,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 16,
+      "techCount": 8
     },
     {
       "branch": "BANDAR LAMPUNG",
@@ -189,7 +201,9 @@
       "ratioWithAdmin": 72.3,
       "diff": 2,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 9,
+      "techCount": 5
     },
     {
       "branch": "DENPASAR",
@@ -216,7 +230,9 @@
       "ratioWithAdmin": 72,
       "diff": 4,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 20,
+      "techCount": 13
     },
     {
       "branch": "DENPASAR - CELLULAR WORLD",
@@ -243,7 +259,9 @@
       "ratioWithAdmin": 72,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "PALANGKARAYA",
@@ -270,7 +288,9 @@
       "ratioWithAdmin": 71.3,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "BOJONEGORO",
@@ -297,7 +317,9 @@
       "ratioWithAdmin": 69.5,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "BERAU",
@@ -324,7 +346,9 @@
       "ratioWithAdmin": 68,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "DENPASAR - PLANET GADGET",
@@ -351,7 +375,9 @@
       "ratioWithAdmin": 67,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "PANGKALAN BUN",
@@ -378,7 +404,9 @@
       "ratioWithAdmin": 66,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "KARAWANG",
@@ -405,7 +433,9 @@
       "ratioWithAdmin": 65,
       "diff": 2,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 7,
+      "techCount": 4
     },
     {
       "branch": "KUPANG",
@@ -432,7 +462,9 @@
       "ratioWithAdmin": 64.5,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 4,
+      "techCount": 3
     },
     {
       "branch": "MANADO",
@@ -459,7 +491,9 @@
       "ratioWithAdmin": 63.9,
       "diff": 4,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 10,
+      "techCount": 6
     },
     {
       "branch": "BENGKULU",
@@ -486,7 +520,9 @@
       "ratioWithAdmin": 58.5,
       "diff": 2,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 4,
+      "techCount": 2
     },
     {
       "branch": "MAKASSAR",
@@ -513,7 +549,9 @@
       "ratioWithAdmin": 56.7,
       "diff": 8,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 21,
+      "techCount": 14
     },
     {
       "branch": "PALU",
@@ -540,7 +578,9 @@
       "ratioWithAdmin": 54.3,
       "diff": 2,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 4,
+      "techCount": 2
     },
     {
       "branch": "PANGKAL PINANG",
@@ -567,7 +607,9 @@
       "ratioWithAdmin": 54,
       "diff": 2,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 4,
+      "techCount": 2
     },
     {
       "branch": "TANJUNGPINANG",
@@ -594,7 +636,9 @@
       "ratioWithAdmin": 54,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "SINGKAWANG",
@@ -621,7 +665,9 @@
       "ratioWithAdmin": 53,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "MAMUJU",
@@ -648,7 +694,9 @@
       "ratioWithAdmin": 51.5,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "SINGARAJA",
@@ -675,7 +723,9 @@
       "ratioWithAdmin": 50,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 1,
+      "techCount": 0
     },
     {
       "branch": "PROBOLINGGO",
@@ -702,7 +752,9 @@
       "ratioWithAdmin": 47.7,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "AMBON",
@@ -729,7 +781,9 @@
       "ratioWithAdmin": 47,
       "diff": 2,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 4,
+      "techCount": 4
     },
     {
       "branch": "PAMEKASAN",
@@ -756,7 +810,9 @@
       "ratioWithAdmin": 46.3,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "PATI",
@@ -783,7 +839,9 @@
       "ratioWithAdmin": 46,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "totalStaff": 2,
+      "techCount": 2
     },
     {
       "branch": "SORONG",
@@ -810,7 +868,9 @@
       "ratioWithAdmin": 45.5,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "JAYAPURA",
@@ -837,7 +897,9 @@
       "ratioWithAdmin": 44.3,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "BONTANG",
@@ -864,7 +926,9 @@
       "ratioWithAdmin": 42,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "SERPONG ITC-BSD",
@@ -891,7 +955,9 @@
       "ratioWithAdmin": 39.8,
       "diff": 6,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 10,
+      "techCount": 4
     },
     {
       "branch": "PALOPO",
@@ -918,7 +984,9 @@
       "ratioWithAdmin": 39.7,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "TIMIKA",
@@ -945,7 +1013,9 @@
       "ratioWithAdmin": 39.7,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "GORONTALO",
@@ -972,7 +1042,9 @@
       "ratioWithAdmin": 33.7,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 3,
+      "techCount": 2
     },
     {
       "branch": "SRAGEN",
@@ -999,7 +1071,9 @@
       "ratioWithAdmin": 27,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 1,
+      "techCount": 1
     },
     {
       "branch": "SAMPIT",
@@ -1026,7 +1100,9 @@
       "ratioWithAdmin": 26.5,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "totalStaff": 2,
+      "techCount": 0
     },
     {
       "branch": "BANDAR JAYA",
@@ -1053,7 +1129,9 @@
       "ratioWithAdmin": 24.5,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "LUWUK",
@@ -1080,7 +1158,9 @@
       "ratioWithAdmin": 23.5,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "totalStaff": 2,
+      "techCount": 1
     },
     {
       "branch": "TANJUNG",
@@ -1107,7 +1187,9 @@
       "ratioWithAdmin": 0,
       "diff": -2,
       "status": "KURANG",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "totalStaff": 0,
+      "techCount": 1
     },
     {
       "branch": "TARAKAN",
@@ -1134,7 +1216,9 @@
       "ratioWithAdmin": 0,
       "diff": -2,
       "status": "KURANG",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "totalStaff": 0,
+      "techCount": 0
     },
     {
       "branch": "BATAM",
@@ -1161,7 +1245,9 @@
       "ratioWithAdmin": 0,
       "diff": 20,
       "status": "LEBIH",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "totalStaff": 22,
+      "techCount": 12
     }
   ]
 }

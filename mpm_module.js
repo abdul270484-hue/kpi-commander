@@ -275,6 +275,7 @@
                 // Formula Kolom BJ Excel (Real Person vs Min Staff) tapi HELPER DIKELUARKAN (Count = 0 di sheet 1)
                 const effectiveStaff = (r.allStaff || 0) - (r.helperCount || 0);
                 r.effectiveStaff = effectiveStaff;
+                r.totalStaff = effectiveStaff;
                 r.diff = effectiveStaff - r.finalMinStaff;
                 if (effectiveStaff < r.finalMinStaff) r.status = 'KURANG';
                 else if (effectiveStaff > r.finalMinStaff) r.status = 'LEBIH';
@@ -433,6 +434,7 @@
                     techHhp: 0,
                     techCe: 0,
                     leaderCount: 0,
+                    techCount: 0,
                     adminCount: 0,
                     helperCount: 0
                 };
@@ -444,6 +446,7 @@
                 : inferPositionCategory(e.position, e.roles);
 
             if (pos === 'LEADER/PIC') rosterBranchStats[b].leaderCount++;
+            else if (pos === 'TEKNISI') rosterBranchStats[b].techCount++;
             else if (pos === 'ADMIN') rosterBranchStats[b].adminCount++;
             else if (pos === 'HELPER') rosterBranchStats[b].helperCount++;
 
@@ -465,10 +468,12 @@
                     if (rData.techs > 0) r.realTech = rData.techs;
                     if (rData.allStaff > 0) r.allStaff = rData.allStaff;
                     r.leaderCount = rData.leaderCount || 0;
+                    r.techCount = rData.techCount || 0;
                     r.adminCount = rData.adminCount || 0;
                     r.helperCount = rData.helperCount || 0;
                     const effectiveStaff = (r.allStaff || 0) - (r.helperCount || 0);
                     r.effectiveStaff = effectiveStaff;
+                    r.totalStaff = effectiveStaff;
                     r.totalCancel = (r.cancelHhp || 0) + (r.cancelCe || 0);
                     r.ratioWoAdmin = r.realTech > 0 ? parseFloat((r.totalAdjust / r.realTech).toFixed(1)) : 0;
                     r.ratioWithAdmin = r.allStaff > 0 ? parseFloat((r.totalAdjust / r.allStaff).toFixed(1)) : 0;
@@ -478,9 +483,11 @@
                     else r.status = 'CUKUP';
                 } else {
                     r.leaderCount = r.leaderCount || 0;
+                    r.techCount = r.techCount || 0;
                     r.adminCount = r.adminCount || 0;
                     r.helperCount = r.helperCount || 0;
                     r.effectiveStaff = (r.allStaff || 0) - (r.helperCount || 0);
+                    r.totalStaff = r.effectiveStaff;
                     r.totalCancel = (r.cancelHhp || 0) + (r.cancelCe || 0);
                 }
             });
@@ -616,6 +623,8 @@
 
             // Formula Kolom BJ Excel (Real Person vs Min Staff) tapi HELPER DIKELUARKAN (Count = 0 di sheet 1)
             const effectiveStaff = (rData.allStaff || 0) - (rData.helperCount || 0);
+            rData.effectiveStaff = effectiveStaff;
+            rData.totalStaff = effectiveStaff;
             const diff = effectiveStaff - finalMinStaff;
 
             let status = 'CUKUP';
@@ -639,9 +648,11 @@
                 pureMinStaff,
                 finalMinStaff,
                 leaderCount: rData.leaderCount || 0,
+                techCount: rData.techCount || 0,
                 realTech,
                 adminCount: rData.adminCount || 0,
                 helperCount: rData.helperCount || 0,
+                totalStaff: effectiveStaff,
                 effectiveStaff,
                 allStaff: rData.allStaff,
                 ratioWoAdmin: parseFloat(ratioWoAdmin.toFixed(1)),
@@ -985,51 +996,28 @@
                 </div>
             </div>
 
-            <!-- Controls: Filter Tipe Layanan & Filter Status Gap (Executive Light Theme) -->
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; background: #f8fafc; padding: 14px 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <!-- Row 1: Filter Tipe Layanan (Permintaan BOS) -->
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                        <span style="font-size: 0.8rem; color: #475569; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-layer-group" style="color: #2563eb;"></i> Tipe Layanan:
-                        </span>
-                        <button class="cap-type-filter-btn ${currentFilterType === 'ALL' ? 'active' : ''}" data-val="ALL" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'ALL' ? '#2563eb' : '#cbd5e1'}; background: ${currentFilterType === 'ALL' ? '#2563eb' : '#ffffff'}; color: ${currentFilterType === 'ALL' ? '#ffffff' : '#475569'}; box-shadow: ${currentFilterType === 'ALL' ? '0 2px 4px rgba(37,99,235,0.2)' : 'none'};">
-                            Semua Layanan (${capacityData.length})
-                        </button>
-                        <button class="cap-type-filter-btn ${currentFilterType === 'HYBRID' ? 'active' : ''}" data-val="HYBRID" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'HYBRID' ? '#7c3aed' : '#d8b4fe'}; background: ${currentFilterType === 'HYBRID' ? '#7c3aed' : '#f5f3ff'}; color: ${currentFilterType === 'HYBRID' ? '#ffffff' : '#6d28d9'}; box-shadow: ${currentFilterType === 'HYBRID' ? '0 2px 4px rgba(124,58,237,0.2)' : 'none'};">
-                            🟣 HYBRID MX+CE (${hybridCount})
-                        </button>
-                        <button class="cap-type-filter-btn ${currentFilterType === 'MX' ? 'active' : ''}" data-val="MX" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'MX' ? '#0284c7' : '#bae6fd'}; background: ${currentFilterType === 'MX' ? '#0284c7' : '#eff6ff'}; color: ${currentFilterType === 'MX' ? '#ffffff' : '#0369a1'}; box-shadow: ${currentFilterType === 'MX' ? '0 2px 4px rgba(2,132,199,0.2)' : 'none'};">
-                            🔵 MX ONLY (${mxCount})
-                        </button>
-                        <button class="cap-type-filter-btn ${currentFilterType === 'CE' ? 'active' : ''}" data-val="CE" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'CE' ? '#d97706' : '#fde68a'}; background: ${currentFilterType === 'CE' ? '#d97706' : '#fffbeb'}; color: ${currentFilterType === 'CE' ? '#ffffff' : '#b45309'}; box-shadow: ${currentFilterType === 'CE' ? '0 2px 4px rgba(217,119,6,0.2)' : 'none'};">
-                            🟡 CE ONLY (${ceCount})
-                        </button>
-                        ${overriddenCount > 0 ? `
-                            <button class="cap-type-filter-btn ${currentFilterType === 'REVISI' ? 'active' : ''}" data-val="REVISI" style="padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterType === 'REVISI' ? '#059669' : '#a7f3d0'}; background: ${currentFilterType === 'REVISI' ? '#059669' : '#ecfdf5'}; color: ${currentFilterType === 'REVISI' ? '#ffffff' : '#047857'};">
-                                ✏️ Direvisi (${overriddenCount})
-                            </button>
-                        ` : ''}
-                    </div>
-
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 0.8rem; color: #475569; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-location-dot" style="color: #2563eb;"></i> Cabang:
-                        </span>
-                        <select id="cap-branch-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; outline: none; cursor: pointer; min-width: 210px;">
-                            <option value="ALL">Semua Cabang (${allCapBranches.length})</option>
-                            ${allCapBranches.map(b => `<option value="${b}" ${currentFilterBranch === b ? 'selected' : ''}>${b}</option>`).join('')}
-                        </select>
-                    </div>
+            <!-- Controls: Filter Status Gap & Filter Cabang (Clean Single-Row Executive Style) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; background: #f8fafc; padding: 12px 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <!-- Filter Status Gap (Kurang, Cukup, Lebih) -->
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <span style="font-size: 0.8rem; color: #475569; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-right: 4px;">
+                        <i class="fa-solid fa-filter" style="color: #2563eb;"></i> Filter Status:
+                    </span>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'ALL' ? 'active' : ''}" data-val="ALL" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'ALL' ? '#2563eb' : '#cbd5e1'}; background: ${currentFilterStatus === 'ALL' ? '#2563eb' : '#ffffff'}; color: ${currentFilterStatus === 'ALL' ? '#ffffff' : '#475569'}; box-shadow: ${currentFilterStatus === 'ALL' ? '0 2px 4px rgba(37,99,235,0.2)' : 'none'};">Semua (${capacityData.length})</button>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'KURANG' ? 'active' : ''}" data-val="KURANG" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fca5a5'}; background: ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fee2e2'}; color: ${currentFilterStatus === 'KURANG' ? '#ffffff' : '#dc2626'}; box-shadow: ${currentFilterStatus === 'KURANG' ? '0 2px 4px rgba(239,68,68,0.2)' : 'none'};">🔴 Kurang (${kurangCount})</button>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'CUKUP' ? 'active' : ''}" data-val="CUKUP" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#86efac'}; background: ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#dcfce7'}; color: ${currentFilterStatus === 'CUKUP' ? '#ffffff' : '#16a34a'}; box-shadow: ${currentFilterStatus === 'CUKUP' ? '0 2px 4px rgba(16,185,129,0.2)' : 'none'};">🟢 Cukup (${cukupCount})</button>
+                    <button class="cap-filter-btn ${currentFilterStatus === 'LEBIH' ? 'active' : ''}" data-val="LEBIH" style="padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#7dd3fc'}; background: ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#e0f2fe'}; color: ${currentFilterStatus === 'LEBIH' ? '#ffffff' : '#0284c7'}; box-shadow: ${currentFilterStatus === 'LEBIH' ? '0 2px 4px rgba(2,132,199,0.2)' : 'none'};">🔵 Lebih (${lebihCount})</button>
                 </div>
 
-                <!-- Row 2: Filter Status Gap (Kurang, Cukup, Lebih) -->
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-top: 1px dashed #e2e8f0; padding-top: 10px;">
-                    <span style="font-size: 0.8rem; color: #64748b; font-weight: 700; margin-right: 5px;">Filter Status:</span>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'ALL' ? 'active' : ''}" data-val="ALL" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; border: 1px solid ${currentFilterStatus === 'ALL' ? '#2563eb' : '#cbd5e1'}; background: ${currentFilterStatus === 'ALL' ? '#2563eb' : '#ffffff'}; color: ${currentFilterStatus === 'ALL' ? '#ffffff' : '#475569'};">Semua (${capacityData.length})</button>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'KURANG' ? 'active' : ''}" data-val="KURANG" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fca5a5'}; background: ${currentFilterStatus === 'KURANG' ? '#ef4444' : '#fee2e2'}; color: ${currentFilterStatus === 'KURANG' ? '#ffffff' : '#dc2626'};">🔴 Kurang (${kurangCount})</button>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'CUKUP' ? 'active' : ''}" data-val="CUKUP" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#86efac'}; background: ${currentFilterStatus === 'CUKUP' ? '#10b981' : '#dcfce7'}; color: ${currentFilterStatus === 'CUKUP' ? '#ffffff' : '#16a34a'};">🟢 Cukup (${cukupCount})</button>
-                    <button class="cap-filter-btn ${currentFilterStatus === 'LEBIH' ? 'active' : ''}" data-val="LEBIH" style="padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 700; border: 1px solid ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#7dd3fc'}; background: ${currentFilterStatus === 'LEBIH' ? '#0284c7' : '#e0f2fe'}; color: ${currentFilterStatus === 'LEBIH' ? '#ffffff' : '#0284c7'};">🔵 Lebih (${lebihCount})</button>
+                <!-- Filter Dropdown Cabang -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.8rem; color: #475569; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-location-dot" style="color: #2563eb;"></i> Cabang:
+                    </span>
+                    <select id="cap-branch-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; outline: none; cursor: pointer; min-width: 220px;">
+                        <option value="ALL">Semua Cabang (${allCapBranches.length})</option>
+                        ${allCapBranches.map(b => `<option value="${b}" ${currentFilterBranch === b ? 'selected' : ''}>${b}</option>`).join('')}
+                    </select>
                 </div>
             </div>
 
@@ -1045,15 +1033,16 @@
                             <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol CE (x2.5)</th>
                             <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #991b1b; color: #fee2e2;" title="Cancel tiket servis (bobot 0.5x poin)">Cancel (x0.5)</th>
                             <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Total Poin</th>
-                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Min Staf</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e3a8a;">Leader/PIC</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1d4ed8;">Teknisi</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e3a8a;">Admin</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e3a8a;">Helper</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e40af;" title="Total Staf Efektif = Leader/PIC + Teknisi + Admin (Helper tidak dihitung)">Total Staff</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #0284c7;" title="Kebutuhan Minimum Staff dari Total Poin">Min Staff</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Ratio w/o Admin</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #172554; border-left: 1px solid #3b82f6; border-right: 1px solid #3b82f6;">Ratio w/ Admin <i class="fa-solid fa-arrow-down-wide-short" style="color: #93c5fd; margin-left: 4px;" title="Sorted Z-A (Tertinggi ke Terendah)"></i></th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Status Gap</th>
-                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; width: 170px;">Aksi</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; width: 85px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="cap-table-body">
@@ -1061,14 +1050,6 @@
                 </table>
             </div>
         `;
-
-        // Event Listeners for Tipe Layanan Filter (BOS Request)
-        container.querySelectorAll('.cap-type-filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                currentFilterType = btn.dataset.val;
-                renderCapacitySubTab(container);
-            });
-        });
 
         // Event Listeners for Status Filter
         container.querySelectorAll('.cap-filter-btn').forEach(btn => {
@@ -1097,15 +1078,8 @@
 
         let filtered = capacityData.filter(r => {
             const matchStatus = currentFilterStatus === 'ALL' || r.status === currentFilterStatus;
-            
-            let matchType = true;
-            if (currentFilterType === 'HYBRID') matchType = r.productType === 'HYBRID (MX+CE)';
-            else if (currentFilterType === 'MX') matchType = r.productType === 'MX ONLY';
-            else if (currentFilterType === 'CE') matchType = r.productType === 'CE ONLY';
-            else if (currentFilterType === 'REVISI') matchType = r.isOverridden;
-
             const matchBranch = currentFilterBranch === 'ALL' || r.branch === currentFilterBranch;
-            return matchStatus && matchType && matchBranch;
+            return matchStatus && matchBranch;
         });
 
         // Always ensure Z-A sort by Ratio w/ Admin (Permintaan BOS)
@@ -1116,7 +1090,7 @@
         });
 
         if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="16" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="17" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>`;
             return;
         }
 
@@ -1156,27 +1130,31 @@
                     <td style="padding: 8px 10px; text-align: right; color: #d97706; font-weight: 600;">${r.volCe}</td>
                     <td style="padding: 8px 10px; text-align: right; color: #dc2626; font-weight: 700;" title="Cancel HHP: ${r.cancelHhp || 0}, Cancel CE: ${r.cancelCe || 0} (Bobot 0.5x: ${(((r.totalCancel || 0) * 0.5)).toFixed(1)} Poin)">${r.totalCancel || ((r.cancelHhp || 0) + (r.cancelCe || 0))}</td>
                     <td style="padding: 8px 10px; text-align: right; color: #7c3aed; font-weight: 800;">${r.totalAdjust}</td>
-                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0284c7;">${r.finalMinStaff}</td>
                     <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #b45309; background: #fffbeb;">${r.leaderCount || 0}</td>
-                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #1d4ed8; background: #eff6ff;">${r.realTech}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #1d4ed8; background: #eff6ff;" title="Teknisi: ${r.techCount != null ? r.techCount : r.realTech} Orang (Teknisi Riil Lapangan: ${r.realTech})">${r.techCount != null ? r.techCount : r.realTech}</td>
                     <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #0284c7; background: #f0f9ff;">${r.adminCount || 0}</td>
-                    <td style="padding: 8px 10px; text-align: center; font-weight: 600; color: #64748b; background: #f8fafc;">${r.helperCount || 0}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 600; color: #64748b; background: #f8fafc;" title="Helper (Driver/OB/Security) - Tidak masuk hitungan Min Staff">${r.helperCount || 0}</td>
+                    <td style="padding: 8px 10px; text-align: center; background: #eff6ff;" title="Total Staf Efektif = Leader (${r.leaderCount || 0}) + Teknisi (${r.techCount != null ? r.techCount : r.realTech}) + Admin (${r.adminCount || 0})">
+                        <span style="font-weight: 800; font-size: 0.88rem; color: #1e40af; background: #dbeafe; border: 1px solid #bfdbfe; padding: 2px 8px; border-radius: 6px; display: inline-block;">
+                            ${r.effectiveStaff != null ? r.effectiveStaff : ((r.leaderCount || 0) + (r.techCount != null ? r.techCount : r.realTech) + (r.adminCount || 0))}
+                        </span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; background: #f0f9ff;" title="Kebutuhan Minimum Staff (Total Poin: ${r.totalAdjust})">
+                        <span style="font-weight: 800; font-size: 0.88rem; color: #0369a1; background: #e0f2fe; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 6px; display: inline-block;">
+                            ${r.finalMinStaff}
+                        </span>
+                    </td>
                     <td style="padding: 8px 10px; text-align: center;">
                         <span style="font-weight: 800; color: ${ratioColor}; font-size: 0.9rem;">${r.ratioWoAdmin}</span>
                     </td>
                     <td style="padding: 8px 10px; text-align: center; color: #64748b; font-weight: 600;">
                         ${r.ratioWithAdmin > 0 ? r.ratioWithAdmin : '-'}
                     </td>
-                    <td style="padding: 8px 10px; text-align: center;">${statusBadge}</td>
+                    <td style="padding: 8px 10px; text-align: center;" title="Status Gap = Total Staff (${r.effectiveStaff != null ? r.effectiveStaff : ((r.leaderCount || 0) + (r.techCount != null ? r.techCount : r.realTech) + (r.adminCount || 0))}) - Min Staff (${r.finalMinStaff})">${statusBadge}</td>
                     <td style="padding: 8px 10px; text-align: center;">
-                        <div style="display: flex; gap: 5px; justify-content: center; align-items: center;">
-                            <button class="mpm-btn-edit-type" data-branch="${r.branch}" style="background: #ffffff; border: 1px solid #cbd5e1; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Revisi Tipe Layanan Cabang ${r.branch}">
-                                <i class="fa-solid fa-sliders" style="color: #2563eb;"></i> Revisi Layanan
-                            </button>
-                            <button class="mpm-btn-view-roster" data-branch="${r.branch}" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #2563eb; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s;" title="Lihat Data Manpower Cabang ${r.branch}">
-                                <i class="fa-solid fa-users"></i> Manpower
-                            </button>
-                        </div>
+                        <button class="mpm-btn-edit-type" data-branch="${r.branch}" style="background: #ffffff; border: 1px solid #cbd5e1; color: #1e293b; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" title="Edit Tipe Layanan Cabang ${r.branch}" onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#93c5fd';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1';">
+                            <i class="fa-solid fa-pen-to-square" style="color: #2563eb;"></i> Edit
+                        </button>
                     </td>
                 </tr>
             `;
@@ -1188,14 +1166,6 @@
                 e.stopPropagation();
                 const branch = btn.dataset.branch;
                 openBranchTypeModal(branch);
-            });
-        });
-
-        tbody.querySelectorAll('.mpm-btn-view-roster').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const targetBranch = btn.dataset.branch;
-                currentRosterBranch = targetBranch;
-                switchMpmSubTab('roster');
             });
         });
     }
