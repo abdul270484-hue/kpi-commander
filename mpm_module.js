@@ -23,6 +23,56 @@
     let currentRosterWorkStatus = 'ALL'; // 'ALL' | 'AKTIF' | 'RESIGN'
     let currentRosterSearch = '';
 
+    // Official operating branches present in Capacity Plan sheet "Summary" (Summ)
+    const SUMMARY_ALLOWED_BRANCHES = new Set([
+        'PONTIANAK',
+        'BANJARMASIN',
+        'PALANGKARAYA',
+        'SAMARINDA',
+        'TARAKAN',
+        'BANDAR LAMPUNG',
+        'BATAM',
+        'PANGKAL PINANG',
+        'BENGKULU',
+        'TANJUNGPINANG',
+        'SINGKAWANG',
+        'BONTANG',
+        'PAMEKASAN',
+        'KARAWANG',
+        'SAMPIT',
+        'PANGKALAN BUN',
+        'BANDAR JAYA',
+        'PATI',
+        'SRAGEN',
+        'SERPONG ITC-BSD',
+        'SERPONG',
+        'BOJONEGORO',
+        'SIDOARJO',
+        'PROBOLINGGO',
+        'DENPASAR',
+        'DENPASAR - PLANET GADGET',
+        'DENPASAR - CELLULAR WORLD',
+        'SINGARAJA',
+        'MAKASSAR',
+        'MAKASSAR - LEVEL 21',
+        'KENDARI',
+        'PALOPO',
+        'MAMUJU',
+        'PALU',
+        'LUWUK',
+        'GORONTALO',
+        'MANADO',
+        'MANADO - IT CENTER',
+        'TERNATE',
+        'AMBON',
+        'KUPANG',
+        'ATAMBUA',
+        'SORONG',
+        'JAYAPURA',
+        'TIMIKA',
+        'BERAU'
+    ]);
+
     // Initialize module when DOM is ready or called
     window.initMpmModule = async function () {
         console.log('[MPM] Initializing Manpower Management Module (Executive Light Theme)...');
@@ -109,7 +159,9 @@
                 if (res.ok) {
                     const json = await res.json();
                     if (json && json.branches && json.branches.length > 0) {
-                        capacityData = json.branches.map(b => ({ ...b, branch: normalizeBranchName(b.branch) }));
+                        capacityData = json.branches
+                            .map(b => ({ ...b, branch: normalizeBranchName(b.branch) }))
+                            .filter(b => SUMMARY_ALLOWED_BRANCHES.has(b.branch));
                         console.log(`[MPM] Instantly pre-loaded ${capacityData.length} branches from mpm_capacity.json.`);
                     }
                 }
@@ -165,6 +217,7 @@
 
         // If no live GD trend data available (offline / initial load), preserve precalculated GD numbers from cache
         if (!hasGdData && capacityData.length > 0) {
+            capacityData = capacityData.filter(b => SUMMARY_ALLOWED_BRANCHES.has(b.branch));
             capacityData.forEach(r => {
                 const rData = rosterBranchStats[r.branch];
                 if (rData) {
@@ -212,7 +265,7 @@
         const results = [];
 
         allBranches.forEach(branch => {
-            if (!branch || branch === 'UNKNOWN') return;
+            if (!branch || branch === 'UNKNOWN' || branch === 'HO' || !SUMMARY_ALLOWED_BRANCHES.has(branch)) return;
 
             let gdSum = 0, gdCount = 0;
             months3.forEach(m => {
