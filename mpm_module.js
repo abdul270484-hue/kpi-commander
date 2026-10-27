@@ -21,7 +21,6 @@
     let currentFilterRole = 'ALL';
     let currentSearchTerm = '';
     let currentRosterBranch = 'ALL';
-    let currentRosterWorkStatus = 'ALL'; // 'ALL' | 'AKTIF' | 'RESIGN'
     let currentRosterSearch = '';
     let branchOverrides = {}; // { [branch]: { productType: string, note: string, updatedAt: string, updatedBy: string } }
 
@@ -710,7 +709,7 @@
     // Render base shell with navigation tabs & containers
     function renderMpmShell(container) {
         ensureMpmModals();
-        const branchStaffCount = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO').length || 257;
+        const branchStaffCount = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO' && e.status !== 'RESIGN').length || 257;
         container.innerHTML = `
             <!-- MPM Header Bar (Executive Light Theme) -->
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
@@ -771,8 +770,8 @@
             activeBtn.style.fontWeight = '700';
         }
 
-        // Dynamically update Manpower tab label to show branch staff count (excl HO)
-        const branchStaffCount = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO').length || 257;
+        // Dynamically update Manpower tab label to show branch staff count (excl HO & Resign)
+        const branchStaffCount = mpmEmployees.filter(e => normalizeBranchName(e.branch) !== 'HO' && e.status !== 'RESIGN').length || 257;
         const rosterBtn = document.getElementById('mpm-tab-roster');
         if (rosterBtn) {
             rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Data Manpower Karyawan (${branchStaffCount})`;
@@ -1262,10 +1261,17 @@
     // =========================================================================
     function renderRosterSubTab(container) {
         // Filter out employees at "HO" as instructed by BOS (no correlation with branch capacity plan)
+        // AND exclude RESIGN employees (BOS instruction: jika dinyatakan resign, dianggap hilang datanya)
         const branchEmployees = mpmEmployees.filter(e => {
             const b = normalizeBranchName(e.branch);
-            return b !== 'HO';
+            return b !== 'HO' && e.status !== 'RESIGN';
         });
+
+        // Update tab header badge count dynamically
+        const rosterBtn = document.getElementById('mpm-tab-roster');
+        if (rosterBtn) {
+            rosterBtn.innerHTML = `<i class="fa-solid fa-id-card-clip"></i> Data Manpower Karyawan (${branchEmployees.length})`;
+        }
 
         // Collect list of unique branches for filter dropdown (strictly operational branches, no HO)
         const branchList = Array.from(new Set(branchEmployees.map(e => normalizeBranchName(e.branch)).filter(Boolean))).sort();
@@ -1274,7 +1280,6 @@
         let filtered = branchEmployees.filter(e => {
             const b = normalizeBranchName(e.branch) || 'BELUM DITENTUKAN';
             const matchBranch = currentRosterBranch === 'ALL' || b === currentRosterBranch;
-            const matchWork = currentRosterWorkStatus === 'ALL' || (currentRosterWorkStatus === 'AKTIF' ? e.status !== 'RESIGN' : e.status === 'RESIGN');
             const searchLower = currentRosterSearch.toLowerCase();
             const matchSearch = !currentRosterSearch || 
                 (e.name && e.name.toLowerCase().includes(searchLower)) ||
@@ -1282,11 +1287,8 @@
                 (e.position && e.position.toLowerCase().includes(searchLower)) ||
                 (e.roleStatus && e.roleStatus.toLowerCase().includes(searchLower)) ||
                 (Array.isArray(e.roles) && e.roles.some(r => r.toLowerCase().includes(searchLower)));
-            return matchBranch && matchWork && matchSearch;
+            return matchBranch && matchSearch;
         });
-
-        const totalActive = branchEmployees.filter(e => e.status !== 'RESIGN').length;
-        const totalResign = branchEmployees.filter(e => e.status === 'RESIGN').length;
 
         container.innerHTML = `
             <!-- Controls Bar (Executive Light Theme) -->
@@ -1298,16 +1300,6 @@
                         <select id="roster-branch-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; outline: none;">
                             <option value="ALL">Semua Cabang (${branchList.length})</option>
                             ${branchList.map(b => `<option value="${b}" ${currentRosterBranch === b ? 'selected' : ''}>${b}</option>`).join('')}
-                        </select>
-                    </div>
-
-                    <!-- Work Status Filter -->
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 0.8rem; color: #64748b; font-weight: 700;">Status:</span>
-                        <select id="roster-work-status-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; outline: none;">
-                            <option value="ALL" ${currentRosterWorkStatus === 'ALL' ? 'selected' : ''}>Semua (${branchEmployees.length})</option>
-                            <option value="AKTIF" ${currentRosterWorkStatus === 'AKTIF' ? 'selected' : ''}>🟢 Masih Bekerja (${totalActive})</option>
-                            <option value="RESIGN" ${currentRosterWorkStatus === 'RESIGN' ? 'selected' : ''}>🔴 Sudah Resign (${totalResign})</option>
                         </select>
                     </div>
 
@@ -1341,18 +1333,16 @@
                             <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Kategori Peran</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Tgl Masuk</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Masa Kerja</th>
-                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Status</th>
                             <th style="padding: 10px 10px; text-align: center; width: 90px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${filtered.length === 0 ? `<tr><td colspan="9" style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 500;">Tidak ada data manpower yang cocok dengan filter.</td></tr>` : ''}
+                        ${filtered.length === 0 ? `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8; font-weight: 500;">Tidak ada data manpower yang cocok dengan filter.</td></tr>` : ''}
                         ${filtered.map(emp => {
-                            const isResign = emp.status === 'RESIGN';
                             const photoSrc = emp.photo ? emp.photo : `photos/emp_${emp.nik}.jpg`;
 
                             return `
-                                <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff; color: #0f172a; opacity: ${isResign ? '0.6' : '1.0'}; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff; color: #0f172a; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
                                     <!-- Photo Avatar -->
                                     <td style="padding: 8px 10px; text-align: center;">
                                         <div style="width: 44px; height: 44px; border-radius: 50%; overflow: hidden; border: 2px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; background: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
@@ -1395,14 +1385,6 @@
                                         ${emp.tenureText || (emp.tenureYears ? emp.tenureYears + ' Thn' : '-')}
                                     </td>
 
-                                    <!-- Work Status Badge -->
-                                    <td style="padding: 8px 10px; text-align: center;">
-                                        ${isResign ? 
-                                            `<span style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700;">RESIGN</span>` : 
-                                            `<span style="background: #dcfce7; color: #16a34a; border: 1px solid #86efac; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700;">AKTIF</span>`
-                                        }
-                                    </td>
-
                                     <!-- Action Button: Edit -->
                                     <td style="padding: 8px 10px; text-align: center;">
                                         <button class="mpm-btn-edit-emp" data-nik="${emp.nik}" style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Edit Data Karyawan">
@@ -1426,14 +1408,6 @@
             });
         }
 
-        const workStatusSelect = document.getElementById('roster-work-status-select');
-        if (workStatusSelect) {
-            workStatusSelect.addEventListener('change', (e) => {
-                currentRosterWorkStatus = e.target.value;
-                renderRosterSubTab(container);
-            });
-        }
-
         const searchInput = document.getElementById('roster-search-input');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
@@ -1446,7 +1420,6 @@
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
                 currentRosterBranch = 'ALL';
-                currentRosterWorkStatus = 'ALL';
                 currentRosterSearch = '';
                 renderRosterSubTab(container);
             });
