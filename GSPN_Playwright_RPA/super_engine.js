@@ -507,6 +507,18 @@ async function startRemoteListener() {
                 console.log(`\n[HTTP] [REMOTE TRIGGER] Perintah dari Web Dashboard (${data.requestedBy || 'User'})...`);
                 executeRpaCycle(data.slot || 'WEB_DASHBOARD');
             }
+
+            if (data.command === 'ABORT_SHUTDOWN' || data.command === 'CANCEL_SHUTDOWN') {
+                console.log('[REMOTE] 🛑 Perintah pembatalan shutdown diterima dari Web Dashboard.');
+                exec('shutdown /a', (err) => {
+                    isShutdownTriggered = false;
+                    setDoc(triggerDocRef, {
+                        command: 'NONE',
+                        status: 'IDLE',
+                        progress: 'Auto shutdown berhasil dibatalkan oleh user.'
+                    }, { merge: true }).catch(() => {});
+                });
+            }
         }
     }, (err) => {
         console.error('Snapshot Listener Warning:', err.message);
@@ -521,6 +533,8 @@ async function startRemoteListener() {
             memoryUsage: memoryMB + ' MB',
             hostName: process.env.COMPUTERNAME || 'LAPTOP-BUJM',
             rpaStatus: lockManager.currentExecutionId ? 'RUNNING' : 'IDLE',
+            autoShutdownEnabled: config.AUTO_SHUTDOWN ? config.AUTO_SHUTDOWN.ENABLED : false,
+            autoShutdownTime: config.AUTO_SHUTDOWN ? config.AUTO_SHUTDOWN.TARGET_TIME : '20:00',
             waReady: clientReady
         }, { merge: true }).catch(() => {});
     };
@@ -529,12 +543,24 @@ async function startRemoteListener() {
 }
 
 // =============================================================
-// 4. CONTINUOUS RPA CYCLE WITH 10-MIN REST (09:00 - 17:30)
-// Sesuai arahan BOS: Tarik selesai -> Istirahat 10 menit -> Tarik lagi
-// Berulang terus menerus jam 09:00 s/d 17:30 waktu setempat.
-// Jadwal WA Blasting tetap tidak ada perubahan.
+// 4. CONTINUOUS RPA CYCLE WITH AUTO SHUTDOWN (MANDAT BOS)
+// - Siklus Kontinu: Tarik GSPN -> Istirahat 10 Menit -> Tarik Lagi
+// - Jadwal tarikan diperpanjang terus menerus hingga jam shutdown (default 20:00)
+// - Pada jam 20:00 (atau setelah siklus tarikan terakhir selesai tuntas),
+//   laptop otomatis dimatikan dengan aman (Windows shutdown).
 // =============================================================
 let isContinuousLoopRunning = false;
+let isShutdownTriggered = false;
+let lastShutdownDate = null;
+
+// Parse target shutdown time from config (default 20:00)
+function getTargetShutdownMinutes() {
+    const targetStr = (config.AUTO_SHUTDOWN && config.AUTO_SHUTDOWN.TARGET_TIME) || '20:00';
+    const parts = targetStr.split(':').map(Number);
+    const h = isNaN(parts[0]) ? 20 : parts[0];
+    const m = isNaN(parts[1]) ? 0 : parts[1];
+    return h * 60 + m;
+}
 
 function isWithinOperatingHours() {
     const now = new Date();
@@ -542,10 +568,15 @@ function isWithinOperatingHours() {
     const minutes = now.getMinutes();
     const currentTimeMinutes = hours * 60 + minutes;
 
-    const startMinutes = 9 * 60;       // 09:00
-    const endMinutes = 17 * 60 + 30;   // 17:30
+    const startMinutes = 9 * 60; // 09:00
 
-    return currentTimeMinutes >= startMinutes && currentTimeMinutes <= endMinutes;
+    // Jika Auto Shutdown aktif, jam operasional diperpanjang sampai TARGET_TIME (20:00)
+    let endMinutes = 17 * 60 + 30; // default 17:30
+    if (config.AUTO_SHUTDOWN && config.AUTO_SHUTDOWN.ENABLED && config.AUTO_SHUTDOWN.EXTEND_RPA_HOURS) {
+        endMinutes = getTargetShutdownMinutes();
+    }
+
+    return currentTimeMinutes >= startMinutes && currentTimeMinutes < endMinutes;
 }
 
 function getMsUntilNextStart() {
@@ -553,25 +584,124 @@ function getMsUntilNextStart() {
     const start = new Date(now);
     start.setHours(9, 0, 0, 0);
 
-    // Jika sudah lewat 17:30 hari ini, jadwalkan ke jam 09:00 besok
-    if (now.getHours() > 17 || (now.getHours() === 17 && now.getMinutes() > 30)) {
+    const targetMinutes = (config.AUTO_SHUTDOWN && config.AUTO_SHUTDOWN.ENABLED && config.AUTO_SHUTDOWN.EXTEND_RPA_HOURS)
+        ? getTargetShutdownMinutes()
+        : (17 * 60 + 30);
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    if (currentMinutes >= targetMinutes) {
         start.setDate(start.getDate() + 1);
     }
     const diff = start.getTime() - now.getTime();
     return Math.max(diff, 60000); // minimal 1 menit
 }
 
+// Eksekusi Windows Auto Shutdown (dengan grace period 60 detik)
+async function triggerAutoShutdown(reason = 'Jadwal operasional harian selesai') {
+    if (!config.AUTO_SHUTDOWN || !config.AUTO_SHUTDOWN.ENABLED) return;
+    if (isShutdownTriggered) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (lastShutdownDate === todayStr) return; // Cegah trigger ganda di hari yang sama
+
+    isShutdownTriggered = true;
+    lastShutdownDate = todayStr;
+
+    const targetTime = config.AUTO_SHUTDOWN.TARGET_TIME || '20:00';
+    const graceSec = config.AUTO_SHUTDOWN.GRACE_PERIOD_SEC || 60;
+
+    console.log('\n=============================================================');
+    console.log(`  🔌 [AUTO SHUTDOWN] MANDAT BOS: WAKTU OPERASIONAL SELESAI (${targetTime})`);
+    console.log(`  Alasan: ${reason}`);
+    console.log(`  Siklus tarikan GSPN hari ini telah tuntas 100%!`);
+    console.log(`  Komputer akan otomatis shutdown dalam ${graceSec} detik.`);
+    console.log(`  (Untuk membatalkan: Jalankan BATALKAN_SHUTDOWN.bat atau ketik 'shutdown /a' di CMD)`);
+    console.log('=============================================================\n');
+
+    // Update telemetry status ke Firestore
+    try {
+        await setDoc(doc(db, 'rpa_commands', 'pc_telemetry'), {
+            online: false,
+            rpaStatus: 'SHUTTING_DOWN',
+            lastHeartbeat: new Date().toISOString(),
+            shutdownNotice: `Laptop auto shutdown jam ${new Date().toLocaleTimeString('id-ID')} WIB (${reason})`
+        }, { merge: true });
+    } catch (_) {}
+
+    // Jalankan perintah shutdown Windows resmi
+    const shutdownMsg = `BUJM Super Engine: Siklus RPA selesai (${targetTime}). Laptop otomatis mati dalam ${graceSec} detik. Jalankan BATALKAN_SHUTDOWN.bat untuk membatalkan.`;
+    const shutdownCmd = `shutdown /s /t ${graceSec} /c "${shutdownMsg}"`;
+
+    exec(shutdownCmd, (err, stdout, stderr) => {
+        if (err) {
+            console.error('[AUTO SHUTDOWN] ⚠️ Error eksekusi perintah shutdown:', err.message);
+        } else {
+            console.log('[AUTO SHUTDOWN] ✅ Perintah shutdown Windows berhasil dikirim ke sistem operasi.');
+        }
+    });
+}
+
+// Watcher Auto Shutdown (Mengecek berkala jika jam target telah tiba saat mesin IDLE)
+function startAutoShutdownWatcher() {
+    if (!config.AUTO_SHUTDOWN || !config.AUTO_SHUTDOWN.ENABLED) {
+        console.log('[AUTO SHUTDOWN] Fitur auto shutdown: NON-AKTIF.');
+        return;
+    }
+
+    const targetTime = config.AUTO_SHUTDOWN.TARGET_TIME || '20:00';
+    console.log(`[AUTO SHUTDOWN] 🔌 Fitur Auto Shutdown AKTIF: Target Pukul ${targetTime} WIB (Grace Period: ${config.AUTO_SHUTDOWN.GRACE_PERIOD_SEC || 60}s).`);
+
+    // Inisialisasi: Jika engine baru distart saat ini sudah lewat jam target (misal jam 21:00), jangan langsung matikan
+    const now = new Date();
+    const currentMin = now.getHours() * 60 + now.getMinutes();
+    const targetMin = getTargetShutdownMinutes();
+    const todayStr = now.toISOString().split('T')[0];
+
+    if (currentMin >= targetMin) {
+        lastShutdownDate = todayStr;
+        console.log(`[AUTO SHUTDOWN] ℹ️ Engine dinyalakan saat sudah lewat pukul ${targetTime}. Auto shutdown dijadwalkan untuk besok.`);
+    }
+
+    setInterval(() => {
+        if (!config.AUTO_SHUTDOWN || !config.AUTO_SHUTDOWN.ENABLED) return;
+        if (isShutdownTriggered) return;
+
+        const nowDate = new Date();
+        const curMin = nowDate.getHours() * 60 + nowDate.getMinutes();
+        const tgtMin = getTargetShutdownMinutes();
+        const curToday = nowDate.toISOString().split('T')[0];
+
+        if (curToday === lastShutdownDate) return;
+
+        // Jika jam target telah tiba atau terlewati
+        if (curMin >= tgtMin) {
+            // Jika RPA sedang berjalan (lock aktif), jangan matikan dulu, biarkan siklus selesai
+            if (lockManager.currentExecutionId) {
+                console.log(`[AUTO SHUTDOWN] ⏳ Pukul ${targetTime} tercapai, namun tarikan GSPN sedang berjalan. Menunggu siklus tarikan tuntas...`);
+                return;
+            }
+
+            // Jika RPA sedang IDLE / Rest, langsung eksekusi shutdown!
+            triggerAutoShutdown(`Pukul ${targetTime} WIB tercapai saat status mesin IDLE/Rest`);
+        }
+    }, 20000); // Cek tiap 20 detik
+}
+
 async function startContinuousRpaLoop() {
     if (isContinuousLoopRunning) return;
     isContinuousLoopRunning = true;
 
-    console.log('[AUTO-LOOP] 🔄 Siklus Kontinu BUJM Aktif: Tarik GSPN -> Istirahat 10 Menit -> Ulangi (09:00 - 17:30)');
+    const opEndTime = (config.AUTO_SHUTDOWN && config.AUTO_SHUTDOWN.ENABLED && config.AUTO_SHUTDOWN.EXTEND_RPA_HOURS)
+        ? config.AUTO_SHUTDOWN.TARGET_TIME
+        : '17:30';
+
+    console.log(`[AUTO-LOOP] 🔄 Siklus Kontinu BUJM Aktif: Tarik GSPN -> Istirahat 10 Menit -> Ulangi (09:00 - ${opEndTime})`);
 
     while (true) {
         if (!isWithinOperatingHours()) {
             const waitMs = getMsUntilNextStart();
             const waitHours = (waitMs / 3600000).toFixed(1);
-            console.log(`[AUTO-LOOP] 🌙 Di luar jam operasional (09:00 - 17:30). Menunggu ${waitHours} jam hingga pukul 09:00...`);
+            console.log(`[AUTO-LOOP] 🌙 Di luar jam operasional (09:00 - ${opEndTime}). Menunggu ${waitHours} jam hingga pukul 09:00...`);
             await new Promise(res => setTimeout(res, Math.min(waitMs, 300000))); // cek periodik tiap max 5 menit
             continue;
         }
@@ -590,8 +720,19 @@ async function startContinuousRpaLoop() {
             console.error('[AUTO-LOOP] ⚠️ Error saat siklus tarikan:', err.message);
         }
 
+        // Cek segera setelah siklus selesai: apakah sudah mencapai jam shutdown (misal 20:00)?
+        const postCycleNow = new Date();
+        const postCycleMin = postCycleNow.getHours() * 60 + postCycleNow.getMinutes();
+        const targetShutdownMin = getTargetShutdownMinutes();
+
+        if (config.AUTO_SHUTDOWN && config.AUTO_SHUTDOWN.ENABLED && postCycleMin >= targetShutdownMin) {
+            console.log(`[AUTO-LOOP] 🏁 Siklus tarikan terakhir selesai tuntas pada pukul ${postCycleNow.toLocaleTimeString('id-ID')} WIB.`);
+            await triggerAutoShutdown(`Siklus tarikan GSPN terakhir selesai tuntas pada/setelah pukul ${config.AUTO_SHUTDOWN.TARGET_TIME}`);
+            break; // Keluar dari loop karena laptop akan shutdown
+        }
+
         if (!isWithinOperatingHours()) {
-            console.log('[AUTO-LOOP] 🏁 Jam operasional hari ini telah berakhir (lewat 17:30). Menunggu besok pagi.');
+            console.log(`[AUTO-LOOP] 🏁 Jam operasional hari ini telah berakhir (lewat ${opEndTime}). Menunggu besok pagi.`);
             continue;
         }
 
@@ -607,9 +748,11 @@ async function startContinuousRpaLoop() {
 signInAnonymously(auth).then(() => {
     console.log('[AUTH] Terautentikasi ke Firebase Service.');
     startRemoteListener();
+    startAutoShutdownWatcher();
     startContinuousRpaLoop();
 }).catch(() => {
     startRemoteListener();
+    startAutoShutdownWatcher();
     startContinuousRpaLoop();
 });
 

@@ -286,5 +286,13 @@ module.exports = {
 
     // Target Benchmarks
     TARGET_GD_MX: 6.4,
-    TARGET_GD_CE: 2.4
+    TARGET_GD_CE: 2.4,
+
+    // Auto Shutdown Configuration (Mandat BOS)
+    AUTO_SHUTDOWN: {
+        ENABLED: true,
+        TARGET_TIME: '20:00',      // Format HH:MM (Jam 20:00 malam waktu setempat)
+        GRACE_PERIOD_SEC: 60,      // Countdown notifikasi Windows 60 detik sebelum shutdown
+        EXTEND_RPA_HOURS: true     // Jadwal tarikan GSPN berjalan terus sampai jam shutdown
+    }
 };
