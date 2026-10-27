@@ -20,7 +20,10 @@
       "ratioWithAdmin": 127.5,
       "diff": -2,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "PANGKALAN BUN",
@@ -40,7 +43,10 @@
       "ratioWithAdmin": 104.5,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "SERPONG",
@@ -60,7 +66,10 @@
       "ratioWithAdmin": 100.3,
       "diff": -5,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 3,
+      "helperCount": 1
     },
     {
       "branch": "KENDARI",
@@ -80,7 +89,10 @@
       "ratioWithAdmin": 95.5,
       "diff": -2,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 1,
+      "helperCount": 0
     },
     {
       "branch": "SAMARINDA",
@@ -100,7 +112,10 @@
       "ratioWithAdmin": 89.8,
       "diff": -3,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 3,
+      "helperCount": 0
     },
     {
       "branch": "TERNATE",
@@ -120,7 +135,10 @@
       "ratioWithAdmin": 89,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "DENPASAR",
@@ -140,7 +158,10 @@
       "ratioWithAdmin": 75.3,
       "diff": -3,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 5,
+      "helperCount": 2
     },
     {
       "branch": "BANJARMASIN",
@@ -160,7 +181,10 @@
       "ratioWithAdmin": 74.2,
       "diff": -5,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 3,
+      "adminCount": 5,
+      "helperCount": 1
     },
     {
       "branch": "BANDAR LAMPUNG",
@@ -180,7 +204,10 @@
       "ratioWithAdmin": 72.3,
       "diff": -2,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 3,
+      "helperCount": 1
     },
     {
       "branch": "DENPASAR - CELLULAR WORLD",
@@ -200,7 +227,10 @@
       "ratioWithAdmin": 72,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "PALANGKARAYA",
@@ -220,7 +250,10 @@
       "ratioWithAdmin": 71.3,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "BOJONEGORO",
@@ -240,7 +273,10 @@
       "ratioWithAdmin": 69.5,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "SIDOARJO",
@@ -260,7 +296,10 @@
       "ratioWithAdmin": 68.7,
       "diff": -2,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 2,
+      "helperCount": 1
     },
     {
       "branch": "PONTIANAK",
@@ -280,7 +319,10 @@
       "ratioWithAdmin": 68.4,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 2,
+      "adminCount": 2,
+      "helperCount": 0
     },
     {
       "branch": "BERAU",
@@ -300,7 +342,10 @@
       "ratioWithAdmin": 68,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "DENPASAR - PLANET GADGET",
@@ -320,7 +365,10 @@
       "ratioWithAdmin": 67,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "KARAWANG",
@@ -340,7 +388,10 @@
       "ratioWithAdmin": 65,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 2,
+      "helperCount": 0
     },
     {
       "branch": "KUPANG",
@@ -360,7 +411,10 @@
       "ratioWithAdmin": 64.5,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "MANADO",
@@ -380,7 +434,10 @@
       "ratioWithAdmin": 58.1,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 2,
+      "adminCount": 3,
+      "helperCount": 0
     },
     {
       "branch": "TIMIKA",
@@ -400,7 +457,10 @@
       "ratioWithAdmin": 57.5,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 0,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "BENGKULU",
@@ -420,7 +480,10 @@
       "ratioWithAdmin": 57,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 1,
+      "helperCount": 0
     },
     {
       "branch": "PANGKAL PINANG",
@@ -440,7 +503,10 @@
       "ratioWithAdmin": 55,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 1,
+      "helperCount": 0
     },
     {
       "branch": "MAKASSAR",
@@ -460,7 +526,10 @@
       "ratioWithAdmin": 54.1,
       "diff": 1,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 2,
+      "adminCount": 6,
+      "helperCount": 2
     },
     {
       "branch": "TANJUNGPINANG",
@@ -480,7 +549,10 @@
       "ratioWithAdmin": 54,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "SINGKAWANG",
@@ -500,7 +572,10 @@
       "ratioWithAdmin": 53,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "SAMPIT",
@@ -520,7 +595,10 @@
       "ratioWithAdmin": 53,
       "diff": -2,
       "status": "KURANG",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "PALU",
@@ -540,7 +618,10 @@
       "ratioWithAdmin": 52.8,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 1,
+      "helperCount": 0
     },
     {
       "branch": "MAMUJU",
@@ -560,7 +641,10 @@
       "ratioWithAdmin": 51.5,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "SINGARAJA",
@@ -580,7 +664,10 @@
       "ratioWithAdmin": 50,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "PROBOLINGGO",
@@ -600,7 +687,10 @@
       "ratioWithAdmin": 48.3,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "PAMEKASAN",
@@ -620,7 +710,10 @@
       "ratioWithAdmin": 46.3,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "PATI",
@@ -640,7 +733,10 @@
       "ratioWithAdmin": 46,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "leaderCount": 0,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "BONTANG",
@@ -660,7 +756,10 @@
       "ratioWithAdmin": 42,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "SERPONG ITC-BSD",
@@ -680,7 +779,10 @@
       "ratioWithAdmin": 39.8,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 5,
+      "helperCount": 1
     },
     {
       "branch": "SORONG",
@@ -700,7 +802,10 @@
       "ratioWithAdmin": 35.5,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "GORONTALO",
@@ -720,7 +825,10 @@
       "ratioWithAdmin": 34.3,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "AMBON",
@@ -740,7 +848,10 @@
       "ratioWithAdmin": 31.3,
       "diff": 3,
       "status": "LEBIH",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "PALOPO",
@@ -760,7 +871,10 @@
       "ratioWithAdmin": 29.8,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 1,
+      "helperCount": 0
     },
     {
       "branch": "SRAGEN",
@@ -780,7 +894,10 @@
       "ratioWithAdmin": 27,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 0,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "BANDAR JAYA",
@@ -800,7 +917,10 @@
       "ratioWithAdmin": 24.5,
       "diff": 0,
       "status": "CUKUP",
-      "bosGuardrail": false
+      "bosGuardrail": false,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "LUWUK",
@@ -820,7 +940,10 @@
       "ratioWithAdmin": 22.5,
       "diff": -1,
       "status": "KURANG",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "leaderCount": 1,
+      "adminCount": 0,
+      "helperCount": 0
     },
     {
       "branch": "BATAM",
@@ -840,7 +963,10 @@
       "ratioWithAdmin": 0,
       "diff": 10,
       "status": "LEBIH",
-      "bosGuardrail": true
+      "bosGuardrail": true,
+      "leaderCount": 2,
+      "adminCount": 6,
+      "helperCount": 0
     }
   ]
 }

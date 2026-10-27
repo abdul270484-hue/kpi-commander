@@ -217,12 +217,10 @@
             renderActiveSubTab();
         }
 
-        // Load data in parallel with immediate fallback support
-        await Promise.all([
-            loadBranchOverrides(),
-            loadEmployeesData(),
-            calculateMpmCapacityData()
-        ]);
+        // Load data in sequence so calculateMpmCapacityData has full employees roster
+        await loadBranchOverrides();
+        await loadEmployeesData();
+        await calculateMpmCapacityData();
 
         // Render active view with fresh data
         console.log(`[MPM] Ready! Rendering active view with ${capacityData.length} branches and ${mpmEmployees.length} employees.`);
@@ -420,13 +418,31 @@
             }
         }
 
-        // Count real technicians from live edited mpmEmployees for real-time reactive sync!
-        // Mandat BOS: Jika ada peran teknisi tercentang, masuk ke hitungan Teknisi Riil (Ratio w/o Admin)
+        // Count real technicians and staff positions from live edited mpmEmployees for real-time reactive sync!
+        // Mandat BOS: Leader/PIC, Teknisi (Teknisi Riil), Admin, Helper
         const rosterBranchStats = {};
         mpmEmployees.filter(e => e.status !== 'RESIGN').forEach(e => {
             const b = normalizeBranchName(e.branch);
-            if (!rosterBranchStats[b]) rosterBranchStats[b] = { techs: 0, allStaff: 0, techHhp: 0, techCe: 0 };
+            if (!rosterBranchStats[b]) {
+                rosterBranchStats[b] = {
+                    techs: 0,
+                    allStaff: 0,
+                    techHhp: 0,
+                    techCe: 0,
+                    leaderCount: 0,
+                    adminCount: 0,
+                    helperCount: 0
+                };
+            }
             rosterBranchStats[b].allStaff++;
+
+            const pos = ['LEADER/PIC', 'ADMIN', 'TEKNISI', 'HELPER'].includes(e.position)
+                ? e.position
+                : inferPositionCategory(e.position, e.roles);
+
+            if (pos === 'LEADER/PIC') rosterBranchStats[b].leaderCount++;
+            else if (pos === 'ADMIN') rosterBranchStats[b].adminCount++;
+            else if (pos === 'HELPER') rosterBranchStats[b].helperCount++;
 
             if (isEmployeeTechnician(e)) {
                 rosterBranchStats[b].techs++;
@@ -445,12 +461,19 @@
                 if (rData) {
                     if (rData.techs > 0) r.realTech = rData.techs;
                     if (rData.allStaff > 0) r.allStaff = rData.allStaff;
+                    r.leaderCount = rData.leaderCount || 0;
+                    r.adminCount = rData.adminCount || 0;
+                    r.helperCount = rData.helperCount || 0;
                     r.ratioWoAdmin = r.realTech > 0 ? parseFloat((r.totalAdjust / r.realTech).toFixed(1)) : 0;
                     r.ratioWithAdmin = r.allStaff > 0 ? parseFloat((r.totalAdjust / r.allStaff).toFixed(1)) : 0;
                     r.diff = r.realTech - r.finalMinStaff;
                     if (r.realTech < r.finalMinStaff) r.status = 'KURANG';
                     else if (r.realTech > r.finalMinStaff) r.status = 'LEBIH';
                     else r.status = 'CUKUP';
+                } else {
+                    r.leaderCount = r.leaderCount || 0;
+                    r.adminCount = r.adminCount || 0;
+                    r.helperCount = r.helperCount || 0;
                 }
             });
             applyOverridesToCapacityData();
@@ -590,7 +613,10 @@
                 cancelCe,
                 totalAdjust,
                 finalMinStaff,
+                leaderCount: rData.leaderCount || 0,
                 realTech,
+                adminCount: rData.adminCount || 0,
+                helperCount: rData.helperCount || 0,
                 allStaff: rData.allStaff,
                 ratioWoAdmin: parseFloat(ratioWoAdmin.toFixed(1)),
                 ratioWithAdmin: parseFloat(ratioWithAdmin.toFixed(1)),
@@ -988,14 +1014,16 @@
                             <th style="padding: 10px 8px; text-align: center; width: 40px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">No</th>
                             <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Cabang</th>
                             <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Tipe Layanan</th>
-                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Avg 3M GD</th>
                             <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol HHP</th>
                             <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol CE (x2.5)</th>
                             <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Total Poin</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Min Staf</th>
-                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Teknisi Riil</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e3a8a;">Leader/PIC</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1d4ed8;">Teknisi</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e3a8a;">Admin</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e3a8a;">Helper</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Ratio w/o Admin</th>
-                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e40af; border-left: 1px solid #3b82f6; border-right: 1px solid #3b82f6;">Ratio w/ Admin <i class="fa-solid fa-arrow-down-wide-short" style="color: #93c5fd; margin-left: 4px;" title="Sorted Z-A (Tertinggi ke Terendah)"></i></th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #172554; border-left: 1px solid #3b82f6; border-right: 1px solid #3b82f6;">Ratio w/ Admin <i class="fa-solid fa-arrow-down-wide-short" style="color: #93c5fd; margin-left: 4px;" title="Sorted Z-A (Tertinggi ke Terendah)"></i></th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Status Gap</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; width: 170px;">Aksi</th>
                         </tr>
@@ -1060,7 +1088,7 @@
         });
 
         if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="15" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>`;
             return;
         }
 
@@ -1096,12 +1124,14 @@
                             ${r.isOverridden ? `<span title="Direvisi manual oleh BOS: ${r.overrideNote || ''}" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; cursor: help;"><i class="fa-solid fa-check"></i> REVISI</span>` : ''}
                         </div>
                     </td>
-                    <td style="padding: 8px 10px; text-align: right; color: #334155; font-weight: 600;">${r.avg3MonthGd}</td>
                     <td style="padding: 8px 10px; text-align: right; color: #64748b;">${r.volHhp}</td>
                     <td style="padding: 8px 10px; text-align: right; color: #d97706; font-weight: 600;">${r.volCe}</td>
                     <td style="padding: 8px 10px; text-align: right; color: #7c3aed; font-weight: 800;">${r.totalAdjust}</td>
                     <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0284c7;">${r.finalMinStaff}</td>
-                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0f172a;">${r.realTech}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #b45309; background: #fffbeb;">${r.leaderCount || 0}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #1d4ed8; background: #eff6ff;">${r.realTech}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #0284c7; background: #f0f9ff;">${r.adminCount || 0}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 600; color: #64748b; background: #f8fafc;">${r.helperCount || 0}</td>
                     <td style="padding: 8px 10px; text-align: center;">
                         <span style="font-weight: 800; color: ${ratioColor}; font-size: 0.9rem;">${r.ratioWoAdmin}</span>
                     </td>
