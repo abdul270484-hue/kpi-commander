@@ -406,7 +406,7 @@
                 if (prodSnap && prodSnap.exists) {
                     const p = prodSnap.data();
                     if (p.gdTrendData) gdTrend = p.gdTrendData;
-                    if (!fameList.length && p.fameList) fameList = p.fameList;
+                    if (p.fameList && p.fameList.length > 0) fameList = p.fameList;
                 }
                 if (engSnap && engSnap.exists) {
                     const e = engSnap.data();
@@ -464,6 +464,7 @@
                     r.leaderCount = rData.leaderCount || 0;
                     r.adminCount = rData.adminCount || 0;
                     r.helperCount = rData.helperCount || 0;
+                    r.totalCancel = (r.cancelHhp || 0) + (r.cancelCe || 0);
                     r.ratioWoAdmin = r.realTech > 0 ? parseFloat((r.totalAdjust / r.realTech).toFixed(1)) : 0;
                     r.ratioWithAdmin = r.allStaff > 0 ? parseFloat((r.totalAdjust / r.allStaff).toFixed(1)) : 0;
                     r.diff = r.realTech - r.finalMinStaff;
@@ -474,6 +475,7 @@
                     r.leaderCount = r.leaderCount || 0;
                     r.adminCount = r.adminCount || 0;
                     r.helperCount = r.helperCount || 0;
+                    r.totalCancel = (r.cancelHhp || 0) + (r.cancelCe || 0);
                 }
             });
             applyOverridesToCapacityData();
@@ -530,31 +532,6 @@
 
             if (avg3MonthGd === 0 && rData.allStaff === 0) return;
 
-            const totalFame = fData.repairHhp + fData.repairCe;
-            let propHhp = totalFame > 0 ? (fData.repairHhp / totalFame) : 0.8;
-            let propCe = totalFame > 0 ? (fData.repairCe / totalFame) : 0.2;
-
-            if (rData.techCe > 0 && rData.techHhp === 0) { propCe = 1.0; propHhp = 0.0; }
-            if (rData.techHhp > 0 && rData.techCe === 0) { propHhp = 1.0; propCe = 0.0; }
-
-            const volHhp = Math.round(avg3MonthGd * propHhp);
-            const volCe = Math.round(avg3MonthGd * propCe);
-            const cancelHhp = fData.cancelHhp;
-            const cancelCe = fData.cancelCe;
-
-            const adjustHhp = volHhp + (0.5 * cancelHhp);
-            const adjustCe = (volCe * 2.5) + (0.5 * cancelCe);
-            const totalAdjust = Math.round(adjustHhp + adjustCe);
-
-            // Norma Samsung Murni
-            let pureMinStaff = 1;
-            if (totalAdjust < 100) pureMinStaff = 1;
-            else if (totalAdjust < 200) pureMinStaff = 2;
-            else pureMinStaff = Math.round(totalAdjust / 100);
-
-            const hasCe = volCe > 0 || rData.techCe > 0 || fData.repairCe > 0;
-            const hasMx = volHhp > 0 || rData.techHhp > 0 || fData.repairHhp > 0;
-
             // MANDAT RESMI OPERASIONAL DARI BOS (27 OKT 2026):
             // 1. CE ONLY: HANYA cabang SERPONG
             // 2. MX ONLY: SERPONG ITC-BSD, DENPASAR CELLULAR WORLD, DENPASAR PLANET GADGET, SRAGEN, SINGARAJA, BANDAR JAYA
@@ -579,6 +556,43 @@
             const productType = (ovr && ovr.productType) ? ovr.productType : baseProductType;
             const isOverridden = !!(ovr && ovr.productType);
             const overrideNote = ovr ? (ovr.note || '') : '';
+
+            // FIX REKAP DATA: Proporsi Volume dihitung murni dari Tipe Layanan & Data Riil Tiket GSPN (Fame),
+            // TIDAK BOLEH dioverride atau dirusak oleh roster teknisi cabang!
+            const totalFame = fData.repairHhp + fData.repairCe;
+            let propHhp = 0.8;
+            let propCe = 0.2;
+
+            if (productType === 'CE ONLY') {
+                propHhp = 0.0;
+                propCe = 1.0;
+            } else if (productType === 'MX ONLY') {
+                propHhp = 1.0;
+                propCe = 0.0;
+            } else if (totalFame > 0) {
+                // Cabang HYBRID: Gunakan proporsi riil tiket repair GSPN
+                propHhp = fData.repairHhp / totalFame;
+                propCe = fData.repairCe / totalFame;
+            }
+
+            const volHhp = Math.round(avg3MonthGd * propHhp);
+            const volCe = Math.round(avg3MonthGd * propCe);
+            const cancelHhp = fData.cancelHhp || 0;
+            const cancelCe = fData.cancelCe || 0;
+            const totalCancel = cancelHhp + cancelCe;
+
+            const adjustHhp = volHhp + (0.5 * cancelHhp);
+            const adjustCe = (volCe * 2.5) + (0.5 * cancelCe);
+            const totalAdjust = Math.round(adjustHhp + adjustCe);
+
+            // Norma Samsung Murni
+            let pureMinStaff = 1;
+            if (totalAdjust < 100) pureMinStaff = 1;
+            else if (totalAdjust < 200) pureMinStaff = 2;
+            else pureMinStaff = Math.round(totalAdjust / 100);
+
+            const hasCe = volCe > 0 || rData.techCe > 0 || fData.repairCe > 0;
+            const hasMx = volHhp > 0 || rData.techHhp > 0 || fData.repairHhp > 0;
 
             let finalMinStaff = pureMinStaff;
             let bosGuardrail = false;
@@ -609,6 +623,7 @@
                 avg3MonthGd,
                 volHhp,
                 volCe,
+                totalCancel,
                 cancelHhp,
                 cancelCe,
                 totalAdjust,
@@ -1016,6 +1031,7 @@
                             <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Tipe Layanan</th>
                             <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol HHP</th>
                             <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol CE (x2.5)</th>
+                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #991b1b; color: #fee2e2;" title="Cancel tiket servis (bobot 0.5x poin)">Cancel (x0.5)</th>
                             <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Total Poin</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Min Staf</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e3a8a;">Leader/PIC</th>
@@ -1088,7 +1104,7 @@
         });
 
         if (filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="15" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="16" style="text-align: center; padding: 30px; color: #94a3b8; font-weight: 500;">Tidak ada cabang yang cocok dengan filter pencarian.</td></tr>`;
             return;
         }
 
@@ -1126,6 +1142,7 @@
                     </td>
                     <td style="padding: 8px 10px; text-align: right; color: #64748b;">${r.volHhp}</td>
                     <td style="padding: 8px 10px; text-align: right; color: #d97706; font-weight: 600;">${r.volCe}</td>
+                    <td style="padding: 8px 10px; text-align: right; color: #dc2626; font-weight: 700;" title="Cancel HHP: ${r.cancelHhp || 0}, Cancel CE: ${r.cancelCe || 0} (Bobot 0.5x: ${(((r.totalCancel || 0) * 0.5)).toFixed(1)} Poin)">${r.totalCancel || ((r.cancelHhp || 0) + (r.cancelCe || 0))}</td>
                     <td style="padding: 8px 10px; text-align: right; color: #7c3aed; font-weight: 800;">${r.totalAdjust}</td>
                     <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #0284c7;">${r.finalMinStaff}</td>
                     <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #b45309; background: #fffbeb;">${r.leaderCount || 0}</td>
