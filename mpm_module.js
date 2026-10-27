@@ -1029,10 +1029,10 @@
                             <th style="padding: 10px 8px; text-align: center; width: 40px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">No</th>
                             <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Cabang</th>
                             <th style="padding: 10px 10px; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Tipe Layanan</th>
-                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol HHP</th>
-                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol CE (x2.5)</th>
-                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #991b1b; color: #fee2e2;" title="Cancel tiket servis (bobot 0.5x poin)">Cancel (x0.5)</th>
-                            <th style="padding: 10px 10px; text-align: right; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Total Poin</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol HHP</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Vol CE (x2.5)</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #991b1b; color: #fee2e2;" title="Cancel tiket servis (bobot 0.5x poin)">Cancel (x0.5)</th>
+                            <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase;">Total Poin</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e3a8a;">Leader/PIC</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1d4ed8;">Teknisi</th>
                             <th style="padding: 10px 10px; text-align: center; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; background: #1e3a8a;">Admin</th>
@@ -1126,10 +1126,10 @@
                             ${r.isOverridden ? `<span title="Direvisi manual oleh BOS: ${r.overrideNote || ''}" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.65rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; cursor: help;"><i class="fa-solid fa-check"></i> REVISI</span>` : ''}
                         </div>
                     </td>
-                    <td style="padding: 8px 10px; text-align: right; color: #64748b;">${r.volHhp}</td>
-                    <td style="padding: 8px 10px; text-align: right; color: #d97706; font-weight: 600;">${r.volCe}</td>
-                    <td style="padding: 8px 10px; text-align: right; color: #dc2626; font-weight: 700;" title="Cancel HHP: ${r.cancelHhp || 0}, Cancel CE: ${r.cancelCe || 0} (Bobot 0.5x: ${(((r.totalCancel || 0) * 0.5)).toFixed(1)} Poin)">${r.totalCancel || ((r.cancelHhp || 0) + (r.cancelCe || 0))}</td>
-                    <td style="padding: 8px 10px; text-align: right; color: #7c3aed; font-weight: 800;">${r.totalAdjust}</td>
+                    <td style="padding: 8px 10px; text-align: center; color: #64748b;">${r.volHhp}</td>
+                    <td style="padding: 8px 10px; text-align: center; color: #d97706; font-weight: 600;">${r.volCe}</td>
+                    <td style="padding: 8px 10px; text-align: center; color: #dc2626; font-weight: 700;" title="Cancel HHP: ${r.cancelHhp || 0}, Cancel CE: ${r.cancelCe || 0} (Bobot 0.5x: ${(((r.totalCancel || 0) * 0.5)).toFixed(1)} Poin)">${r.totalCancel || ((r.cancelHhp || 0) + (r.cancelCe || 0))}</td>
+                    <td style="padding: 8px 10px; text-align: center; color: #7c3aed; font-weight: 800;">${r.totalAdjust}</td>
                     <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #b45309; background: #fffbeb;">${r.leaderCount || 0}</td>
                     <td style="padding: 8px 10px; text-align: center; font-weight: 800; color: #1d4ed8; background: #eff6ff;" title="Teknisi: ${r.techCount != null ? r.techCount : r.realTech} Orang (Teknisi Riil Lapangan: ${r.realTech})">${r.techCount != null ? r.techCount : r.realTech}</td>
                     <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: #0284c7; background: #f0f9ff;">${r.adminCount || 0}</td>
