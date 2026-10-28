@@ -37,6 +37,10 @@
     let currentPerfSort = 'PCT_DESC'; // 'PCT_DESC' | 'PCT_ASC' | 'AVGGD_DESC' | 'LABOR_DESC' | 'MOM_DESC'
     let currentPerfSearch = '';
     let currentPerfUtilFilter = 'ALL'; // 'ALL' | 'OVERLOAD' | 'IDEAL' | 'UNDERLOAD'
+    let currentUtilSortCol = 'utilPct';
+    let currentUtilSortDir = 'desc'; // 'asc' (A-Z) | 'desc' (Z-A)
+    let currentTechSortCol = 'productivityPct';
+    let currentTechSortDir = 'desc'; // 'asc' (A-Z) | 'desc' (Z-A)
     let branchOverrides = {}; // { [branch]: { productType: string, note: string, updatedAt: string, updatedBy: string } }
 
     // Official operating branches present in Capacity Plan sheet "Summary" (Summ)
@@ -2672,6 +2676,11 @@
         if (sortSel) {
             sortSel.addEventListener('change', (e) => {
                 currentPerfSort = e.target.value;
+                if (currentPerfSort === 'PCT_DESC') { currentTechSortCol = 'productivityPct'; currentTechSortDir = 'desc'; }
+                else if (currentPerfSort === 'PCT_ASC') { currentTechSortCol = 'productivityPct'; currentTechSortDir = 'asc'; }
+                else if (currentPerfSort === 'AVGGD_DESC') { currentTechSortCol = 'avgGd'; currentTechSortDir = 'desc'; }
+                else if (currentPerfSort === 'LABOR_DESC') { currentTechSortCol = 'totalLabor'; currentTechSortDir = 'desc'; }
+                else if (currentPerfSort === 'MOM_DESC') { currentTechSortCol = 'momGrowthPct'; currentTechSortDir = 'desc'; }
                 updatePerformanceDynamicView(dataset, userAllowedBranches);
             });
         }
@@ -2718,21 +2727,44 @@
             return matchBranch && matchCat && matchSearch;
         });
 
-        // Sort Technicians
-        filteredTechs.sort((a, b) => {
-            if (currentPerfSort === 'PCT_ASC') return a.productivityPct - b.productivityPct || a.avgGd - b.avgGd;
-            if (currentPerfSort === 'AVGGD_DESC') return b.avgGd - a.avgGd || b.productivityPct - a.productivityPct;
-            if (currentPerfSort === 'LABOR_DESC') return b.totalLabor - a.totalLabor || b.productivityPct - a.productivityPct;
-            if (currentPerfSort === 'MOM_DESC') return (b.momGrowthPct != null ? b.momGrowthPct : -999) - (a.momGrowthPct != null ? a.momGrowthPct : -999);
-            return b.productivityPct - a.productivityPct || b.avgGd - a.avgGd;
-        });
-
         // Ranking for Top 3 & Bottom 3 ( strictly sorted by % Produktivitas vs Capacity Plan )
         const rankedByPct = [...filteredTechs].sort((a, b) => b.productivityPct - a.productivityPct || b.pointsPerDay - a.pointsPerDay);
+        rankedByPct.forEach((t, i) => { t.baseRank = i + 1; });
         const top3 = rankedByPct.slice(0, 3);
         const bottom3 = rankedByPct.length > 3
             ? [...rankedByPct].reverse().slice(0, 3)
             : [...rankedByPct].reverse();
+
+        // Sort Technicians by active header column & direction (A-Z / Z-A)
+        filteredTechs.sort((a, b) => {
+            const dir = currentTechSortDir === 'asc' ? 1 : -1;
+            switch (currentTechSortCol) {
+                case 'rank':
+                    return dir * ((a.baseRank || 999) - (b.baseRank || 999));
+                case 'displayName':
+                    return dir * (String(a.displayName || '').localeCompare(String(b.displayName || ''), 'id') || String(a.nik || '').localeCompare(String(b.nik || '')));
+                case 'branch':
+                    return dir * (String(a.branch || '').localeCompare(String(b.branch || ''), 'id') || String(a.techCategory || '').localeCompare(String(b.techCategory || '')));
+                case 'tenureMonths': {
+                    const va = a.tenureMonths != null ? a.tenureMonths : -1;
+                    const vb = b.tenureMonths != null ? b.tenureMonths : -1;
+                    return dir * (va - vb || String(a.displayName || '').localeCompare(String(b.displayName || ''), 'id'));
+                }
+                case 'avgGd':
+                    return dir * (a.avgGd - b.avgGd || a.productivityPct - b.productivityPct);
+                case 'productivityPct':
+                    return dir * (a.productivityPct - b.productivityPct || a.pointsPerDay - b.pointsPerDay);
+                case 'momGrowthPct': {
+                    const ma = a.momGrowthPct != null ? a.momGrowthPct : -999999;
+                    const mb = b.momGrowthPct != null ? b.momGrowthPct : -999999;
+                    return dir * (ma - mb || a.productivityPct - b.productivityPct);
+                }
+                case 'totalLabor':
+                    return dir * (a.totalLabor - b.totalLabor || a.productivityPct - b.productivityPct);
+                default:
+                    return dir * (a.productivityPct - b.productivityPct || a.avgGd - b.avgGd);
+            }
+        });
 
         // Group Comparison: Teknisi Baru (< 3 Bulan) vs Teknisi Senior (>= 3 Bulan)
         const newTechGroup = filteredTechs.filter(t => t.isNewTech);
@@ -2771,7 +2803,64 @@
         const displayedBranchUtils = branchUtils.filter(b => {
             if (currentPerfUtilFilter === 'ALL') return true;
             return b.utilStatus === currentPerfUtilFilter;
+        }).sort((a, b) => {
+            const dir = currentUtilSortDir === 'asc' ? 1 : -1;
+            switch (currentUtilSortCol) {
+                case 'branch':
+                    return dir * String(a.branch || '').localeCompare(String(b.branch || ''), 'id');
+                case 'productType':
+                    return dir * (String(a.productType || '').localeCompare(String(b.productType || ''), 'id') || String(a.branch || '').localeCompare(String(b.branch || ''), 'id'));
+                case 'realTech':
+                    return dir * (a.realTech - b.realTech || a.utilPct - b.utilPct);
+                case 'techCapacityPoints':
+                    return dir * (a.techCapacityPoints - b.techCapacityPoints || a.utilPct - b.utilPct);
+                case 'loadPoints':
+                    return dir * (a.loadPoints - b.loadPoints || a.utilPct - b.utilPct);
+                case 'utilPct':
+                    return dir * (a.utilPct - b.utilPct || a.loadPoints - b.loadPoints);
+                case 'weeks': {
+                    const wa = Array.isArray(a.weeks) ? a.weeks.reduce((s, x) => s + x, 0) : 0;
+                    const wb = Array.isArray(b.weeks) ? b.weeks.reduce((s, x) => s + x, 0) : 0;
+                    return dir * (wa - wb || a.utilPct - b.utilPct);
+                }
+                case 'branchMomPct': {
+                    const ma = a.branchMomPct != null ? a.branchMomPct : -999999;
+                    const mb = b.branchMomPct != null ? b.branchMomPct : -999999;
+                    return dir * (ma - mb || a.utilPct - b.utilPct);
+                }
+                case 'recommendation':
+                    return dir * (String(a.recommendation || '').localeCompare(String(b.recommendation || ''), 'id') || a.utilPct - b.utilPct);
+                default:
+                    return dir * (a.utilPct - b.utilPct);
+            }
         });
+
+        const renderSortBtn = (tableKey, colKey, label, align = 'left', extraStyle = '') => {
+            const isUtil = tableKey === 'util';
+            const activeCol = isUtil ? currentUtilSortCol : currentTechSortCol;
+            const activeDir = isUtil ? currentUtilSortDir : currentTechSortDir;
+            const isActive = activeCol === colKey;
+            const badgeText = isActive
+                ? (activeDir === 'asc' ? '▲ A-Z' : '▼ Z-A')
+                : '⇅ A-Z/Z-A';
+            const badgeBg = isActive
+                ? (activeDir === 'asc' ? '#fde047' : '#38bdf8')
+                : 'rgba(255,255,255,0.14)';
+            const badgeCol = isActive ? '#0f172a' : '#e2e8f0';
+            const badgeBorder = isActive ? '#ffffff' : 'rgba(255,255,255,0.28)';
+            const justify = align === 'center' ? 'center' : (align === 'right' ? 'flex-end' : 'space-between');
+
+            return `
+                <th class="mpm-sortable-th" data-table="${tableKey}" data-col="${colKey}" title="Klik untuk urutkan ${label} (A-Z / Z-A)" style="padding: 8px 10px; text-align: ${align}; font-size: 0.74rem; text-transform: uppercase; cursor: pointer; user-select: none; transition: background 0.15s; ${extraStyle}">
+                    <div style="display: flex; align-items: center; justify-content: ${justify}; gap: 6px;">
+                        <span>${label}</span>
+                        <span style="display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 0.64rem; font-weight: 800; background: ${badgeBg}; color: ${badgeCol}; border: 1px solid ${badgeBorder}; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.2px;">
+                            ${badgeText}
+                        </span>
+                    </div>
+                </th>
+            `;
+        };
 
         const renderTopBottomCardItem = (t, rankNum, isTop) => {
             const photoSrc = t.empObj ? getEmployeePhotoSrc(t.empObj) : '';
@@ -2942,15 +3031,15 @@
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;">
                         <thead style="position: sticky; top: 0; z-index: 2;">
                             <tr style="background: #1e293b; color: #ffffff;">
-                                <th style="padding: 8px 10px; font-size: 0.74rem; text-transform: uppercase;">Cabang</th>
-                                <th style="padding: 8px 10px; font-size: 0.74rem; text-transform: uppercase;">Layanan</th>
-                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">Teknisi Riil</th>
-                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">Kapasitas (Poin)</th>
-                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">Beban Capacity</th>
-                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">% Utilisasi</th>
-                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">Tren 4 Minggu (M1–M4)</th>
-                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">MoM Cabang</th>
-                                <th style="padding: 8px 10px; font-size: 0.74rem; text-transform: uppercase;">Status & Rekomendasi Taktis</th>
+                                ${renderSortBtn('util', 'branch', 'Cabang', 'left')}
+                                ${renderSortBtn('util', 'productType', 'Layanan', 'left')}
+                                ${renderSortBtn('util', 'realTech', 'Teknisi Riil', 'center')}
+                                ${renderSortBtn('util', 'techCapacityPoints', 'Kapasitas (Poin)', 'center')}
+                                ${renderSortBtn('util', 'loadPoints', 'Beban Capacity', 'center')}
+                                ${renderSortBtn('util', 'utilPct', '% Utilisasi', 'center')}
+                                ${renderSortBtn('util', 'weeks', 'Tren 4 Minggu (M1–M4)', 'center')}
+                                ${renderSortBtn('util', 'branchMomPct', 'MoM Cabang', 'center')}
+                                ${renderSortBtn('util', 'recommendation', 'Status & Rekomendasi Taktis', 'left')}
                             </tr>
                         </thead>
                         <tbody>
@@ -3004,14 +3093,14 @@
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left;">
                         <thead>
                             <tr style="background: var(--accent-blue, #2563eb); color: #ffffff; border-bottom: 2px solid #1d4ed8;">
-                                <th style="padding: 10px 8px; text-align: center; width: 45px; font-size: 0.75rem; text-transform: uppercase;">Rank</th>
-                                <th style="padding: 10px 10px; font-size: 0.75rem; text-transform: uppercase;">Teknisi & NIK</th>
-                                <th style="padding: 10px 10px; font-size: 0.75rem; text-transform: uppercase;">Cabang & Kategori</th>
-                                <th style="padding: 10px 10px; text-align: center; font-size: 0.75rem; text-transform: uppercase;">Join Date & Masa Kerja</th>
-                                <th style="padding: 10px 10px; text-align: center; font-size: 0.75rem; text-transform: uppercase; background: #1e40af;">Avg GD / Hari vs Norma</th>
-                                <th style="padding: 10px 12px; font-size: 0.75rem; text-transform: uppercase; background: #172554; min-width: 190px;">% Produktivitas vs Capacity Plan</th>
-                                <th style="padding: 10px 10px; text-align: center; font-size: 0.75rem; text-transform: uppercase;">Tren Performa (MoM)</th>
-                                <th style="padding: 10px 10px; text-align: right; font-size: 0.75rem; text-transform: uppercase; background: #0369a1;">Kontribusi Labor (IW / OOW)</th>
+                                ${renderSortBtn('tech', 'rank', 'Rank', 'center', 'padding: 10px 8px; width: 45px; font-size: 0.75rem;')}
+                                ${renderSortBtn('tech', 'displayName', 'Teknisi & NIK', 'left', 'padding: 10px 10px; font-size: 0.75rem;')}
+                                ${renderSortBtn('tech', 'branch', 'Cabang & Kategori', 'left', 'padding: 10px 10px; font-size: 0.75rem;')}
+                                ${renderSortBtn('tech', 'tenureMonths', 'Join Date & Masa Kerja', 'center', 'padding: 10px 10px; font-size: 0.75rem;')}
+                                ${renderSortBtn('tech', 'avgGd', 'Avg GD / Hari vs Norma', 'center', 'padding: 10px 10px; font-size: 0.75rem; background: #1e40af;')}
+                                ${renderSortBtn('tech', 'productivityPct', '% Produktivitas vs Capacity Plan', 'left', 'padding: 10px 12px; font-size: 0.75rem; background: #172554; min-width: 190px;')}
+                                ${renderSortBtn('tech', 'momGrowthPct', 'Tren Performa (MoM)', 'center', 'padding: 10px 10px; font-size: 0.75rem;')}
+                                ${renderSortBtn('tech', 'totalLabor', 'Kontribusi Labor (IW / OOW)', 'right', 'padding: 10px 10px; font-size: 0.75rem; background: #0369a1;')}
                             </tr>
                         </thead>
                         <tbody>
@@ -3112,6 +3201,41 @@
         wrapper.querySelectorAll('.perf-util-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 currentPerfUtilFilter = btn.dataset.util;
+                updatePerformanceDynamicView(dataset, userAllowedBranches);
+            });
+        });
+
+        // Bind 1-Button-2-Function (A-Z / Z-A) Sortable Table Headers for Both Tables
+        wrapper.querySelectorAll('.mpm-sortable-th').forEach(th => {
+            th.addEventListener('click', () => {
+                const tableKey = th.dataset.table;
+                const colKey = th.dataset.col;
+                if (tableKey === 'util') {
+                    if (currentUtilSortCol === colKey) {
+                        currentUtilSortDir = currentUtilSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentUtilSortCol = colKey;
+                        const textCols = ['branch', 'productType', 'recommendation'];
+                        currentUtilSortDir = textCols.includes(colKey) ? 'asc' : 'desc';
+                    }
+                } else if (tableKey === 'tech') {
+                    if (currentTechSortCol === colKey) {
+                        currentTechSortDir = currentTechSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentTechSortCol = colKey;
+                        const textCols = ['rank', 'displayName', 'branch'];
+                        currentTechSortDir = textCols.includes(colKey) ? 'asc' : 'desc';
+                    }
+                    // Synchronize top dropdown if matching
+                    const sortSel = document.getElementById('perf-sort-select');
+                    if (sortSel) {
+                        if (currentTechSortCol === 'productivityPct' && currentTechSortDir === 'desc') { currentPerfSort = 'PCT_DESC'; sortSel.value = 'PCT_DESC'; }
+                        else if (currentTechSortCol === 'productivityPct' && currentTechSortDir === 'asc') { currentPerfSort = 'PCT_ASC'; sortSel.value = 'PCT_ASC'; }
+                        else if (currentTechSortCol === 'avgGd' && currentTechSortDir === 'desc') { currentPerfSort = 'AVGGD_DESC'; sortSel.value = 'AVGGD_DESC'; }
+                        else if (currentTechSortCol === 'totalLabor' && currentTechSortDir === 'desc') { currentPerfSort = 'LABOR_DESC'; sortSel.value = 'LABOR_DESC'; }
+                        else if (currentTechSortCol === 'momGrowthPct' && currentTechSortDir === 'desc') { currentPerfSort = 'MOM_DESC'; sortSel.value = 'MOM_DESC'; }
+                    }
+                }
                 updatePerformanceDynamicView(dataset, userAllowedBranches);
             });
         });
