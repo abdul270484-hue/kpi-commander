@@ -1737,6 +1737,40 @@ async function processAndSyncToFirebase(downloadedFiles, scheduleSlot = 'MANUAL'
         partsDailyData = mergedPartsDaily;
     }
 
+    // Proteksi partsSalesList: jangan biarkan ter-overwrite kosong saat putaran rutin non-parts
+    if (!partsSalesList || partsSalesList.length === 0) {
+        if (existingParts && Array.isArray(existingParts.partsSalesList) && existingParts.partsSalesList.length > 0) {
+            partsSalesList = existingParts.partsSalesList;
+        } else if (partsDailyData && Object.keys(partsDailyData).length > 0) {
+            // Rekonstruksi partsSalesList dari partsDailyData
+            const reconstructed = [];
+            for (const [rowKey, val] of Object.entries(partsDailyData)) {
+                const parts = rowKey.split(' - ');
+                const bName = parts[0];
+                const catName = parts[1] || '';
+                let totalDaily = 0;
+                for (const [k, v] of Object.entries(val)) {
+                    if (/^\\d+$/.test(k)) totalDaily += Number(v) || 0;
+                }
+                const partNos = Array.isArray(val.partNos) ? val.partNos : [];
+                if (partNos.length > 0 && totalDaily > 0) {
+                    const share = Math.max(1, Math.round(totalDaily / partNos.length));
+                    partNos.forEach(p => {
+                        reconstructed.push({
+                            branch: bName.trim(),
+                            partNo: (p || '').trim().toUpperCase(),
+                            desc: catName.includes('ADAPTOR') ? 'Adaptor' : 'Data Cable',
+                            qty: share
+                        });
+                    });
+                }
+            }
+            if (reconstructed.length > 0) {
+                partsSalesList = reconstructed;
+            }
+        }
+    }
+
     const payloadPartsSales = {
         lastUpdated: `${dateStr} ${timeStr} WIB`,
         timestamp: Date.now(),

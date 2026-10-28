@@ -150,6 +150,77 @@
         return 'ADMIN';
     }
 
+    // =========================================================================
+    // HELPER: PARSE TANGGAL & KALKULASI MASA KERJA (MANDAT BOS)
+    // =========================================================================
+    function parseJoinDate(val) {
+        if (!val) return null;
+        if (val instanceof Date && !isNaN(val)) return val;
+        val = String(val).trim();
+        // Format YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+            const parts = val.split('-');
+            return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        }
+        // Format DD/MM/YYYY or DD-MM-YYYY
+        const dmyMatch = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (dmyMatch) {
+            return new Date(parseInt(dmyMatch[3], 10), parseInt(dmyMatch[2], 10) - 1, parseInt(dmyMatch[1], 10));
+        }
+        const parsed = new Date(val);
+        return isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function calculateTenure(joinDateVal) {
+        const startDate = parseJoinDate(joinDateVal);
+        if (!startDate) return { tenureYears: '0.0', tenureText: '-' };
+        const now = new Date();
+        if (startDate > now) return { tenureYears: '0.0', tenureText: 'Baru Masuk' };
+
+        let years = now.getFullYear() - startDate.getFullYear();
+        let months = now.getMonth() - startDate.getMonth();
+        let days = now.getDate() - startDate.getDate();
+
+        if (days < 0) {
+            months -= 1;
+            const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+            days += prevMonth.getDate();
+        }
+        if (months < 0) {
+            years -= 1;
+            months += 12;
+        }
+
+        const totalDays = Math.max(0, Math.floor((now - startDate) / (1000 * 60 * 60 * 24)));
+        const tenureYears = (totalDays / 365.25).toFixed(1);
+
+        const parts = [];
+        if (years > 0) parts.push(`${years} tahun`);
+        if (months > 0) parts.push(`${months} bulan`);
+        if (days > 0 || parts.length === 0) parts.push(`${days} hari`);
+
+        const tenureText = parts.join(', ');
+        return { tenureYears, tenureText };
+    }
+
+    function toInputDateFormat(dateVal) {
+        const d = parseJoinDate(dateVal);
+        if (!d) return '';
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function toDisplayDateFormat(dateVal) {
+        const d = parseJoinDate(dateVal);
+        if (!d) return '';
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${dd}/${mm}/${yyyy}`;
+    }
+
     function normalizeEmployeeFields(emp) {
         if (!emp) return;
         emp.branch = normalizeBranchName(emp.branch);
@@ -160,6 +231,13 @@
             emp.position = inferPositionCategory(emp.position, emp.roles);
         }
         emp.roleStatus = emp.roles.join(', ');
+
+        // Kalkulasi dinamis masa kerja dari joinDate jika belum ada atau kosong
+        if (emp.joinDate && (!emp.tenureText || emp.tenureText === '-')) {
+            const tenureCalc = calculateTenure(emp.joinDate);
+            emp.tenureYears = tenureCalc.tenureYears;
+            emp.tenureText = tenureCalc.tenureText;
+        }
     }
 
     // MANDAT RESMI BOS:
@@ -1760,6 +1838,9 @@
             ? targetEmp.roles 
             : inferEmployeeRoles(targetEmp);
 
+        const initialTenure = calculateTenure(targetEmp.joinDate);
+        const initialTenureText = targetEmp.tenureText || initialTenure.tenureText;
+
         const photoSrc = getEmployeePhotoSrc(targetEmp);
 
         box.innerHTML = `
@@ -1863,6 +1944,22 @@
                     </div>
                     <span style="font-size: 0.73rem; color: #64748b; margin-top: 4px; display: block;">
                         Centang satu atau lebih peran sesuai penugasan riil karyawan.
+                    </span>
+                </div>
+
+                <!-- Tanggal Masuk & Kalkulasi Masa Kerja (Mandat BOS) -->
+                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                        <label style="font-size: 0.8rem; color: #0f172a; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-calendar-day" style="color: #2563eb;"></i> Tanggal Masuk Karyawan
+                        </label>
+                        <span id="edit-tenure-badge" style="font-size: 0.75rem; color: #1e40af; background: #eff6ff; font-weight: 700; padding: 2px 8px; border-radius: 4px; border: 1px solid #bfdbfe;">
+                            Masa Kerja: ${initialTenureText}
+                        </span>
+                    </div>
+                    <input type="date" id="edit-join-date" value="${toInputDateFormat(targetEmp.joinDate)}" required style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
+                    <span style="font-size: 0.72rem; color: #64748b; margin-top: 4px; display: block;">
+                        Masa kerja terkalkulasi secara otomatis (tahun, bulan, hari) dan tersimpan ke data karyawan.
                     </span>
                 </div>
 
@@ -2032,6 +2129,17 @@
             });
         });
 
+        // Live calculation of tenure when join date changes (Mandat BOS)
+        const joinDateInput = document.getElementById('edit-join-date');
+        const tenureBadge = document.getElementById('edit-tenure-badge');
+        if (joinDateInput && tenureBadge) {
+            joinDateInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                const calc = calculateTenure(val);
+                tenureBadge.textContent = `Masa Kerja: ${calc.tenureText}`;
+            });
+        }
+
         // Submit handler
         document.getElementById('mpm-edit-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -2042,6 +2150,10 @@
             const newPosition = document.getElementById('edit-position').value;
             const checkedRoles = Array.from(document.querySelectorAll('input[name="edit-role-checkbox"]:checked')).map(cb => cb.value);
             const newStatus = document.querySelector('input[name="edit-status"]:checked').value;
+
+            const newJoinDateRaw = document.getElementById('edit-join-date') ? document.getElementById('edit-join-date').value : '';
+            const newJoinDate = toDisplayDateFormat(newJoinDateRaw) || targetEmp.joinDate || new Date().toLocaleDateString('id-ID');
+            const newTenureCalc = calculateTenure(newJoinDateRaw || newJoinDate);
 
             if (checkedRoles.length === 0) {
                 alert('Pilih minimal satu Kategori Peran (Standar Samsung)!');
@@ -2079,7 +2191,9 @@
                 position: newPosition,
                 roles: checkedRoles,
                 roleStatus: checkedRoles.join(', '),
-                joinDate: targetEmp.joinDate || new Date().toLocaleDateString('id-ID'),
+                joinDate: newJoinDate,
+                tenureYears: newTenureCalc.tenureYears,
+                tenureText: newTenureCalc.tenureText,
                 status: newStatus,
                 photo: finalPhoto,
                 updatedAt: new Date().toISOString()
