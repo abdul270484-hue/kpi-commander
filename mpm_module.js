@@ -2632,21 +2632,9 @@
                 </div>
 
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <!-- Sort Select -->
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 0.78rem; color: #64748b; font-weight: 700;">Urutkan:</span>
-                        <select id="perf-sort-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; outline: none; cursor: pointer;">
-                            <option value="PCT_DESC" ${currentPerfSort === 'PCT_DESC' ? 'selected' : ''}>% Produktivitas vs Target (Tertinggi)</option>
-                            <option value="PCT_ASC" ${currentPerfSort === 'PCT_ASC' ? 'selected' : ''}>% Produktivitas vs Target (Terendah)</option>
-                            <option value="AVGGD_DESC" ${currentPerfSort === 'AVGGD_DESC' ? 'selected' : ''}>Avg GD / Hari (Tertinggi)</option>
-                            <option value="LABOR_DESC" ${currentPerfSort === 'LABOR_DESC' ? 'selected' : ''}>Kontribusi Labor Rp (Tertinggi)</option>
-                            <option value="MOM_DESC" ${currentPerfSort === 'MOM_DESC' ? 'selected' : ''}>Tren Growth MoM (Tertinggi)</option>
-                        </select>
-                    </div>
-
                     <!-- Search Box -->
                     <div style="position: relative;">
-                        <input type="text" id="perf-search-input" value="${currentPerfSearch}" placeholder="Cari Teknisi, NIK, Cabang..." style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px 6px 30px; border-radius: 6px; font-size: 0.82rem; width: 210px; outline: none;">
+                        <input type="text" id="perf-search-input" value="${currentPerfSearch}" placeholder="Cari Teknisi, NIK, Cabang..." style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px 6px 30px; border-radius: 6px; font-size: 0.82rem; width: 230px; outline: none;">
                         <i class="fa-solid fa-search" style="position: absolute; left: 10px; top: 9px; color: #94a3b8; font-size: 0.78rem;"></i>
                     </div>
                 </div>
@@ -2671,19 +2659,6 @@
                 renderPerformanceSubTab(container);
             });
         });
-
-        const sortSel = document.getElementById('perf-sort-select');
-        if (sortSel) {
-            sortSel.addEventListener('change', (e) => {
-                currentPerfSort = e.target.value;
-                if (currentPerfSort === 'PCT_DESC') { currentTechSortCol = 'productivityPct'; currentTechSortDir = 'desc'; }
-                else if (currentPerfSort === 'PCT_ASC') { currentTechSortCol = 'productivityPct'; currentTechSortDir = 'asc'; }
-                else if (currentPerfSort === 'AVGGD_DESC') { currentTechSortCol = 'avgGd'; currentTechSortDir = 'desc'; }
-                else if (currentPerfSort === 'LABOR_DESC') { currentTechSortCol = 'totalLabor'; currentTechSortDir = 'desc'; }
-                else if (currentPerfSort === 'MOM_DESC') { currentTechSortCol = 'momGrowthPct'; currentTechSortDir = 'desc'; }
-                updatePerformanceDynamicView(dataset, userAllowedBranches);
-            });
-        }
 
         const searchInp = document.getElementById('perf-search-input');
         if (searchInp) {
@@ -3220,15 +3195,6 @@
                         currentTechSortCol = colKey;
                         const textCols = ['rank', 'displayName', 'branch'];
                         currentTechSortDir = textCols.includes(colKey) ? 'asc' : 'desc';
-                    }
-                    // Synchronize top dropdown if matching
-                    const sortSel = document.getElementById('perf-sort-select');
-                    if (sortSel) {
-                        if (currentTechSortCol === 'productivityPct' && currentTechSortDir === 'desc') { currentPerfSort = 'PCT_DESC'; sortSel.value = 'PCT_DESC'; }
-                        else if (currentTechSortCol === 'productivityPct' && currentTechSortDir === 'asc') { currentPerfSort = 'PCT_ASC'; sortSel.value = 'PCT_ASC'; }
-                        else if (currentTechSortCol === 'avgGd' && currentTechSortDir === 'desc') { currentPerfSort = 'AVGGD_DESC'; sortSel.value = 'AVGGD_DESC'; }
-                        else if (currentTechSortCol === 'totalLabor' && currentTechSortDir === 'desc') { currentPerfSort = 'LABOR_DESC'; sortSel.value = 'LABOR_DESC'; }
-                        else if (currentTechSortCol === 'momGrowthPct' && currentTechSortDir === 'desc') { currentPerfSort = 'MOM_DESC'; sortSel.value = 'MOM_DESC'; }
                     }
                 }
                 updatePerformanceDynamicView(dataset, userAllowedBranches);
