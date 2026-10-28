@@ -1062,61 +1062,8 @@
         });
 
         container.innerHTML = `
-            <!-- Top KPI Stat Cards (Matching ALL AGING & GD & SALES) -->
-            <div class="kpi-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 15px; margin: 15px 0 20px 0;">
-                <div class="kpi-master-card bg-purple">
-                    <div class="kpi-icon-left"><i class="fa-solid fa-calculator"></i></div>
-                    <div class="kpi-content">
-                        <div class="kpi-title">TOTAL POIN BEBAN KERJA</div>
-                        <div class="value">${totalPoints.toLocaleString('id-ID')} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Poin</span></div>
-                        <div class="kpi-subtitle">Avg 3M GD + Bobot CE 2.5x</div>
-                    </div>
-                    <div class="kpi-chart-right"><i class="fa-solid fa-chart-line"></i></div>
-                </div>
-                <div class="kpi-master-card bg-blue">
-                    <div class="kpi-icon-left"><i class="fa-solid fa-user-check"></i></div>
-                    <div class="kpi-content">
-                        <div class="kpi-title">KEBUTUHAN MIN TEKNISI</div>
-                        <div class="value">${totalMin} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Orang</span></div>
-                        <div class="kpi-subtitle">Norma Samsung + Aturan BOS</div>
-                    </div>
-                    <div class="kpi-chart-right"><i class="fa-solid fa-user-gear"></i></div>
-                </div>
-                <div class="kpi-master-card bg-cyan">
-                    <div class="kpi-icon-left"><i class="fa-solid fa-users"></i></div>
-                    <div class="kpi-content">
-                        <div class="kpi-title">TEKNISI RIIL LAPANGAN</div>
-                        <div class="value">${totalReal} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Teknisi</span></div>
-                        <div class="kpi-subtitle">Aktif di Manpower & Fame</div>
-                    </div>
-                    <div class="kpi-chart-right"><i class="fa-solid fa-id-badge"></i></div>
-                </div>
-                <div class="kpi-master-card ${gap < 0 ? 'bg-coral' : 'bg-blue'}">
-                    <div class="kpi-icon-left"><i class="fa-solid fa-scale-unbalanced"></i></div>
-                    <div class="kpi-content">
-                        <div class="kpi-title">GAP KAPASITAS NASIONAL</div>
-                        <div class="value">${gap > 0 ? '+' + gap : gap} <span style="font-size: 0.9rem; font-weight: 500; opacity: 0.9;">Orang</span></div>
-                        <div class="kpi-subtitle">${gap < 0 ? 'Defisit Perlu Rebalancing' : 'Staf Operasional Terpenuhi'}</div>
-                    </div>
-                    <div class="kpi-chart-right"><i class="fa-solid ${gap < 0 ? 'fa-triangle-exclamation' : 'fa-circle-check'}"></i></div>
-                </div>
-                <div class="kpi-master-card bg-gold">
-                    <div class="kpi-icon-left"><i class="fa-solid fa-map-location-dot"></i></div>
-                    <div class="kpi-content">
-                        <div class="kpi-title">SEBARAN ${capacityData.length} CABANG</div>
-                        <div class="value" style="font-size: 1.35rem !important;">
-                            <span>${kurangCount} Kurang</span> &bull; 
-                            <span>${cukupCount} Cukup</span> &bull; 
-                            <span>${lebihCount} Lebih</span>
-                        </div>
-                        <div class="kpi-subtitle">Peta Intervensi Asmen & Head Ops</div>
-                    </div>
-                    <div class="kpi-chart-right"><i class="fa-solid fa-diagram-project"></i></div>
-                </div>
-            </div>
-
             <!-- Controls: Filter Status Gap & Filter Cabang (Clean Single-Row Executive Style) -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; background: #f8fafc; padding: 12px 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin: 15px 0; background: #f8fafc; padding: 12px 18px; border-radius: 8px; border: 1px solid #e2e8f0;">
                 <!-- Filter Status Gap (Kurang, Cukup, Lebih) -->
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <span style="font-size: 0.8rem; color: #475569; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-right: 4px;">
