@@ -2636,8 +2636,8 @@
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.78rem; color: #64748b; font-weight: 700;">Urutkan:</span>
                         <select id="perf-sort-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; outline: none; cursor: pointer;">
-                            <option value="PCT_DESC" ${currentPerfSort === 'PCT_DESC' ? 'selected' : ''}>% Produktivitas vs Norma (Tertinggi)</option>
-                            <option value="PCT_ASC" ${currentPerfSort === 'PCT_ASC' ? 'selected' : ''}>% Produktivitas vs Norma (Terendah)</option>
+                            <option value="PCT_DESC" ${currentPerfSort === 'PCT_DESC' ? 'selected' : ''}>% Produktivitas vs Target (Tertinggi)</option>
+                            <option value="PCT_ASC" ${currentPerfSort === 'PCT_ASC' ? 'selected' : ''}>% Produktivitas vs Target (Terendah)</option>
                             <option value="AVGGD_DESC" ${currentPerfSort === 'AVGGD_DESC' ? 'selected' : ''}>Avg GD / Hari (Tertinggi)</option>
                             <option value="LABOR_DESC" ${currentPerfSort === 'LABOR_DESC' ? 'selected' : ''}>Kontribusi Labor Rp (Tertinggi)</option>
                             <option value="MOM_DESC" ${currentPerfSort === 'MOM_DESC' ? 'selected' : ''}>Tren Growth MoM (Tertinggi)</option>
@@ -2893,7 +2893,7 @@
                         </div>
                     </div>
                     <div style="text-align: right; flex-shrink: 0;">
-                        <div style="font-size: 1.05rem; font-weight: 900; color: ${badgeColor};">${t.productivityPct}% <span style="font-size: 0.7rem; font-weight: 600; color: #64748b;">vs Norma</span></div>
+                        <div style="font-size: 1.05rem; font-weight: 900; color: ${badgeColor};">${t.productivityPct}% <span style="font-size: 0.7rem; font-weight: 600; color: #64748b;">vs Target</span></div>
                         <div style="font-size: 0.73rem; color: #475569; font-weight: 600;">Avg: <strong>${t.avgGd}</strong> unit/hr (${t.pointsPerDay} poin/hr)</div>
                         <div style="font-size: 0.71rem; color: #0284c7; font-weight: 700;">Labor: ${formatRupiahShort(t.totalLabor)}</div>
                     </div>
@@ -2911,7 +2911,7 @@
                             <i class="fa-solid fa-trophy" style="color: #eab308;"></i>
                             TOP 3 TEKNISI TERBAIK (% Produktivitas vs Capacity Plan)
                         </h3>
-                        <span style="font-size: 0.72rem; background: #dcfce7; color: #15803d; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #86efac;">Norma: 4.0 Poin/Hari</span>
+                        <span style="font-size: 0.72rem; background: #dcfce7; color: #15803d; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #86efac;">Target: 4.0 Poin/Hari</span>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         ${top3.length > 0 ? top3.map((t, i) => renderTopBottomCardItem(t, i + 1, true)).join('') : `<div style="padding: 20px; text-align: center; color: #94a3b8;">Tidak ada data teknisi.</div>`}
@@ -3079,7 +3079,7 @@
                             DAFTAR PERFORMA PRODUKTIVITAS TEKNISI VS CAPACITY PLAN (${filteredTechs.length} Teknisi)
                         </h3>
                         <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #64748b;">
-                            Standar Norma Samsung FTE: <strong>4.0 Poin/Hari Kerja</strong> (MX = 4.0 unit/hari bobot 1x | CE = 1.6 unit/hari bobot 2.5x | Cancel bobot 0.5x). Hari kerja berjalan: <strong>${dataset.workingDays} hari</strong>.
+                            Standar Target Samsung FTE: <strong>4.0 Poin/Hari Kerja</strong> (MX = 4.0 unit/hari bobot 1x | CE = 1.6 unit/hari bobot 2.5x | Cancel bobot 0.5x). Hari kerja berjalan: <strong>${dataset.workingDays} hari</strong>.
                         </p>
                     </div>
                 </div>
@@ -3092,7 +3092,7 @@
                                 ${renderSortBtn('tech', 'displayName', 'Teknisi & NIK', 'left', 'padding: 10px 10px; font-size: 0.75rem;')}
                                 ${renderSortBtn('tech', 'branch', 'Cabang & Kategori', 'left', 'padding: 10px 10px; font-size: 0.75rem;')}
                                 ${renderSortBtn('tech', 'tenureMonths', 'Join Date & Masa Kerja', 'center', 'padding: 10px 10px; font-size: 0.75rem;')}
-                                ${renderSortBtn('tech', 'avgGd', 'Avg GD / Hari vs Norma', 'center', 'padding: 10px 10px; font-size: 0.75rem; background: #1e40af;')}
+                                ${renderSortBtn('tech', 'avgGd', 'Avg GD / Hari vs Target', 'center', 'padding: 10px 10px; font-size: 0.75rem; background: #1e40af;')}
                                 ${renderSortBtn('tech', 'productivityPct', '% Produktivitas vs Capacity Plan', 'left', 'padding: 10px 12px; font-size: 0.75rem; background: #172554; min-width: 190px;')}
                                 ${renderSortBtn('tech', 'momGrowthPct', 'Tren Performa (MoM)', 'center', 'padding: 10px 10px; font-size: 0.75rem;')}
                                 ${renderSortBtn('tech', 'totalLabor', 'Kontribusi Labor (IW / OOW)', 'right', 'padding: 10px 10px; font-size: 0.75rem; background: #0369a1;')}
@@ -3163,7 +3163,7 @@
                                         </td>
                                         <td style="padding: 10px 10px; text-align: center; background: #f8fafc;">
                                             <div style="font-size: 0.95rem; font-weight: 900; color: #0f172a;">${t.avgGd} <span style="font-size: 0.72rem; font-weight: 600; color: #64748b;">unit/hr</span></div>
-                                            <div style="font-size: 0.71rem; color: #475569; margin-top: 2px;">Norma Unit: <strong>${t.unitNormPerDay}</strong>/hr</div>
+                                            <div style="font-size: 0.71rem; color: #475569; margin-top: 2px;">Target Unit: <strong>${t.unitNormPerDay}</strong>/hr</div>
                                         </td>
                                         <td style="padding: 10px 12px;">
                                             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">

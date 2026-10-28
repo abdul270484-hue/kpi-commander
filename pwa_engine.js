@@ -21,7 +21,7 @@
     if ('caches' in window) {
         caches.keys().then((keys) => {
             keys.forEach((key) => {
-                if (key.startsWith('bujm-kpi-shell-') && key !== 'bujm-kpi-shell-v4.8') {
+                if (key.startsWith('bujm-kpi-shell-') && key !== 'bujm-kpi-shell-v4.9') {
                     console.log('[PWA] Purging outdated cache:', key);
                     caches.delete(key).catch(() => {});
                 }
