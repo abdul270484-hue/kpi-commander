@@ -2840,23 +2840,18 @@
             const activeCol = isUtil ? currentUtilSortCol : currentTechSortCol;
             const activeDir = isUtil ? currentUtilSortDir : currentTechSortDir;
             const isActive = activeCol === colKey;
-            const badgeText = isActive
-                ? (activeDir === 'asc' ? '▲ A-Z' : '▼ Z-A')
-                : '⇅ A-Z/Z-A';
-            const badgeBg = isActive
-                ? (activeDir === 'asc' ? '#fde047' : '#38bdf8')
-                : 'rgba(255,255,255,0.14)';
-            const badgeCol = isActive ? '#0f172a' : '#e2e8f0';
-            const badgeBorder = isActive ? '#ffffff' : 'rgba(255,255,255,0.28)';
-            const justify = align === 'center' ? 'center' : (align === 'right' ? 'flex-end' : 'space-between');
+            const iconHtml = isActive
+                ? (activeDir === 'asc'
+                    ? `<i class="fa-solid fa-sort-up" style="color: #fde047; font-size: 0.82rem; transform: translateY(2px);"></i>`
+                    : `<i class="fa-solid fa-sort-down" style="color: #fde047; font-size: 0.82rem; transform: translateY(-2px);"></i>`)
+                : `<i class="fa-solid fa-sort" style="color: rgba(255,255,255,0.45); font-size: 0.72rem;"></i>`;
+            const justify = align === 'center' ? 'center' : (align === 'right' ? 'flex-end' : 'flex-start');
 
             return `
                 <th class="mpm-sortable-th" data-table="${tableKey}" data-col="${colKey}" title="Klik untuk urutkan ${label} (A-Z / Z-A)" style="padding: 8px 10px; text-align: ${align}; font-size: 0.74rem; text-transform: uppercase; cursor: pointer; user-select: none; transition: background 0.15s; ${extraStyle}">
-                    <div style="display: flex; align-items: center; justify-content: ${justify}; gap: 6px;">
+                    <div style="display: inline-flex; align-items: center; justify-content: ${justify}; gap: 5px;">
                         <span>${label}</span>
-                        <span style="display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 0.64rem; font-weight: 800; background: ${badgeBg}; color: ${badgeCol}; border: 1px solid ${badgeBorder}; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.2px;">
-                            ${badgeText}
-                        </span>
+                        ${iconHtml}
                     </div>
                 </th>
             `;
