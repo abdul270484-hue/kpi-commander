@@ -1,6 +1,6 @@
 /**
  * @file mpm_module.js
- * @description Manpower Management & Capacity Intelligence (MPM) Module for BUJM Dashboard.
+ * @description Manpower Management (MPM) Module for BUJM Dashboard.
  * Executive Light Theme matching ALL AGING and GD & SALES pages.
  * Integrates:
  * 1. Samsung Capacity Plan & 3-Month Moving Average GD
@@ -944,10 +944,10 @@
                 <div>
                     <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 10px; margin: 0;">
                         <i class="fa-solid fa-users-gear" style="color: var(--accent-blue, #2563eb);"></i>
-                        MANPOWER MANAGEMENT & CAPACITY INTELLIGENCE (MPM)
+                        MANPOWER MANAGEMENT (MPM)
                     </h2>
                     <p style="font-size: 0.85rem; color: #64748b; margin: 4px 0 0 0;">
-                        Standar Norma Samsung FTE & Data Manpower Tim Operasional PT BUJM (Terintegrasi Live GSPN)
+                        Capacity Plan & Data Manpower Tim Operasional PT BUJM (Terintegrasi Live GSPN)
                     </p>
                 </div>
 
