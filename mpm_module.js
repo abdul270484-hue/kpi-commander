@@ -17,7 +17,7 @@
     let currentMpmSubTab = (function() {
         try {
             const saved = localStorage.getItem('bujm_mpm_subtab');
-            return (saved && saved !== 'simulator') ? saved : 'capacity';
+            return (saved === 'roster') ? 'roster' : 'capacity';
         } catch (_) { return 'capacity'; }
     })();
     let currentFilterStatus = 'ALL';
@@ -959,7 +959,6 @@
                     <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: ${currentMpmSubTab === 'roster' ? '#ffffff' : 'transparent'}; color: ${currentMpmSubTab === 'roster' ? 'var(--accent-blue, #2563eb)' : '#64748b'}; border: 1px solid ${currentMpmSubTab === 'roster' ? '#cbd5e1' : 'transparent'}; padding: 8px 16px; border-radius: 6px; font-weight: ${currentMpmSubTab === 'roster' ? '700' : '600'}; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: ${currentMpmSubTab === 'roster' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none'};">
                         <i class="fa-solid fa-id-card-clip"></i> Data Manpower (${branchStaffCount})
                     </button>
-                    <!-- Mandat BOS: Tab Simulator Mutasi Taktis disembunyikan sementara belum difungsikan -->
                 </div>
             </div>
 
@@ -977,8 +976,6 @@
         if (tabCap) tabCap.addEventListener('click', () => switchMpmSubTab('capacity'));
         const tabRoster = document.getElementById('mpm-tab-roster');
         if (tabRoster) tabRoster.addEventListener('click', () => switchMpmSubTab('roster'));
-        const tabSim = document.getElementById('mpm-tab-simulator');
-        if (tabSim) tabSim.addEventListener('click', () => switchMpmSubTab('simulator'));
     }
 
     function switchMpmSubTab(tabName) {
@@ -1014,14 +1011,7 @@
         const content = document.getElementById('mpm-subtab-content');
         if (!content) return;
 
-        // Jika sebelumnya tersimpan simulator di local storage, redirect ke capacity
-        if (currentMpmSubTab === 'simulator') {
-            currentMpmSubTab = 'capacity';
-        }
-
-        if (currentMpmSubTab === 'capacity') {
-            renderCapacitySubTab(content);
-        } else if (currentMpmSubTab === 'roster') {
+        if (currentMpmSubTab === 'roster') {
             renderRosterSubTab(content);
         } else {
             renderCapacitySubTab(content);
@@ -2265,196 +2255,6 @@
             await calculateMpmCapacityData();
             renderActiveSubTab();
         };
-    }
-
-    // =========================================================================
-    // SUB-TAB 3: SIMULATOR MUTASI (ZERO-COST REBALANCING - LIGHT THEME)
-    // =========================================================================
-    function renderSimulatorSubTab(container) {
-        // Find donor branches (Surplus) and recipient branches (Deficit)
-        const donorList = capacityData.filter(c => c.status === 'LEBIH' || c.diff > 0);
-        const recipientList = capacityData.filter(c => c.status === 'KURANG' || c.diff < 0);
-
-        let selectedDonor = donorList[0] ? donorList[0].branch : (capacityData[0] ? capacityData[0].branch : '');
-        let selectedRecipient = recipientList[0] ? recipientList[0].branch : (capacityData[1] ? capacityData[1].branch : '');
-        let transferCount = 1;
-
-        container.innerHTML = `
-            <div style="margin: 15px 0 20px 0; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div>
-                        <h3 style="color: #0f172a; margin: 0; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-scale-balanced" style="color: var(--accent-blue, #2563eb);"></i>
-                            Simulator Mutasi Taktis & Zero-Cost Rebalancing
-                        </h3>
-                        <p style="color: #64748b; font-size: 0.85rem; margin: 4px 0 0 0;">
-                            Simulasikan pergeseran teknisi dari cabang donor (kelebihan) ke cabang kritis (kurang) tanpa menambah biaya gaji baru.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Simulation Inputs Form -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
-                    <!-- Cabang Asal (Donor) -->
-                    <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #bae6fd; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                        <label style="display: block; font-size: 0.8rem; color: #0284c7; font-weight: 700; margin-bottom: 8px;">1. PILIH CABANG DONOR (SUMBER BANTUAN)</label>
-                        <select id="sim-donor-select" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
-                            ${capacityData.map(c => `<option value="${c.branch}" ${c.branch === selectedDonor ? 'selected' : ''}>${c.branch} (Riil: ${c.realTech}, Min: ${c.finalMinStaff}, ${c.status})</option>`).join('')}
-                        </select>
-                    </div>
-
-                    <!-- Jumlah Teknisi -->
-                    <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                        <label style="display: block; font-size: 0.8rem; color: #7c3aed; font-weight: 700; margin-bottom: 8px;">2. JUMLAH TEKNISI YANG DIPINDAHKAN</label>
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 5px;">
-                            <button id="sim-btn-minus" style="width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; border: 1px solid #cbd5e1; color: #0f172a; font-weight: 800; cursor: pointer; font-size: 1.1rem;">-</button>
-                            <span id="sim-count-display" style="font-size: 1.6rem; font-weight: 800; color: #0f172a;">${transferCount}</span>
-                            <button id="sim-btn-plus" style="width: 36px; height: 36px; border-radius: 50%; background: #f1f5f9; border: 1px solid #cbd5e1; color: #0f172a; font-weight: 800; cursor: pointer; font-size: 1.1rem;">+</button>
-                        </div>
-                    </div>
-
-                    <!-- Cabang Tujuan (Penerima) -->
-                    <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #fecaca; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                        <label style="display: block; font-size: 0.8rem; color: #dc2626; font-weight: 700; margin-bottom: 8px;">3. PILIH CABANG PENERIMA (TARGET DEFISIT)</label>
-                        <select id="sim-recipient-select" style="width: 100%; background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none;">
-                            ${capacityData.map(c => `<option value="${c.branch}" ${c.branch === selectedRecipient ? 'selected' : ''}>${c.branch} (Riil: ${c.realTech}, Min: ${c.finalMinStaff}, ${c.status})</option>`).join('')}
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Simulation Result Comparison Cards -->
-                <div id="sim-result-box" style="width: 100%;">
-                    <!-- Rendered by updateSimulationView -->
-                </div>
-            </div>
-        `;
-
-        function updateSimulationView() {
-            const dObj = capacityData.find(c => c.branch === selectedDonor);
-            const rObj = capacityData.find(c => c.branch === selectedRecipient);
-            const box = document.getElementById('sim-result-box');
-            if (!dObj || !rObj || !box) return;
-
-            // Calculations
-            const donorRealBefore = dObj.realTech;
-            const donorRealAfter = Math.max(0, donorRealBefore - transferCount);
-            const donorRatioBefore = dObj.ratioWoAdmin;
-            const donorRatioAfter = donorRealAfter > 0 ? (dObj.totalAdjust / donorRealAfter).toFixed(1) : 0;
-
-            const recipRealBefore = rObj.realTech;
-            const recipRealAfter = recipRealBefore + transferCount;
-            const recipRatioBefore = rObj.ratioWoAdmin;
-            const recipRatioAfter = recipRealAfter > 0 ? (rObj.totalAdjust / recipRealAfter).toFixed(1) : 0;
-
-            box.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                    <!-- Donor Card -->
-                    <div style="background: #ffffff; border: 1px solid #bae6fd; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
-                            <span style="font-weight: 700; color: #0284c7; font-size: 1.1rem;">${dObj.branch} (Cabang Donor)</span>
-                            <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Beban: ${dObj.totalAdjust} Poin</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-around; margin-top: 15px; text-align: center;">
-                            <div>
-                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">SEBELUM</div>
-                                <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">${donorRealBefore} <span style="font-size: 0.8rem; color: #64748b;">Org</span></div>
-                                <div style="font-size: 0.85rem; font-weight: 700; color: #0284c7;">Rasio: ${donorRatioBefore}</div>
-                            </div>
-                            <div style="display: flex; align-items: center; color: #2563eb; font-size: 1.5rem;">
-                                <i class="fa-solid fa-arrow-right"></i>
-                            </div>
-                            <div>
-                                <div style="font-size: 0.75rem; color: #16a34a; font-weight: 700;">SETELAH PINDAH</div>
-                                <div style="font-size: 1.4rem; font-weight: 800; color: #16a34a;">${donorRealAfter} <span style="font-size: 0.8rem; color: #64748b;">Org</span></div>
-                                <div style="font-size: 0.85rem; font-weight: 700; color: ${donorRatioAfter > 115 ? '#dc2626' : '#16a34a'};">Rasio: ${donorRatioAfter}</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 15px; font-size: 0.8rem; color: #0369a1; text-align: center; background: #f0f9ff; padding: 8px; border-radius: 6px; font-weight: 600;">
-                            Status Pasca Mutasi: <b>${donorRealAfter >= dObj.finalMinStaff ? 'AMAN / CUKUP' : 'DEFISIT (Tidak Disarankan)'}</b>
-                        </div>
-                    </div>
-
-                    <!-- Recipient Card -->
-                    <div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 10px; padding: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
-                            <span style="font-weight: 700; color: #dc2626; font-size: 1.1rem;">${rObj.branch} (Cabang Penerima)</span>
-                            <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Beban: ${rObj.totalAdjust} Poin</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-around; margin-top: 15px; text-align: center;">
-                            <div>
-                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 600;">SEBELUM</div>
-                                <div style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">${recipRealBefore} <span style="font-size: 0.8rem; color: #64748b;">Org</span></div>
-                                <div style="font-size: 0.85rem; font-weight: 700; color: #dc2626;">Rasio: ${recipRatioBefore}</div>
-                            </div>
-                            <div style="display: flex; align-items: center; color: #2563eb; font-size: 1.5rem;">
-                                <i class="fa-solid fa-arrow-right"></i>
-                            </div>
-                            <div>
-                                <div style="font-size: 0.75rem; color: #16a34a; font-weight: 700;">SETELAH DIBANTU</div>
-                                <div style="font-size: 1.4rem; font-weight: 800; color: #16a34a;">${recipRealAfter} <span style="font-size: 0.8rem; color: #64748b;">Org</span></div>
-                                <div style="font-size: 0.85rem; font-weight: 700; color: ${recipRatioAfter <= 115 ? '#16a34a' : '#d97706'};">Rasio: ${recipRatioAfter}</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 15px; font-size: 0.8rem; color: #b91c1c; text-align: center; background: #fef2f2; padding: 8px; border-radius: 6px; font-weight: 600;">
-                            Status Pasca Mutasi: <b>${recipRealAfter >= rObj.finalMinStaff ? 'PULIH KE ZONA SEHAT (CUKUP)' : `DEFISIT BERKURANG (${recipRealAfter - rObj.finalMinStaff})`}</b>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Executive Justification Copy Button -->
-                <div style="margin-top: 20px; text-align: center;">
-                    <button id="btn-copy-sim-justification" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
-                        <i class="fa-solid fa-copy"></i> Salin Teks Justifikasi Mutasi untuk Direksi / WA
-                    </button>
-                </div>
-            `;
-
-            const copyBtn = document.getElementById('btn-copy-sim-justification');
-            if (copyBtn) {
-                copyBtn.onclick = () => {
-                    const text = `*USULAN MUTASI REBALANCING SDM BUJM (ZERO COST)*\n` +
-                                 `-----------------------------------------\n` +
-                                 `• *Cabang Asal (Donor):* ${dObj.branch}\n` +
-                                 `  - Riil Saat Ini : ${donorRealBefore} teknisi (Rasio: ${donorRatioBefore})\n` +
-                                 `  - Setelah Mutasi: ${donorRealAfter} teknisi (Rasio: ${donorRatioAfter} - Tetap Aman)\n\n` +
-                                 `• *Cabang Tujuan (Penerima):* ${rObj.branch}\n` +
-                                 `  - Riil Saat Ini : ${recipRealBefore} teknisi (Rasio: ${recipRatioBefore} - Overload)\n` +
-                                 `  - Setelah Mutasi: ${recipRealAfter} teknisi (Rasio: ${recipRatioAfter} - Beban Turun)\n\n` +
-                                 `• *Dampak Finansial:* Rp 0,- (Tanpa Tambahan Biaya Gaji)\n` +
-                                 `• *Tujuan:* Menurunkan beban overload teknisi dan mencegah lonjakan Aging unit > 7 hari.\n\n` +
-                                 `Mohon arahan dan persetujuan Manajemen. Terima kasih.`;
-                    navigator.clipboard.writeText(text).then(() => {
-                        showToast('Draft justifikasi mutasi berhasil disalin ke clipboard!');
-                    });
-                };
-            }
-        }
-
-        // Dropdown listeners
-        document.getElementById('sim-donor-select').onchange = (e) => {
-            selectedDonor = e.target.value;
-            updateSimulationView();
-        };
-        document.getElementById('sim-recipient-select').onchange = (e) => {
-            selectedRecipient = e.target.value;
-            updateSimulationView();
-        };
-        document.getElementById('sim-btn-minus').onclick = () => {
-            if (transferCount > 1) {
-                transferCount--;
-                document.getElementById('sim-count-display').innerText = transferCount;
-                updateSimulationView();
-            }
-        };
-        document.getElementById('sim-btn-plus').onclick = () => {
-            if (transferCount < 5) {
-                transferCount++;
-                document.getElementById('sim-count-display').innerText = transferCount;
-                updateSimulationView();
-            }
-        };
-
-        updateSimulationView();
     }
 
     // Helper: Toast notification
