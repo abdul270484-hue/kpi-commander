@@ -1,4 +1,4 @@
-﻿# ⚠️ BUJM SYSTEM MASTER RULES (WAJIB BACA SEBELUM REVISI) ⚠️
+# ⚠️ BUJM SYSTEM MASTER RULES (WAJIB BACA SEBELUM REVISI) ⚠️
 
 Dokumen ini adalah **SOP MULTAK** dan **CETAK BIRU (BLUEPRINT) LOGIKA DATA** bagi setiap AI / Agen / Developer yang akan melakukan modifikasi pada sistem BUJM Dashboard maupun Aging Commander. 
 
@@ -39,9 +39,20 @@ Data yang dirender ke UI memiliki aturan perhitungan khusus:
   - *Bot Server (Pusat):* Mengeksekusi pesan secara *background* dari *Node.js*.
   - *Fallback Chrome (Remote Manager):* Jika Manager membuka dari PC lain (Cek *Firestore state* vs *Local state*), WAJIB *fallback* ke wa.me (tab Chrome berantai). Jangan merusak *flag* isLocal / isJarvisOnline yang membedakan ini.
 - **Rule 5.2 - Autostart Bot:** Skrip .vbs dan .bat berjalan otomatis (*invisible*). Dilarang menyisipkan pause atau interaksi CLI yang akan membuat *bot* ter-jeda/nyangkut saat PC *restart*.
-- **Rule 5.3 - Jadwal Tembak (Schedule Logic Wajib):** Jadwal *Blast All* tidak boleh diubah tanpa persetujuan, dengan aturan ketat:
-  - **09:10 WIB:** Menembak "Dosa Cabang" (Teknisi) DAN "Pending Delivery / RC" (PIC Cabang).
-  - **12:10 & 15:10 WIB:** HANYA menembak "Dosa Cabang" (Teknisi). Dilarang menyertakan *Pending Delivery* di jam ini agar PIC cabang tidak merasa di-*spam*.
+- **Rule 5.3 - Target Penerima Wajib (MANDAT MUTLAK BOS):** 
+  - **DILARANG KERAS (DEPRECATED TOTAL):** Dilarang mengirim WA Blast ke masing-masing teknisi secara individual.
+  - **WAJIB (MANDAT RESMI):** Seluruh pesan monitoring aging / dosa cabang WAJIB dikelompokkan per cabang dan dikirim **HANYA ke PIC / LEADER CABANG**. PIC/Leader yang bertanggung jawab mengawal, membagi, dan menegur teknisi di bawah naungannya.
+- **Rule 5.4 - Jadwal Tembak & Template Resmi (Schedule Logic Wajib):** 
+  - **09:10 WIB (Sesi Pagi):** 
+    - *Pesan 1:* `📋 MONITORING AGING UNIT PER TEKNISI` ke PIC/Leader (rekap per teknisi & total unit tertahan di cabang).
+    - *Pesan 2:* `🚨 WARNING PENDING DELIVERY (RC)` ke PIC/Leader (daftar unit selesai reparasi yang harus segera dipush D2D/pickup).
+  - **12:10 WIB (Sesi Siang):** 
+    - *Pesan:* `🚨 CRITICAL ALERT — PUSH CLOSING CABANG` ke PIC/Leader (evaluasi unit cabang yang belum selesai / stagnan sejak pagi).
+    - *Larangan:* Dilarang menyertakan *Pending Delivery (RC)* di jam siang agar PIC cabang tidak merasa di-*spam*.
+  - **15:10 WIB (Sesi Sore / Closing):** 
+    - *Pesan:* `🚨 CRITICAL ALERT — PUSH CLOSING CABANG` ke PIC/Leader (push closing deadline hari ini).
+    - *Larangan:* Dilarang menyertakan *Pending Delivery (RC)* di jam sore.
+- **Rule 5.5 - Filter Cabang Area:** Bot di server Asmen HANYA menembak cabang di wilayah area kerjanya (Denpasar, DCW, DPG, Kupang, Singaraja, Manado). Dilarang menembak cabang di luar area.
 
 ## BAB 6: ATURAN PROTEKSI ERROR BATCH (FAIL-SAFE)
 - Segala *loop* pemrosesan data (Excel/JSON) wajib memiliki proteksi *null/undefined* (if (!row) continue;).
