@@ -36,7 +36,7 @@ Data yang dirender ke UI memiliki aturan perhitungan khusus:
 
 ## BAB 5: ATURAN ENGINE WHATSAPP (JARVIS & BLASTER)
 - **Rule 5.1 - Logika Dual-Mode & Desentralisasi Pengiriman WA Asmen (MANDAT RESMI BOS):** 
-  - *Bot Server Background (Khusus Laptop BOS - Pak Abdul Khoir):* Mengeksekusi pesan secara otomatis di jam operasional (09:10, 12:10, 15:10 WIB) khusus untuk cabang binaan Area BOS (Denpasar Induk, DCW, DPG, Singaraja, Kupang, Manado) menggunakan nomor WhatsApp BOS via Node.js Super Engine.
+  - *Bot Server Background (Khusus Laptop BOS - Pak Abdul Khoir):* Mengeksekusi pesan secara otomatis di jam operasional (**09:15, 12:15, 15:15 WIB**) khusus untuk cabang binaan Area BOS (Denpasar Induk, DCW, DPG, Singaraja, Kupang, Manado) serta Laporan Eksekutif Area ke HOM pada pukul **09:15 WIB** menggunakan nomor WhatsApp BOS via Node.js Super Engine.
   - *Asmen / Area Lain (Bu Susan, Pak Erik, Pak Riis, Bu Sadawani, Pak Ivan):* Pengiriman pesan ke PIC/Leader cabang area masing-masing dikirim langsung oleh Asmen yang bersangkutan saat mereka membuka sistem `BUJM DASHBOARD` (via tombol Blast All / Tombol WA PIC per cabang). Sistem otomatis menggunakan mode *Fallback* `wa.me` (tab WhatsApp Web) agar pesan resmi terkirim dari nomor WhatsApp pribadi/kerja Asmen penanggung jawab masing-masing ke PIC cabangnya.
   - *Integritas Flag:* Dilarang merusak flag `isLocal` / `isJarvisOnline` / `getAllowedBranches()` yang membedakan mekanisme ini.
 - **Rule 5.2 - Autostart Bot:** Skrip .vbs dan .bat berjalan otomatis (*invisible*). Dilarang menyisipkan pause atau interaksi CLI yang akan membuat *bot* ter-jeda/nyangkut saat PC *restart*.
@@ -44,15 +44,16 @@ Data yang dirender ke UI memiliki aturan perhitungan khusus:
   - **DILARANG KERAS (DEPRECATED TOTAL):** Dilarang mengirim WA Blast ke masing-masing teknisi secara individual.
   - **WAJIB (MANDAT RESMI):** Seluruh pesan monitoring aging / dosa cabang WAJIB dikelompokkan per cabang dan dikirim **HANYA ke PIC / LEADER CABANG**. PIC/Leader yang bertanggung jawab mengawal, membagi, dan menegur teknisi di bawah naungannya.
 - **Rule 5.4 - Jadwal Tembak & Template Resmi (Schedule Logic Wajib):** 
-  - **09:10 WIB (Sesi Pagi):** 
+  - **09:15 WIB (Sesi Pagi):** 
     - *Pesan 1:* `📋 MONITORING AGING UNIT PER TEKNISI` ke PIC/Leader (rekap per teknisi & total unit tertahan di cabang).
     - *Pesan 2:* `🚨 WARNING PENDING DELIVERY (RC)` ke PIC/Leader (daftar unit selesai reparasi yang harus segera dipush D2D/pickup).
-  - **12:10 WIB (Sesi Siang):** 
+    - *Pesan 3:* `📊 Daily Operational Report Area` ke **HOM (Head Operational Manager)** khusus pukul **09:15 WIB**.
+  - **12:15 WIB (Sesi Siang):** 
     - *Pesan:* `🚨 CRITICAL ALERT — PUSH CLOSING CABANG` ke PIC/Leader (evaluasi unit cabang yang belum selesai / stagnan sejak pagi).
-    - *Larangan:* Dilarang menyertakan *Pending Delivery (RC)* di jam siang agar PIC cabang tidak merasa di-*spam*.
-  - **15:10 WIB (Sesi Sore / Closing):** 
+    - *Larangan:* Dilarang menyertakan *Pending Delivery (RC)* maupun laporan HOM di jam siang agar tidak spam.
+  - **15:15 WIB (Sesi Sore / Closing):** 
     - *Pesan:* `🚨 CRITICAL ALERT — PUSH CLOSING CABANG` ke PIC/Leader (push closing deadline hari ini).
-    - *Larangan:* Dilarang menyertakan *Pending Delivery (RC)* di jam sore.
+    - *Larangan:* Dilarang menyertakan *Pending Delivery (RC)* maupun laporan HOM di jam sore.
 - **Rule 5.5 - Filter Cabang Area:** Bot di server Asmen HANYA menembak cabang di wilayah area kerjanya (Denpasar, DCW, DPG, Kupang, Singaraja, Manado). Dilarang menembak cabang di luar area.
 
 ## BAB 6: ATURAN PROTEKSI ERROR BATCH (FAIL-SAFE)

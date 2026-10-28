@@ -4388,8 +4388,8 @@ window.generateExecutiveReportText = function() {
     text += `• Kasus Redo: ${totalRedo} unit \n(${redoBreakdown.length > 0 ? redoBreakdown.join(', ') : 'Nihil'})\n`;
     text += `• Penalti MPU / UB / X09: ${totalViolations} kasus\n(${penaltyBreakdown.length > 0 ? penaltyBreakdown.join(', ') : 'Nihil'})\n\n`;
     text += `📌 *ACTION TAKEN AREA HARI INI:*\n`;
-    text += `1. Sistem Auto-Alert WA pengingat aging berjalan terjadwal (09:15, 12:15, 15:15) langsung ke teknisi.\n`;
-    text += `2. Unit Pending Delivery (RC) terus di-blast ke customer agar target GD harian tercapai optimal.\n\n`;
+    text += `1. Sistem Auto-Alert WA pengingat aging berjalan terjadwal (09:15, 12:15, 15:15) langsung ke PIC/Leader cabang.\n`;
+    text += `2. Unit Pending Delivery (RC) terus di-blast ke PIC cabang agar segera di-follow up ke customer/kurir sehingga target GD harian tercapai optimal.\n\n`;
     text += `Data lengkap real-time dapat dipantau di:\n`;
     text += `👉 https://management-bujm-dashboard.web.app\n`;
 
@@ -4501,70 +4501,9 @@ const AUTO_ALERT_TIMES = ['09:15', '12:15', '15:15'];
 let isAutoAlertRunning = false;
 
 async function checkAutoAlerts() {
-    if (isAutoAlertRunning) return;
-    
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-    const currentMins = now.getHours() * 60 + now.getMinutes();
-
-    let completedAlerts = JSON.parse(localStorage.getItem('bujm_completed_alerts') || '{}');
-    if (completedAlerts.date !== dateStr) {
-        completedAlerts = { date: dateStr };
-        localStorage.setItem('bujm_completed_alerts', JSON.stringify(completedAlerts));
-    }
-
-    for (const targetTime of AUTO_ALERT_TIMES) {
-        const parts = targetTime.split(':');
-        const targetTotalMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-        const alertKey = targetTime;
-
-        // Window toleransi 45 menit (contoh: 15:15 s/d 16:00 waktu setempat)
-        if (currentMins >= targetTotalMins && currentMins < targetTotalMins + 45 && !completedAlerts[alertKey]) {
-            isAutoAlertRunning = true;
-            console.log(`[AUTO ALERT ${targetTime}] Memeriksa & menjalankan jadwal kirim otomatis (Waktu Setempat)...`);
-
-            try {
-                let successShame = false;
-                if (typeof executeAreaBlastShame === 'function') {
-                    successShame = await executeAreaBlastShame(true);
-                }
-
-                if (targetTime === '09:15') {
-                    // Jeda sejenak sebelum RC
-                    await new Promise(r => setTimeout(r, 4000));
-                    if (typeof executeAreaBlastRC === 'function') {
-                        await executeAreaBlastRC(true);
-                    }
-
-                    // Jeda sejenak sebelum kirim Laporan Eksekutif khusus HOM (HANYA jam 09:15)
-                    await new Promise(r => setTimeout(r, 4000));
-                    if (typeof executeAreaBlastHOM === 'function') {
-                        await executeAreaBlastHOM(true);
-                    }
-                }
-
-                // HANYA tandai selesai jika pengiriman berhasil diproses!
-                if (successShame) {
-                    completedAlerts = JSON.parse(localStorage.getItem('bujm_completed_alerts') || '{}');
-                    if (completedAlerts.date !== dateStr) completedAlerts = { date: dateStr };
-                    completedAlerts[alertKey] = true;
-                    localStorage.setItem('bujm_completed_alerts', JSON.stringify(completedAlerts));
-                    console.log(`[OK] [AUTO ALERT ${targetTime}] Selesai diproses & dicatat di storage.`);
-                } else {
-                    console.warn(`⚠️   [AUTO ALERT ${targetTime}] Belum berhasil (data belum siap / bot sibuk). Akan dicoba ulang otomatis.`);
-                }
-            } catch (err) {
-                console.error('[FAIL] [AUTO ALERT] Error:', err);
-            } finally {
-                isAutoAlertRunning = false;
-            }
-            break; // Satu jadwal per siklus interval
-        }
-    }
+    // DEPRECATED DI BROWSER: Jadwal 09:15, 12:15, 15:15 WIB & Laporan HOM 09:15 ditangani 100% oleh backend Super Engine.
+    return;
 }
-// [ANTI-SPAM FIX]: Auto-alert terjadwal resmi di-handle 100% oleh backend Super Engine (Rule 5.1 & 5.4).
-// Interval browser dinonaktifkan permanen agar tidak memicu double/looping blast ke PIC.
-// setInterval(checkAutoAlerts, 20000);
 
 
 

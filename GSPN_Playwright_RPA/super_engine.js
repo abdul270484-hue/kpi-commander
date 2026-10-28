@@ -11,7 +11,7 @@ const { getFirestore, doc, getDoc, setDoc, onSnapshot } = require('firebase/fire
 const config = require('./config');
 const { scrapeAllBranches } = require('./scraper');
 const { processAndSyncToFirebase } = require('./sync');
-const { handleSmartAlerts } = require('./alerter');
+const { handleSmartAlerts, isPhoneRecentlyBlasted, recordPhoneBlasted, formatPhoneNumber } = require('./alerter');
 
 // ==========================================
 // GLOBAL ERROR HANDLER TO PREVENT CRASHES
@@ -276,6 +276,7 @@ app.post('/api/send-message', async (req, res) => {
 // Blasting Queue & Anti-Spam Deduplication Protection
 let blastQueue = [];
 let isBlasting = false;
+let currentActiveJobPhone = null;
 let blastProgress = { total: 0, sent: 0, failed: 0, current: null, logs: [] };
 const recentBlastSentMap = new Map(); // formattedPhone -> timestamp (anti-spam cooldown)
 
@@ -285,11 +286,11 @@ async function processBlastQueue() {
 
     while (blastQueue.length > 0) {
         const job = blastQueue.shift();
+        let formattedPhone = formatPhoneNumber(job.phone);
+        currentActiveJobPhone = formattedPhone;
         blastProgress.current = `Mengirim ke ${job.phone} (${job.name})...`;
 
         try {
-            let formattedPhone = job.phone.replace(/\D/g, '');
-            if (formattedPhone.startsWith('0')) formattedPhone = '62' + formattedPhone.substring(1);
             const chatId = formattedPhone + '@c.us';
 
             const zeroWidthSpace = '\u200B';
@@ -302,6 +303,7 @@ async function processBlastQueue() {
             await waClient.sendMessage(chatId, uniqueMessage);
             blastProgress.sent++;
             recentBlastSentMap.set(formattedPhone, Date.now());
+            recordPhoneBlasted(formattedPhone, job.message);
             console.log(`[BLAST] [BLAST ${blastProgress.sent}/${blastProgress.total}] Terkirim 👉 ${job.name} (${formattedPhone})`);
             blastProgress.logs.unshift({ status: 'Sukses', phone: job.phone, name: job.name, reason: '-' });
         } catch (err) {
@@ -309,10 +311,12 @@ async function processBlastQueue() {
             blastProgress.logs.unshift({ status: 'Gagal', phone: job.phone, name: job.name, reason: String(err) });
         }
 
+        currentActiveJobPhone = null;
         const delay = 8000; // 8 detik + 2 detik ngetik = 10 detik
         await new Promise(resolve => setTimeout(resolve, delay));
     }
 
+    currentActiveJobPhone = null;
     blastProgress.current = 'Selesai';
     isBlasting = false;
 }
@@ -357,29 +361,32 @@ app.post('/api/blast', (req, res) => {
         const name = item.name || item.nama || 'PIC Cabang';
 
         if (phone) {
-            let formattedPhone = String(phone).replace(/\D/g, '');
-            if (formattedPhone.startsWith('0')) formattedPhone = '62' + formattedPhone.substring(1);
+            let formattedPhone = formatPhoneNumber(phone);
 
-            // 1. DEDUP: Cek apakah nomor ini SUDAH ADA di dalam antrean aktif
-            const alreadyInQueue = blastQueue.some(q => {
-                let qp = String(q.phone).replace(/\D/g, '');
-                if (qp.startsWith('0')) qp = '62' + qp.substring(1);
-                return qp === formattedPhone;
+            // 1. DEDUP: Cek apakah nomor ini sedang diproses (active) atau SUDAH ADA di dalam antrean aktif
+            const alreadyInQueue = (currentActiveJobPhone === formattedPhone) || blastQueue.some(q => {
+                return formatPhoneNumber(q.phone) === formattedPhone;
             });
             if (alreadyInQueue) {
                 console.warn(`  ⚠️ [BLAST DEDUP] Nomor ${formattedPhone} (${name}) SUDAH ADA di antrean aktif! Dilewati agar tidak spam.`);
                 return;
             }
 
-            // 2. COOLDOWN: Anti-spam (30 menit per nomor untuk blast manual/API)
-            const lastSent = recentBlastSentMap.get(formattedPhone) || 0;
-            const now = Date.now();
-            if (!req.body.force && (now - lastSent < 30 * 60 * 1000)) {
-                const elapsedMins = Math.round((now - lastSent) / 60000);
-                console.warn(`  ⚠️ [BLAST COOLDOWN] Nomor ${formattedPhone} (${name}) baru saja dikirim pesan ${elapsedMins} menit lalu! Dilewati demi proteksi.`);
-                return;
+            // 2. COOLDOWN: Anti-spam (90 menit terpadu lintas alerter.js & super_engine.js)
+            if (!req.body.force) {
+                const sharedCheck = isPhoneRecentlyBlasted(formattedPhone, message, 90);
+                const lastSent = recentBlastSentMap.get(formattedPhone) || 0;
+                const now = Date.now();
+                if (sharedCheck.blocked || (now - lastSent < 90 * 60 * 1000)) {
+                    const elapsedMins = sharedCheck.blocked ? sharedCheck.elapsedMins : Math.max(1, Math.round((now - lastSent) / 60000));
+                    console.warn(`  ⚠️ [BLAST COOLDOWN] Nomor ${formattedPhone} (${name}) baru saja dikirim pesan ${elapsedMins} menit lalu! Dilewati demi proteksi.`);
+                    return;
+                }
             }
 
+            // Kunci cooldown SEKETIKA saat masuk antrean agar request beruntun dari tab browser tidak pernah lolos
+            recentBlastSentMap.set(formattedPhone, Date.now());
+            recordPhoneBlasted(formattedPhone, message);
             blastQueue.push({ phone, name, message });
             added++;
         }
@@ -387,13 +394,13 @@ app.post('/api/blast', (req, res) => {
     
     if (added === 0) {
         console.log(`[BLAST] Tidak ada nomor baru yang dimasukkan ke antrean (antrean aktif / dalam masa cooldown anti-spam).`);
-        return res.json({ success: true, message: 'Semua pesan sudah dalam antrean aktif atau dalam masa cooldown anti-spam.' });
+        return res.json({ success: true, skipped: true, added: 0, message: 'Semua pesan sudah terkirim atau dalam masa cooldown anti-spam.' });
     }
 
     blastProgress.total += added;
 
     processBlastQueue();
-    res.json({ success: true, message: `Blasting dimulai untuk ${added} penerima cabang area Anda!` });
+    res.json({ success: true, added, message: `Blasting dimulai untuk ${added} penerima cabang area Anda!` });
 });
 
 app.get('/api/progress', (req, res) => {
