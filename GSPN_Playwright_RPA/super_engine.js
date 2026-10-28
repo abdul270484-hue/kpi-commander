@@ -273,10 +273,11 @@ app.post('/api/send-message', async (req, res) => {
     }
 });
 
-// Blasting Queue
+// Blasting Queue & Anti-Spam Deduplication Protection
 let blastQueue = [];
 let isBlasting = false;
 let blastProgress = { total: 0, sent: 0, failed: 0, current: null, logs: [] };
+const recentBlastSentMap = new Map(); // formattedPhone -> timestamp (anti-spam cooldown)
 
 async function processBlastQueue() {
     if (isBlasting || blastQueue.length === 0) return;
@@ -300,7 +301,8 @@ async function processBlastQueue() {
 
             await waClient.sendMessage(chatId, uniqueMessage);
             blastProgress.sent++;
-            console.log(`[BLAST] [BLAST ${blastProgress.sent}/${blastProgress.total}] Terkirim Ã¢â€ â€™ ${job.name} (${formattedPhone})`);
+            recentBlastSentMap.set(formattedPhone, Date.now());
+            console.log(`[BLAST] [BLAST ${blastProgress.sent}/${blastProgress.total}] Terkirim 👉 ${job.name} (${formattedPhone})`);
             blastProgress.logs.unshift({ status: 'Sukses', phone: job.phone, name: job.name, reason: '-' });
         } catch (err) {
             blastProgress.failed++;
@@ -321,9 +323,9 @@ app.post('/api/blast', (req, res) => {
     const { data, template, allowedBranches } = req.body;
     if (!data || data.length === 0) return res.status(400).json({ error: 'Data kosong' });
 
-    console.log(`\nðŸ“¢ [BLAST INCOMING] Permintaan blast untuk ${data.length} penerima.`);
+    console.log(`\n📢 [BLAST INCOMING] Permintaan blast untuk ${data.length} penerima.`);
     if (allowedBranches && Array.isArray(allowedBranches)) {
-        console.log(`[AUTH]’ [BLAST AREA FILTER] Cabang Area Diizinkan: ${allowedBranches.join(', ')}`);
+        console.log(`[AUTH]🔒 [BLAST AREA FILTER] Cabang Area Diizinkan: ${allowedBranches.join(', ')}`);
     }
 
     if (!isBlasting) {
@@ -340,7 +342,7 @@ app.post('/api/blast', (req, res) => {
                 return b.includes(cleanA) || cleanA.includes(b);
             });
             if (!ok) {
-                console.warn(`â›” [BLAST REJECTED] Item ${item.name} (${item.phone}) di cabang [${item.branch}] BUKAN bagian dari area yang diizinkan! Ditolak demi keamanan.`);
+                console.warn(`⛔ [BLAST REJECTED] Item ${item.name} (${item.phone}) di cabang [${item.branch}] BUKAN bagian dari area yang diizinkan! Ditolak demi keamanan.`);
                 return;
             }
         }
@@ -352,14 +354,42 @@ app.post('/api/blast', (req, res) => {
         });
 
         const phone = item.phone || item.no_hp || item.hp;
-        const name = item.name || item.nama || 'Teknisi';
+        const name = item.name || item.nama || 'PIC Cabang';
 
         if (phone) {
+            let formattedPhone = String(phone).replace(/\D/g, '');
+            if (formattedPhone.startsWith('0')) formattedPhone = '62' + formattedPhone.substring(1);
+
+            // 1. DEDUP: Cek apakah nomor ini SUDAH ADA di dalam antrean aktif
+            const alreadyInQueue = blastQueue.some(q => {
+                let qp = String(q.phone).replace(/\D/g, '');
+                if (qp.startsWith('0')) qp = '62' + qp.substring(1);
+                return qp === formattedPhone;
+            });
+            if (alreadyInQueue) {
+                console.warn(`  ⚠️ [BLAST DEDUP] Nomor ${formattedPhone} (${name}) SUDAH ADA di antrean aktif! Dilewati agar tidak spam.`);
+                return;
+            }
+
+            // 2. COOLDOWN: Anti-spam (30 menit per nomor untuk blast manual/API)
+            const lastSent = recentBlastSentMap.get(formattedPhone) || 0;
+            const now = Date.now();
+            if (!req.body.force && (now - lastSent < 30 * 60 * 1000)) {
+                const elapsedMins = Math.round((now - lastSent) / 60000);
+                console.warn(`  ⚠️ [BLAST COOLDOWN] Nomor ${formattedPhone} (${name}) baru saja dikirim pesan ${elapsedMins} menit lalu! Dilewati demi proteksi.`);
+                return;
+            }
+
             blastQueue.push({ phone, name, message });
             added++;
         }
     });
     
+    if (added === 0) {
+        console.log(`[BLAST] Tidak ada nomor baru yang dimasukkan ke antrean (antrean aktif / dalam masa cooldown anti-spam).`);
+        return res.json({ success: true, message: 'Semua pesan sudah dalam antrean aktif atau dalam masa cooldown anti-spam.' });
+    }
+
     blastProgress.total += added;
 
     processBlastQueue();

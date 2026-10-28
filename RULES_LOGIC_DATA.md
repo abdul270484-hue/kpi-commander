@@ -35,9 +35,10 @@ Data yang dirender ke UI memiliki aturan perhitungan khusus:
 - **Rule 4.2 - Validasi Status UI (Warna Baris):** Status SO di *Aging Commander* ("WAITING PART", "PENDING ASSIGN", "REPAIRING", dll) dikaitkan langsung dengan logika CSS (*red, yellow, green*). Mengubah *string* status tanpa menyesuaikan aturan CSS akan membuat tabel menjadi abu-abu/hilang warnanya.
 
 ## BAB 5: ATURAN ENGINE WHATSAPP (JARVIS & BLASTER)
-- **Rule 5.1 - Logika Dual-Mode Blasting:** 
-  - *Bot Server (Pusat):* Mengeksekusi pesan secara *background* dari *Node.js*.
-  - *Fallback Chrome (Remote Manager):* Jika Manager membuka dari PC lain (Cek *Firestore state* vs *Local state*), WAJIB *fallback* ke wa.me (tab Chrome berantai). Jangan merusak *flag* isLocal / isJarvisOnline yang membedakan ini.
+- **Rule 5.1 - Logika Dual-Mode & Desentralisasi Pengiriman WA Asmen (MANDAT RESMI BOS):** 
+  - *Bot Server Background (Khusus Laptop BOS - Pak Abdul Khoir):* Mengeksekusi pesan secara otomatis di jam operasional (09:10, 12:10, 15:10 WIB) khusus untuk cabang binaan Area BOS (Denpasar Induk, DCW, DPG, Singaraja, Kupang, Manado) menggunakan nomor WhatsApp BOS via Node.js Super Engine.
+  - *Asmen / Area Lain (Bu Susan, Pak Erik, Pak Riis, Bu Sadawani, Pak Ivan):* Pengiriman pesan ke PIC/Leader cabang area masing-masing dikirim langsung oleh Asmen yang bersangkutan saat mereka membuka sistem `BUJM DASHBOARD` (via tombol Blast All / Tombol WA PIC per cabang). Sistem otomatis menggunakan mode *Fallback* `wa.me` (tab WhatsApp Web) agar pesan resmi terkirim dari nomor WhatsApp pribadi/kerja Asmen penanggung jawab masing-masing ke PIC cabangnya.
+  - *Integritas Flag:* Dilarang merusak flag `isLocal` / `isJarvisOnline` / `getAllowedBranches()` yang membedakan mekanisme ini.
 - **Rule 5.2 - Autostart Bot:** Skrip .vbs dan .bat berjalan otomatis (*invisible*). Dilarang menyisipkan pause atau interaksi CLI yang akan membuat *bot* ter-jeda/nyangkut saat PC *restart*.
 - **Rule 5.3 - Target Penerima Wajib (MANDAT MUTLAK BOS):** 
   - **DILARANG KERAS (DEPRECATED TOTAL):** Dilarang mengirim WA Blast ke masing-masing teknisi secara individual.

@@ -4562,7 +4562,9 @@ async function checkAutoAlerts() {
         }
     }
 }
-setInterval(checkAutoAlerts, 20000); // Evaluasi setiap 20 detik
+// [ANTI-SPAM FIX]: Auto-alert terjadwal resmi di-handle 100% oleh backend Super Engine (Rule 5.1 & 5.4).
+// Interval browser dinonaktifkan permanen agar tidak memicu double/looping blast ke PIC.
+// setInterval(checkAutoAlerts, 20000);
 
 
 
