@@ -14,10 +14,15 @@
     // State management
     let mpmEmployees = [];
     let capacityData = [];
+    let mpmFameList = [];
+    let mpmGdTrend = {};
+    let mpmGdDaily = {};
+    let mpmTechCatMap = {};
     let currentMpmSubTab = (function() {
         try {
             const saved = localStorage.getItem('bujm_mpm_subtab');
-            return (saved === 'roster') ? 'roster' : 'capacity';
+            if (saved === 'roster' || saved === 'performance') return saved;
+            return 'capacity';
         } catch (_) { return 'capacity'; }
     })();
     let currentFilterStatus = 'ALL';
@@ -27,6 +32,11 @@
     let currentSearchTerm = '';
     let currentRosterBranch = 'ALL';
     let currentRosterSearch = '';
+    let currentPerfBranch = 'ALL';
+    let currentPerfCategory = 'ALL'; // 'ALL' | 'MX' | 'CE' | 'NEW' | 'SENIOR'
+    let currentPerfSort = 'PCT_DESC'; // 'PCT_DESC' | 'PCT_ASC' | 'AVGGD_DESC' | 'LABOR_DESC' | 'MOM_DESC'
+    let currentPerfSearch = '';
+    let currentPerfUtilFilter = 'ALL'; // 'ALL' | 'OVERLOAD' | 'IDEAL' | 'UNDERLOAD'
     let branchOverrides = {}; // { [branch]: { productType: string, note: string, updatedAt: string, updatedBy: string } }
 
     // Official operating branches present in Capacity Plan sheet "Summary" (Summ)
@@ -470,6 +480,8 @@
                             }
                         } else if (currentMpmSubTab === 'capacity') {
                             updateCapacityTableRows();
+                        } else if (currentMpmSubTab === 'performance') {
+                            renderActiveSubTab();
                         }
                     }
                 }, err => console.warn('[MPM] Realtime employees listener warning:', err.message));
@@ -487,6 +499,8 @@
                     console.log(`[MPM] Synced ${snap.size} photos from Firestore 'mpm_photos'.`);
                     if (currentMpmSubTab === 'roster') {
                         updateRosterTableRows();
+                    } else if (currentMpmSubTab === 'performance') {
+                        renderActiveSubTab();
                     }
                 }
             }).catch(err => console.warn('[MPM] Firestore photos sync warning:', err.message));
@@ -514,8 +528,21 @@
             }
         }
 
-        let gdTrend = (window.rawDashboardData && window.rawDashboardData.gdTrendData) || window.gdTrendDataGlobal || {};
-        let fameList = window.fameData || window.prodData || [];
+        // Pre-load cached fameList / gdTrend / gdDaily for instant 0ms Manpower Performances render
+        if (!mpmFameList.length) {
+            try {
+                const cachedFame = localStorage.getItem('bujm_mpm_fame_cache');
+                if (cachedFame) mpmFameList = JSON.parse(cachedFame) || [];
+                const cachedTrend = localStorage.getItem('bujm_mpm_gdtrend_cache');
+                if (cachedTrend) mpmGdTrend = JSON.parse(cachedTrend) || {};
+                const cachedDaily = localStorage.getItem('bujm_mpm_gddaily_cache');
+                if (cachedDaily) mpmGdDaily = JSON.parse(cachedDaily) || {};
+            } catch (_) {}
+        }
+
+        let gdTrend = (window.rawDashboardData && window.rawDashboardData.gdTrendData) || window.gdTrendDataGlobal || mpmGdTrend || {};
+        let fameList = window.fameData || window.prodData || mpmFameList || [];
+        let gdDaily = (window.rawDashboardData && window.rawDashboardData.gdDailyData) || mpmGdDaily || {};
         let dtsMx = {};
         let dtsIh = {};
 
@@ -533,6 +560,7 @@
                     const p = prodSnap.data();
                     if (p.gdTrendData) gdTrend = p.gdTrendData;
                     if (p.fameList && p.fameList.length > 0) fameList = p.fameList;
+                    if (p.gdDailyData) gdDaily = p.gdDailyData;
                 }
                 if (engSnap && engSnap.exists) {
                     const e = engSnap.data();
@@ -543,6 +571,21 @@
                 console.warn('[MPM] Firestore capacity fetch warning (using cached data):', err.message);
             }
         }
+
+        if (Array.isArray(fameList) && fameList.length > 0) {
+            mpmFameList = fameList;
+            try { localStorage.setItem('bujm_mpm_fame_cache', JSON.stringify(fameList)); } catch (_) {}
+        }
+        if (gdTrend && Object.keys(gdTrend).length > 0) {
+            mpmGdTrend = gdTrend;
+            try { localStorage.setItem('bujm_mpm_gdtrend_cache', JSON.stringify(gdTrend)); } catch (_) {}
+        }
+        if (gdDaily && Object.keys(gdDaily).length > 0) {
+            mpmGdDaily = gdDaily;
+            try { localStorage.setItem('bujm_mpm_gddaily_cache', JSON.stringify(gdDaily)); } catch (_) {}
+        }
+        for (const name in dtsMx) mpmTechCatMap[name.toUpperCase().trim()] = 'MX';
+        for (const name in dtsIh) mpmTechCatMap[name.toUpperCase().trim()] = 'CE';
 
         // Count real technicians and staff positions from live edited mpmEmployees for real-time reactive sync!
         // Mandat BOS: Leader/PIC, Teknisi (Teknisi Riil), Admin, Helper
@@ -952,12 +995,15 @@
                 </div>
 
                 <!-- Sub-Tabs Switcher -->
-                <div style="display: flex; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="display: flex; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0; flex-wrap: wrap;">
                     <button id="mpm-tab-capacity" class="mpm-tab-btn" style="background: ${currentMpmSubTab === 'capacity' ? '#ffffff' : 'transparent'}; color: ${currentMpmSubTab === 'capacity' ? 'var(--accent-blue, #2563eb)' : '#64748b'}; border: 1px solid ${currentMpmSubTab === 'capacity' ? '#cbd5e1' : 'transparent'}; padding: 8px 16px; border-radius: 6px; font-weight: ${currentMpmSubTab === 'capacity' ? '700' : '600'}; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: ${currentMpmSubTab === 'capacity' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none'};">
                         <i class="fa-solid fa-chart-pie"></i> Capacity & Load Ratios
                     </button>
                     <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: ${currentMpmSubTab === 'roster' ? '#ffffff' : 'transparent'}; color: ${currentMpmSubTab === 'roster' ? 'var(--accent-blue, #2563eb)' : '#64748b'}; border: 1px solid ${currentMpmSubTab === 'roster' ? '#cbd5e1' : 'transparent'}; padding: 8px 16px; border-radius: 6px; font-weight: ${currentMpmSubTab === 'roster' ? '700' : '600'}; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: ${currentMpmSubTab === 'roster' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none'};">
                         <i class="fa-solid fa-id-card-clip"></i> Data Manpower (${branchStaffCount})
+                    </button>
+                    <button id="mpm-tab-performance" class="mpm-tab-btn" style="background: ${currentMpmSubTab === 'performance' ? '#ffffff' : 'transparent'}; color: ${currentMpmSubTab === 'performance' ? 'var(--accent-blue, #2563eb)' : '#64748b'}; border: 1px solid ${currentMpmSubTab === 'performance' ? '#cbd5e1' : 'transparent'}; padding: 8px 16px; border-radius: 6px; font-weight: ${currentMpmSubTab === 'performance' ? '700' : '600'}; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: ${currentMpmSubTab === 'performance' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none'};">
+                        <i class="fa-solid fa-gauge-high"></i> Manpower Performances
                     </button>
                 </div>
             </div>
@@ -976,6 +1022,8 @@
         if (tabCap) tabCap.addEventListener('click', () => switchMpmSubTab('capacity'));
         const tabRoster = document.getElementById('mpm-tab-roster');
         if (tabRoster) tabRoster.addEventListener('click', () => switchMpmSubTab('roster'));
+        const tabPerf = document.getElementById('mpm-tab-performance');
+        if (tabPerf) tabPerf.addEventListener('click', () => switchMpmSubTab('performance'));
     }
 
     function switchMpmSubTab(tabName) {
@@ -1013,6 +1061,8 @@
 
         if (currentMpmSubTab === 'roster') {
             renderRosterSubTab(content);
+        } else if (currentMpmSubTab === 'performance') {
+            renderPerformanceSubTab(content);
         } else {
             renderCapacitySubTab(content);
         }
@@ -2202,6 +2252,880 @@
             await calculateMpmCapacityData();
             renderActiveSubTab();
         };
+    }
+
+    // =========================================================================
+    // SUB-TAB 3: MANPOWER PERFORMANCES (5 MANDAT RESMI BOS)
+    // 1. Produktivitas vs Capacity Plan (avgGd/hari vs Norma -> % Pencapaian)
+    // 2. Utilisasi Cabang vs Capacity Plan (Overload / Ideal / Underload)
+    // 3. Tren MoM & Komparasi Teknisi Baru (< 3 Bulan) vs Senior (Join Date)
+    // 4. Kontribusi Labor (Labor IW & Labor OOW)
+    // 5. Top 3 & Bottom 3 berdasarkan % Produktivitas vs Capacity Plan
+    // =========================================================================
+
+    function phoneticNormalizeName(str) {
+        if (!str) return '';
+        return String(str)
+            .toUpperCase()
+            .replace(/\(.*?\)/g, '')
+            .replace(/[^A-Z\s]/g, ' ')
+            .replace(/\b(MUHAMMAD|MUHAMAD|MOHAMMAD|MOHAMAD|MOH|MUH)\b/g, 'M')
+            .replace(/SY/g, 'S')
+            .replace(/DJ/g, 'J')
+            .replace(/OE/g, 'U')
+            .replace(/Y/g, 'I')
+            .replace(/F/g, 'V')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function matchFameToRosterEmployee(engName, branchName, activeEmps) {
+        if (!engName || !Array.isArray(activeEmps)) return null;
+        const cleanEng = String(engName).toUpperCase().trim();
+        const normBranch = normalizeBranchName(branchName);
+
+        // 1. Exact match
+        let found = activeEmps.find(e => String(e.name || '').toUpperCase().trim() === cleanEng);
+        if (found) return found;
+
+        // 2. Phonetic exact or substring match
+        const pEng = phoneticNormalizeName(cleanEng);
+        found = activeEmps.find(e => {
+            const pEmp = phoneticNormalizeName(e.name);
+            return pEmp && pEng && (pEmp === pEng || (pEmp.length >= 6 && pEng.includes(pEmp)) || (pEng.length >= 6 && pEmp.includes(pEng)));
+        });
+        if (found) return found;
+
+        // 3. Branch-scoped first/last word match (handles middle initials like JORIS K.R. COSTA or YOHANIS ADI TEFA)
+        const engWords = pEng.split(' ').filter(w => w.length >= 3);
+        if (engWords.length >= 2) {
+            const firstW = engWords[0];
+            const lastW = engWords[engWords.length - 1];
+            found = activeEmps.find(e => {
+                if (normalizeBranchName(e.branch) !== normBranch) return false;
+                const empWords = phoneticNormalizeName(e.name).split(' ').filter(w => w.length >= 3);
+                if (empWords.length === 0) return false;
+                return (empWords[0] === firstW && empWords[empWords.length - 1] === lastW) ||
+                       (lastW.length >= 4 && empWords[empWords.length - 1] === lastW) ||
+                       (firstW.length >= 5 && empWords[0] === firstW);
+            });
+            if (found) return found;
+        }
+
+        // 4. Cross-branch first + last word match (if technician recently rotated)
+        if (engWords.length >= 2) {
+            const firstW = engWords[0];
+            const lastW = engWords[engWords.length - 1];
+            found = activeEmps.find(e => {
+                const empWords = phoneticNormalizeName(e.name).split(' ').filter(w => w.length >= 3);
+                return empWords.length >= 2 && empWords[0] === firstW && empWords[empWords.length - 1] === lastW;
+            });
+            if (found) return found;
+        }
+
+        return null;
+    }
+
+    function getTenureMonthsFromJoinDate(joinDateVal) {
+        const d = parseJoinDate(joinDateVal);
+        if (!d) return null;
+        const now = new Date();
+        const diffDays = Math.max(0, (now - d) / (1000 * 60 * 60 * 24));
+        return diffDays / 30.4375;
+    }
+
+    function formatRupiahCompact(num) {
+        const n = Math.round(Number(num) || 0);
+        if (n <= 0) return 'Rp 0';
+        return 'Rp ' + n.toLocaleString('id-ID');
+    }
+
+    function formatRupiahShort(num) {
+        const n = Number(num) || 0;
+        if (n >= 1e9) return 'Rp ' + (n / 1e9).toFixed(2) + ' M';
+        if (n >= 1e6) return 'Rp ' + (n / 1e6).toFixed(1) + ' Jt';
+        if (n >= 1e3) return 'Rp ' + Math.round(n / 1e3) + ' Rb';
+        return 'Rp ' + Math.round(n);
+    }
+
+    function buildManpowerPerformanceDataset() {
+        const activeEmps = mpmEmployees.filter(e => e.status !== 'RESIGN' && normalizeBranchName(e.branch) !== 'HO');
+        const sourceFame = (mpmFameList && mpmFameList.length > 0)
+            ? mpmFameList
+            : (window.fameData || window.prodData || []);
+
+        // Build branch capacity lookup & branch historical MoM lookup
+        const capByBranch = {};
+        capacityData.forEach(c => { capByBranch[c.branch] = c; });
+
+        const trendKeys = Object.keys(mpmGdTrend || {}).sort();
+        const currMonthKey = trendKeys.length > 0 ? trendKeys[trendKeys.length - 1] : '2026-10';
+        const prevMonthKey = trendKeys.length > 1 ? trendKeys[trendKeys.length - 2] : '2026-09';
+
+        // Estimate elapsed working days from fameList mode (gdCount / avgGd)
+        let workingDays = 24;
+        const wdSamples = [];
+        sourceFame.forEach(f => {
+            const avg = parseFloat(f.avgGd);
+            if (avg > 0 && f.gdCount >= 5) {
+                wdSamples.push(Math.round(f.gdCount / avg));
+            }
+        });
+        if (wdSamples.length > 0) {
+            wdSamples.sort((a, b) => a - b);
+            workingDays = Math.max(1, wdSamples[Math.floor(wdSamples.length / 2)]);
+        }
+
+        // Compute branch current-month total GD and previous-month total GD for MoM context
+        const branchMtdGdMap = {};
+        const branchTechCountInFame = {};
+        sourceFame.forEach(item => {
+            const rawName = String(item.engineer || '').toUpperCase().trim();
+            if (!rawName || rawName.includes('JANGAN DIPAKAI') || rawName.startsWith('PIC ') || rawName.startsWith('KACAB ') || rawName === 'UNKNOWN') return;
+            const b = normalizeBranchName(item.resolvedBranch || item.asc);
+            if (!b || b === 'HO') return;
+            branchMtdGdMap[b] = (branchMtdGdMap[b] || 0) + (item.gdCount || 0);
+            branchTechCountInFame[b] = (branchTechCountInFame[b] || 0) + 1;
+        });
+
+        const seenEngineers = new Set();
+        const techRows = [];
+
+        sourceFame.forEach(item => {
+            const rawName = String(item.engineer || '').toUpperCase().trim();
+            if (!rawName || rawName.includes('JANGAN DIPAKAI') || rawName.startsWith('PIC ') || rawName.startsWith('KACAB ') || rawName === 'UNKNOWN') return;
+            if (seenEngineers.has(rawName)) return;
+            seenEngineers.add(rawName);
+
+            const matchedEmp = matchFameToRosterEmployee(rawName, item.resolvedBranch || item.asc, activeEmps);
+            // If matched employee is marked RESIGN in MPM, skip
+            if (matchedEmp && matchedEmp.status === 'RESIGN') return;
+
+            const branch = matchedEmp && normalizeBranchName(matchedEmp.branch) && normalizeBranchName(matchedEmp.branch) !== 'HO'
+                ? normalizeBranchName(matchedEmp.branch)
+                : normalizeBranchName(item.resolvedBranch || item.asc);
+            if (!branch || branch === 'HO' || !SUMMARY_ALLOWED_BRANCHES.has(branch)) return;
+
+            const branchCap = capByBranch[branch] || null;
+
+            // Determine Technician Category: MX vs CE
+            let techCategory = mpmTechCatMap[rawName] || '';
+            if (!techCategory && matchedEmp) {
+                if (isEmployeeCe(matchedEmp) && !isEmployeeMx(matchedEmp)) techCategory = 'CE';
+                else if (isEmployeeMx(matchedEmp) && !isEmployeeCe(matchedEmp)) techCategory = 'MX';
+            }
+            if (!techCategory) {
+                if (branchCap && branchCap.productType === 'CE ONLY') techCategory = 'CE';
+                else if (branchCap && branchCap.productType === 'MX ONLY') techCategory = 'MX';
+                else techCategory = (item.dtsIhTotalVisits > 0) ? 'CE' : 'MX';
+            }
+
+            const gdCount = Number(item.gdCount) || 0;
+            const gdRepair = Number(item.gdRepair) || 0;
+            const gdCancel = Number(item.gdCancel) || 0;
+            const avgGd = parseFloat(item.avgGd) || parseFloat((gdCount / workingDays).toFixed(1));
+
+            // Norma Capacity Plan Samsung:
+            // Standar 1 FTE = 100 Poin / bulan (25 hari kerja = 4.0 Poin / hari kerja)
+            // Bobot: MX Repair = 1.0x, CE Repair = 2.5x, Cancel = 0.5x
+            // Sehingga Norma Unit/Hari: MX = 4.0 unit/hari, CE = 1.6 unit/hari (1.6 * 2.5 = 4.0 poin/hari)
+            const unitNormPerDay = techCategory === 'CE' ? 1.6 : 4.0;
+            const pointWeight = techCategory === 'CE' ? 2.5 : 1.0;
+            const totalPointsMtd = (gdRepair * pointWeight) + (gdCancel * 0.5);
+            const pointsPerDay = totalPointsMtd / workingDays;
+            const pointNormPerDay = 4.0; // 100 poin / 25 hari kerja
+
+            // % Produktivitas terhadap Capacity Plan
+            const productivityPct = Math.round((pointsPerDay / pointNormPerDay) * 100);
+
+            // Proyeksi Bulanan (25 hari kerja) & Tren MoM
+            const projectedMonthlyGd = Math.round(avgGd * 25);
+            const projectedMonthlyPoints = Math.round(pointsPerDay * 25);
+
+            // Baseline Bulan Lalu (gdPrevMonth jika ada; jika 0 karena tarikan GSPN bulanan berjalan, gunakan rata-rata historis per teknisi cabang bulan lalu dari gdTrendData)
+            let prevMonthGdBaseline = Number(item.gdPrevMonth) || 0;
+            let isBranchBenchmarkMoM = false;
+            if (prevMonthGdBaseline <= 0 && mpmGdTrend && mpmGdTrend[prevMonthKey]) {
+                let branchPrevGd = 0;
+                for (const k in mpmGdTrend[prevMonthKey]) {
+                    if (normalizeBranchName(k) === branch) {
+                        branchPrevGd = Number(mpmGdTrend[prevMonthKey][k]) || 0;
+                        break;
+                    }
+                }
+                const divisorTechs = Math.max(1, branchTechCountInFame[branch] || (branchCap && branchCap.realTech) || 1);
+                if (branchPrevGd > 0) {
+                    prevMonthGdBaseline = Math.round(branchPrevGd / divisorTechs);
+                    isBranchBenchmarkMoM = true;
+                }
+            }
+
+            let momGrowthPct = null;
+            if (prevMonthGdBaseline > 0) {
+                momGrowthPct = Math.round(((projectedMonthlyGd - prevMonthGdBaseline) / prevMonthGdBaseline) * 100);
+            }
+
+            // Masa Kerja & Status Teknisi Baru (< 3 bulan) vs Senior (>= 3 bulan)
+            const joinDate = matchedEmp ? (matchedEmp.joinDate || '') : '';
+            const tenureCalc = joinDate ? calculateTenure(joinDate) : { tenureYears: '-', tenureText: 'GSPN Live' };
+            const tenureMonths = getTenureMonthsFromJoinDate(joinDate);
+            const isNewTech = tenureMonths !== null && tenureMonths < 3.0;
+
+            // Kontribusi Labor (IW & OOW)
+            const laborIW = Math.round(Number(item.laborIW) || 0);
+            const laborOOW = Math.round(Number(item.laborOOW) || 0);
+            const totalLabor = laborIW + laborOOW;
+
+            techRows.push({
+                engineer: rawName,
+                displayName: matchedEmp ? matchedEmp.name : rawName,
+                nik: matchedEmp ? matchedEmp.nik : '-',
+                empObj: matchedEmp || null,
+                branch,
+                techCategory,
+                roles: matchedEmp ? (matchedEmp.roles || [matchedEmp.roleStatus || 'TEKNISI']) : [`TEKNISI ${techCategory}`],
+                joinDate: joinDate || '-',
+                tenureText: matchedEmp ? (matchedEmp.tenureText || tenureCalc.tenureText) : 'Data GSPN',
+                tenureMonths,
+                isNewTech,
+                avgGd,
+                unitNormPerDay,
+                pointsPerDay: parseFloat(pointsPerDay.toFixed(1)),
+                pointNormPerDay,
+                totalPointsMtd: Math.round(totalPointsMtd),
+                projectedMonthlyGd,
+                projectedMonthlyPoints,
+                productivityPct,
+                prevMonthGdBaseline,
+                isBranchBenchmarkMoM,
+                momGrowthPct,
+                laborIW,
+                laborOOW,
+                totalLabor
+            });
+        });
+
+        // Build Branch Utilization vs Capacity Plan Dataset
+        const branchUtilRows = capacityData.map(c => {
+            const b = c.branch;
+            let prevGd = 0;
+            let currMtdGd = branchMtdGdMap[b] || 0;
+            if (mpmGdTrend && mpmGdTrend[prevMonthKey]) {
+                for (const k in mpmGdTrend[prevMonthKey]) {
+                    if (normalizeBranchName(k) === b) { prevGd = Number(mpmGdTrend[prevMonthKey][k]) || 0; break; }
+                }
+            }
+            if (!currMtdGd && mpmGdTrend && mpmGdTrend[currMonthKey]) {
+                for (const k in mpmGdTrend[currMonthKey]) {
+                    if (normalizeBranchName(k) === b) { currMtdGd = Number(mpmGdTrend[currMonthKey][k]) || 0; break; }
+                }
+            }
+
+            // 4-Week breakdown from gdDailyData if available
+            let dailyObj = null;
+            if (mpmGdDaily) {
+                for (const k in mpmGdDaily) {
+                    if (normalizeBranchName(k) === b) { dailyObj = mpmGdDaily[k]; break; }
+                }
+            }
+            const weeks = [0, 0, 0, 0];
+            if (dailyObj) {
+                for (const dayKey in dailyObj) {
+                    const dNum = parseInt(dayKey, 10);
+                    const val = Number(dailyObj[dayKey]) || 0;
+                    if (dNum >= 1 && dNum <= 7) weeks[0] += val;
+                    else if (dNum >= 8 && dNum <= 14) weeks[1] += val;
+                    else if (dNum >= 15 && dNum <= 21) weeks[2] += val;
+                    else if (dNum >= 22) weeks[3] += val;
+                }
+            }
+
+            const realTech = Math.max(0, c.realTech || 0);
+            const techCapacityPoints = realTech * 100; // 1 Teknisi = 100 Poin Norma Samsung
+            const loadPoints = c.totalAdjust || 0; // Beban Poin Capacity Plan
+            const utilPct = realTech > 0 ? Math.round((loadPoints / techCapacityPoints) * 100) : (loadPoints > 0 ? 200 : 0);
+
+            let utilStatus = 'IDEAL';
+            let recommendation = 'Kapasitas Seimbang (Pertahankan)';
+            if (utilPct > 115) {
+                utilStatus = 'OVERLOAD';
+                const needed = Math.max(1, Math.ceil((loadPoints - techCapacityPoints) / 100));
+                recommendation = `Overload (+${utilPct - 100}%) • Butuh Tambah / Mutasi Masuk ~${needed} Teknisi`;
+            } else if (utilPct < 85) {
+                utilStatus = 'UNDERLOAD';
+                recommendation = c.bosGuardrail
+                    ? `Underload (${utilPct}%) • Wajib Pertahankan Min 2 Staf (Guardrail Hybrid)`
+                    : `Underload (${utilPct}%) • Kapasitas Longgar / Kandidat Mutasi atau Dorong In-Home`;
+            }
+
+            const projectedBranchGd = workingDays > 0 ? Math.round((currMtdGd / workingDays) * 25) : currMtdGd;
+            const branchMomPct = prevGd > 0 ? Math.round(((projectedBranchGd - prevGd) / prevGd) * 100) : null;
+
+            return {
+                branch: b,
+                productType: c.productType,
+                realTech,
+                effectiveStaff: c.effectiveStaff || c.totalStaff || 0,
+                finalMinStaff: c.finalMinStaff || 1,
+                techCapacityPoints,
+                loadPoints,
+                utilPct,
+                utilStatus,
+                recommendation,
+                prevGd,
+                currMtdGd,
+                projectedBranchGd,
+                branchMomPct,
+                weeks
+            };
+        }).sort((a, b) => b.utilPct - a.utilPct);
+
+        return {
+            techRows,
+            branchUtilRows,
+            workingDays,
+            currMonthKey,
+            prevMonthKey
+        };
+    }
+
+    function renderPerformanceSubTab(container) {
+        const dataset = buildManpowerPerformanceDataset();
+        const allTechs = dataset.techRows;
+        const allBranches = Array.from(new Set([
+            ...capacityData.map(c => c.branch),
+            ...allTechs.map(t => t.branch)
+        ])).filter(Boolean).sort();
+
+        // Check if current logged-in user has specific allowed branches (Asmen mode)
+        const userAllowedBranches = (typeof window.getAllowedBranches === 'function') ? window.getAllowedBranches() : [];
+        const hasSpecificArea = Array.isArray(userAllowedBranches) && userAllowedBranches.length > 0 && userAllowedBranches.length < 30;
+
+        container.innerHTML = `
+            <!-- Control & Filter Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin: 15px 0; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <!-- Branch Filter -->
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.8rem; color: #475569; font-weight: 700;">
+                            <i class="fa-solid fa-location-dot" style="color: #2563eb;"></i> Cabang:
+                        </span>
+                        <select id="perf-branch-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px; border-radius: 6px; font-size: 0.83rem; font-weight: 600; outline: none; cursor: pointer;">
+                            <option value="ALL" ${currentPerfBranch === 'ALL' ? 'selected' : ''}>Semua Cabang Nasional (${allBranches.length})</option>
+                            ${hasSpecificArea ? `<option value="MY_AREA" ${currentPerfBranch === 'MY_AREA' ? 'selected' : ''}>📍 Cabang Area Saya (${userAllowedBranches.length})</option>` : ''}
+                            ${allBranches.map(b => `<option value="${b}" ${currentPerfBranch === b ? 'selected' : ''}>${b}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <!-- Category & Tenure Filter -->
+                    <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                        <button class="perf-cat-btn" data-cat="ALL" style="padding: 6px 11px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid ${currentPerfCategory === 'ALL' ? '#2563eb' : '#cbd5e1'}; background: ${currentPerfCategory === 'ALL' ? '#2563eb' : '#ffffff'}; color: ${currentPerfCategory === 'ALL' ? '#ffffff' : '#475569'};">Semua</button>
+                        <button class="perf-cat-btn" data-cat="MX" style="padding: 6px 11px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid ${currentPerfCategory === 'MX' ? '#1d4ed8' : '#bfdbfe'}; background: ${currentPerfCategory === 'MX' ? '#1d4ed8' : '#eff6ff'}; color: ${currentPerfCategory === 'MX' ? '#ffffff' : '#1d4ed8'};">🔵 MX (HHP)</button>
+                        <button class="perf-cat-btn" data-cat="CE" style="padding: 6px 11px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid ${currentPerfCategory === 'CE' ? '#b45309' : '#fde68a'}; background: ${currentPerfCategory === 'CE' ? '#b45309' : '#fef3c7'}; color: ${currentPerfCategory === 'CE' ? '#ffffff' : '#b45309'};">🟡 CE (In-Home x2.5)</button>
+                        <button class="perf-cat-btn" data-cat="NEW" style="padding: 6px 11px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid ${currentPerfCategory === 'NEW' ? '#059669' : '#a7f3d0'}; background: ${currentPerfCategory === 'NEW' ? '#059669' : '#ecfdf5'}; color: ${currentPerfCategory === 'NEW' ? '#ffffff' : '#047857'};">🆕 Baru (&lt; 3 Bln)</button>
+                        <button class="perf-cat-btn" data-cat="SENIOR" style="padding: 6px 11px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid ${currentPerfCategory === 'SENIOR' ? '#4f46e5' : '#c7d2fe'}; background: ${currentPerfCategory === 'SENIOR' ? '#4f46e5' : '#eef2ff'}; color: ${currentPerfCategory === 'SENIOR' ? '#ffffff' : '#4338ca'};">🎖️ Senior (&ge; 3 Bln)</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <!-- Sort Select -->
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.78rem; color: #64748b; font-weight: 700;">Urutkan:</span>
+                        <select id="perf-sort-select" style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; outline: none; cursor: pointer;">
+                            <option value="PCT_DESC" ${currentPerfSort === 'PCT_DESC' ? 'selected' : ''}>% Produktivitas vs Norma (Tertinggi)</option>
+                            <option value="PCT_ASC" ${currentPerfSort === 'PCT_ASC' ? 'selected' : ''}>% Produktivitas vs Norma (Terendah)</option>
+                            <option value="AVGGD_DESC" ${currentPerfSort === 'AVGGD_DESC' ? 'selected' : ''}>Avg GD / Hari (Tertinggi)</option>
+                            <option value="LABOR_DESC" ${currentPerfSort === 'LABOR_DESC' ? 'selected' : ''}>Kontribusi Labor Rp (Tertinggi)</option>
+                            <option value="MOM_DESC" ${currentPerfSort === 'MOM_DESC' ? 'selected' : ''}>Tren Growth MoM (Tertinggi)</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Box -->
+                    <div style="position: relative;">
+                        <input type="text" id="perf-search-input" value="${currentPerfSearch}" placeholder="Cari Teknisi, NIK, Cabang..." style="background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 6px 12px 6px 30px; border-radius: 6px; font-size: 0.82rem; width: 210px; outline: none;">
+                        <i class="fa-solid fa-search" style="position: absolute; left: 10px; top: 9px; color: #94a3b8; font-size: 0.78rem;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Content Wrapper -->
+            <div id="perf-dynamic-body" style="display: flex; flex-direction: column; gap: 20px;"></div>
+        `;
+
+        // Bind Filter Controls
+        const branchSel = document.getElementById('perf-branch-select');
+        if (branchSel) {
+            branchSel.addEventListener('change', (e) => {
+                currentPerfBranch = e.target.value;
+                updatePerformanceDynamicView(dataset, userAllowedBranches);
+            });
+        }
+
+        container.querySelectorAll('.perf-cat-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentPerfCategory = btn.dataset.cat;
+                renderPerformanceSubTab(container);
+            });
+        });
+
+        const sortSel = document.getElementById('perf-sort-select');
+        if (sortSel) {
+            sortSel.addEventListener('change', (e) => {
+                currentPerfSort = e.target.value;
+                updatePerformanceDynamicView(dataset, userAllowedBranches);
+            });
+        }
+
+        const searchInp = document.getElementById('perf-search-input');
+        if (searchInp) {
+            searchInp.addEventListener('input', (e) => {
+                currentPerfSearch = e.target.value;
+                updatePerformanceDynamicView(dataset, userAllowedBranches);
+            });
+        }
+
+        updatePerformanceDynamicView(dataset, userAllowedBranches);
+    }
+
+    function updatePerformanceDynamicView(dataset, userAllowedBranches) {
+        const wrapper = document.getElementById('perf-dynamic-body');
+        if (!wrapper) return;
+
+        const allowedNormSet = new Set((userAllowedBranches || []).map(b => normalizeBranchName(b)));
+
+        // Filter Technicians
+        let filteredTechs = dataset.techRows.filter(t => {
+            let matchBranch = true;
+            if (currentPerfBranch === 'MY_AREA') {
+                matchBranch = allowedNormSet.has(t.branch);
+            } else if (currentPerfBranch !== 'ALL') {
+                matchBranch = t.branch === currentPerfBranch;
+            }
+
+            let matchCat = true;
+            if (currentPerfCategory === 'MX') matchCat = t.techCategory === 'MX';
+            else if (currentPerfCategory === 'CE') matchCat = t.techCategory === 'CE';
+            else if (currentPerfCategory === 'NEW') matchCat = t.isNewTech === true;
+            else if (currentPerfCategory === 'SENIOR') matchCat = t.isNewTech === false && t.tenureMonths !== null;
+
+            const q = currentPerfSearch.trim().toLowerCase();
+            const matchSearch = !q ||
+                t.displayName.toLowerCase().includes(q) ||
+                t.engineer.toLowerCase().includes(q) ||
+                String(t.nik).toLowerCase().includes(q) ||
+                t.branch.toLowerCase().includes(q);
+
+            return matchBranch && matchCat && matchSearch;
+        });
+
+        // Sort Technicians
+        filteredTechs.sort((a, b) => {
+            if (currentPerfSort === 'PCT_ASC') return a.productivityPct - b.productivityPct || a.avgGd - b.avgGd;
+            if (currentPerfSort === 'AVGGD_DESC') return b.avgGd - a.avgGd || b.productivityPct - a.productivityPct;
+            if (currentPerfSort === 'LABOR_DESC') return b.totalLabor - a.totalLabor || b.productivityPct - a.productivityPct;
+            if (currentPerfSort === 'MOM_DESC') return (b.momGrowthPct != null ? b.momGrowthPct : -999) - (a.momGrowthPct != null ? a.momGrowthPct : -999);
+            return b.productivityPct - a.productivityPct || b.avgGd - a.avgGd;
+        });
+
+        // Ranking for Top 3 & Bottom 3 ( strictly sorted by % Produktivitas vs Capacity Plan )
+        const rankedByPct = [...filteredTechs].sort((a, b) => b.productivityPct - a.productivityPct || b.pointsPerDay - a.pointsPerDay);
+        const top3 = rankedByPct.slice(0, 3);
+        const bottom3 = rankedByPct.length > 3
+            ? [...rankedByPct].reverse().slice(0, 3)
+            : [...rankedByPct].reverse();
+
+        // Group Comparison: Teknisi Baru (< 3 Bulan) vs Teknisi Senior (>= 3 Bulan)
+        const newTechGroup = filteredTechs.filter(t => t.isNewTech);
+        const seniorTechGroup = filteredTechs.filter(t => !t.isNewTech && t.tenureMonths !== null);
+
+        const calcGroupStats = (arr) => {
+            if (!arr.length) return { count: 0, avgGd: '0.0', avgPct: 0, avgLabor: 0 };
+            const sumGd = arr.reduce((s, x) => s + x.avgGd, 0);
+            const sumPct = arr.reduce((s, x) => s + x.productivityPct, 0);
+            const sumLab = arr.reduce((s, x) => s + x.totalLabor, 0);
+            return {
+                count: arr.length,
+                avgGd: (sumGd / arr.length).toFixed(1),
+                avgPct: Math.round(sumPct / arr.length),
+                avgLabor: Math.round(sumLab / arr.length)
+            };
+        };
+        const newStats = calcGroupStats(newTechGroup);
+        const seniorStats = calcGroupStats(seniorTechGroup);
+        const overallStats = calcGroupStats(filteredTechs);
+
+        const totalLaborIW = filteredTechs.reduce((s, x) => s + x.laborIW, 0);
+        const totalLaborOOW = filteredTechs.reduce((s, x) => s + x.laborOOW, 0);
+        const grandTotalLabor = totalLaborIW + totalLaborOOW;
+
+        // Filter Branch Utilization rows
+        let branchUtils = dataset.branchUtilRows.filter(b => {
+            if (currentPerfBranch === 'MY_AREA') return allowedNormSet.has(b.branch);
+            if (currentPerfBranch !== 'ALL') return b.branch === currentPerfBranch;
+            return true;
+        });
+        const overloadCount = branchUtils.filter(b => b.utilStatus === 'OVERLOAD').length;
+        const idealCount = branchUtils.filter(b => b.utilStatus === 'IDEAL').length;
+        const underloadCount = branchUtils.filter(b => b.utilStatus === 'UNDERLOAD').length;
+
+        const displayedBranchUtils = branchUtils.filter(b => {
+            if (currentPerfUtilFilter === 'ALL') return true;
+            return b.utilStatus === currentPerfUtilFilter;
+        });
+
+        const renderTopBottomCardItem = (t, rankNum, isTop) => {
+            const photoSrc = t.empObj ? getEmployeePhotoSrc(t.empObj) : '';
+            const medal = isTop
+                ? (rankNum === 1 ? '🥇 #1' : (rankNum === 2 ? '🥈 #2' : '🥉 #3'))
+                : `#${rankNum}`;
+            const badgeBg = isTop ? '#dcfce7' : '#fee2e2';
+            const badgeColor = isTop ? '#15803d' : '#b91c1c';
+            const badgeBorder = isTop ? '#86efac' : '#fca5a5';
+            const catBadge = t.techCategory === 'CE'
+                ? `<span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:700;">CE (x2.5)</span>`
+                : `<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:700;">MX (HHP)</span>`;
+            const adaptationNote = !isTop
+                ? (t.isNewTech
+                    ? `<span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:700;">🆕 Masa Adaptasi (&lt;3 Bln)</span>`
+                    : `<span style="background:#fff1f2; color:#be123c; border:1px solid #fecdd3; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:700;">⚠️ Wajib Pembinaan Senior</span>`)
+                : `<span style="font-size:0.72rem; color:#64748b;">Masa Kerja: <strong>${t.tenureText}</strong></span>`;
+
+            return `
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.82rem; color: ${badgeColor}; background: ${badgeBg}; border: 1px solid ${badgeBorder}; padding: 4px 8px; border-radius: 6px; flex-shrink: 0;">
+                            ${medal}
+                        </div>
+                        <div style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 2px solid #cbd5e1; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
+                            ${photoSrc ? `<img src="${photoSrc}" alt="${t.displayName}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:0.75rem;\\'>${getInitials(t.displayName)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-weight:700; color:#2563eb; font-size:0.75rem;">${getInitials(t.displayName)}</span>`}
+                        </div>
+                        <div style="min-width: 0;">
+                            <div style="font-weight: 800; color: #0f172a; font-size: 0.86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.displayName}</div>
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+                                <span style="font-size: 0.72rem; font-weight: 700; color: #1d4ed8;">${t.branch}</span>
+                                ${catBadge}
+                                ${adaptationNote}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; flex-shrink: 0;">
+                        <div style="font-size: 1.05rem; font-weight: 900; color: ${badgeColor};">${t.productivityPct}% <span style="font-size: 0.7rem; font-weight: 600; color: #64748b;">vs Norma</span></div>
+                        <div style="font-size: 0.73rem; color: #475569; font-weight: 600;">Avg: <strong>${t.avgGd}</strong> unit/hr (${t.pointsPerDay} poin/hr)</div>
+                        <div style="font-size: 0.71rem; color: #0284c7; font-weight: 700;">Labor: ${formatRupiahShort(t.totalLabor)}</div>
+                    </div>
+                </div>
+            `;
+        };
+
+        wrapper.innerHTML = `
+            <!-- SECTION 1 (ITEM 5): TOP 3 & BOTTOM 3 BERDASARKAN % PRODUKTIVITAS VS CAPACITY PLAN -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px;">
+                <!-- Top 3 Card -->
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #166534; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-trophy" style="color: #eab308;"></i>
+                            TOP 3 TEKNISI TERBAIK (% Produktivitas vs Capacity Plan)
+                        </h3>
+                        <span style="font-size: 0.72rem; background: #dcfce7; color: #15803d; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #86efac;">Norma: 4.0 Poin/Hari</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        ${top3.length > 0 ? top3.map((t, i) => renderTopBottomCardItem(t, i + 1, true)).join('') : `<div style="padding: 20px; text-align: center; color: #94a3b8;">Tidak ada data teknisi.</div>`}
+                    </div>
+                </div>
+
+                <!-- Bottom 3 Card -->
+                <div style="background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border: 1px solid #fecdd3; border-radius: 10px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #9f1239; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-Seedling fa-person-chalkboard" style="color: #e11d48;"></i>
+                            BOTTOM 3 PERLU PEMBINAAN (% Produktivitas Terendah)
+                        </h3>
+                        <span style="font-size: 0.72rem; background: #ffe4e6; color: #be123c; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #fda4af;">Prioritas Evaluasi Asmen</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        ${bottom3.length > 0 ? bottom3.map((t, i) => renderTopBottomCardItem(t, i + 1, false)).join('') : `<div style="padding: 20px; text-align: center; color: #94a3b8;">Tidak ada data teknisi.</div>`}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2 (ITEM 3 & ITEM 4 SUMMARY): MASA ADAPTASI (BARU < 3 BLN VS SENIOR) & TOTAL LABOR -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+                <!-- Komparasi Teknisi Baru (< 3 Bulan) -->
+                <div style="background: #ffffff; border: 1px solid #a7f3d0; border-left: 4px solid #10b981; border-radius: 8px; padding: 14px 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #047857; text-transform: uppercase;">🆕 Teknisi Baru (&lt; 3 Bulan dari Join Date)</span>
+                        <span style="background: #ecfdf5; color: #047857; font-weight: 800; font-size: 0.78rem; padding: 2px 8px; border-radius: 6px; border: 1px solid #a7f3d0;">${newStats.count} Orang</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; text-align: center; background: #f8fafc; padding: 8px; border-radius: 6px;">
+                        <div>
+                            <div style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Avg GD/Hari</div>
+                            <div style="font-size: 1rem; font-weight: 800; color: #0f172a;">${newStats.avgGd}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; color: #64748b; font-weight: 600;">% vs Capacity</div>
+                            <div style="font-size: 1rem; font-weight: 800; color: #059669;">${newStats.avgPct}%</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Avg Labor</div>
+                            <div style="font-size: 0.88rem; font-weight: 800; color: #0284c7;">${formatRupiahShort(newStats.avgLabor)}</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b; margin-top: 6px;">
+                        Pemantauan masa adaptasi teknisi baru terhadap standar kapasitas.
+                    </div>
+                </div>
+
+                <!-- Komparasi Teknisi Senior (>= 3 Bulan) -->
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-left: 4px solid #4f46e5; border-radius: 8px; padding: 14px 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #4338ca; text-transform: uppercase;">🎖️ Teknisi Senior (&ge; 3 Bulan dari Join Date)</span>
+                        <span style="background: #eef2ff; color: #4338ca; font-weight: 800; font-size: 0.78rem; padding: 2px 8px; border-radius: 6px; border: 1px solid #c7d2fe;">${seniorStats.count} Orang</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; text-align: center; background: #f8fafc; padding: 8px; border-radius: 6px;">
+                        <div>
+                            <div style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Avg GD/Hari</div>
+                            <div style="font-size: 1rem; font-weight: 800; color: #0f172a;">${seniorStats.avgGd}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; color: #64748b; font-weight: 600;">% vs Capacity</div>
+                            <div style="font-size: 1rem; font-weight: 800; color: #4f46e5;">${seniorStats.avgPct}%</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Avg Labor</div>
+                            <div style="font-size: 0.88rem; font-weight: 800; color: #0284c7;">${formatRupiahShort(seniorStats.avgLabor)}</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b; margin-top: 6px;">
+                        Selisih Produktivitas Baru vs Senior: <strong>${newStats.count > 0 ? (newStats.avgPct - seniorStats.avgPct > 0 ? '+' : '') + (newStats.avgPct - seniorStats.avgPct) + '%' : 'N/A'}</strong>
+                    </div>
+                </div>
+
+                <!-- Ringkasan Kontribusi Labor (IW & OOW) -->
+                <div style="background: #ffffff; border: 1px solid #bae6fd; border-left: 4px solid #0284c7; border-radius: 8px; padding: 14px 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #0369a1; text-transform: uppercase;">💰 Total Kontribusi Labor Teknisi (MTD)</span>
+                        <span style="background: #e0f2fe; color: #0369a1; font-weight: 800; font-size: 0.78rem; padding: 2px 8px; border-radius: 6px; border: 1px solid #bae6fd;">${filteredTechs.length} Teknisi</span>
+                    </div>
+                    <div style="font-size: 1.25rem; font-weight: 900; color: #0f172a; margin-top: 8px;">
+                        ${formatRupiahCompact(grandTotalLabor)}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: #475569; margin-top: 6px; background: #f8fafc; padding: 6px 10px; border-radius: 6px;">
+                        <span>IW: <strong style="color: #16a34a;">${formatRupiahShort(totalLaborIW)}</strong></span>
+                        <span>OOW: <strong style="color: #2563eb;">${formatRupiahShort(totalLaborOOW)}</strong></span>
+                        <span>Rata2/Teknisi: <strong>${formatRupiahShort(overallStats.avgLabor)}</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3 (ITEM 2): UTILISASI CABANG VS CAPACITY PLAN (KEPUTUSAN TAMBAH ORANG / MUTASI) -->
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 0.98rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-scale-balanced" style="color: #2563eb;"></i>
+                            UTILISASI CABANG VS CAPACITY PLAN (Panduan Tambah Orang / Mutasi Teknisi)
+                        </h3>
+                        <p style="margin: 2px 0 0 0; font-size: 0.76rem; color: #64748b;">
+                            Membandingkan beban poin cabang (HHP 1x, CE 2.5x, Cancel 0.5x) terhadap kapasitas teknisi riil (1 Teknisi = 100 Poin). Klik baris cabang untuk melihat teknisinya.
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button class="perf-util-btn" data-util="ALL" style="padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer; border: 1px solid ${currentPerfUtilFilter === 'ALL' ? '#2563eb' : '#cbd5e1'}; background: ${currentPerfUtilFilter === 'ALL' ? '#2563eb' : '#ffffff'}; color: ${currentPerfUtilFilter === 'ALL' ? '#ffffff' : '#475569'};">Semua (${branchUtils.length})</button>
+                        <button class="perf-util-btn" data-util="OVERLOAD" style="padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer; border: 1px solid ${currentPerfUtilFilter === 'OVERLOAD' ? '#dc2626' : '#fca5a5'}; background: ${currentPerfUtilFilter === 'OVERLOAD' ? '#dc2626' : '#fee2e2'}; color: ${currentPerfUtilFilter === 'OVERLOAD' ? '#ffffff' : '#dc2626'};">🔴 Overload &gt;115% (${overloadCount})</button>
+                        <button class="perf-util-btn" data-util="IDEAL" style="padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer; border: 1px solid ${currentPerfUtilFilter === 'IDEAL' ? '#16a34a' : '#86efac'}; background: ${currentPerfUtilFilter === 'IDEAL' ? '#16a34a' : '#dcfce7'}; color: ${currentPerfUtilFilter === 'IDEAL' ? '#ffffff' : '#16a34a'};">🟢 Ideal 85–115% (${idealCount})</button>
+                        <button class="perf-util-btn" data-util="UNDERLOAD" style="padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer; border: 1px solid ${currentPerfUtilFilter === 'UNDERLOAD' ? '#0284c7' : '#7dd3fc'}; background: ${currentPerfUtilFilter === 'UNDERLOAD' ? '#0284c7' : '#e0f2fe'}; color: ${currentPerfUtilFilter === 'UNDERLOAD' ? '#ffffff' : '#0284c7'};">🔵 Underload &lt;85% (${underloadCount})</button>
+                    </div>
+                </div>
+
+                <div style="max-height: 290px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;">
+                        <thead style="position: sticky; top: 0; z-index: 2;">
+                            <tr style="background: #1e293b; color: #ffffff;">
+                                <th style="padding: 8px 10px; font-size: 0.74rem; text-transform: uppercase;">Cabang</th>
+                                <th style="padding: 8px 10px; font-size: 0.74rem; text-transform: uppercase;">Layanan</th>
+                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">Teknisi Riil</th>
+                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">Kapasitas (Poin)</th>
+                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">Beban Capacity</th>
+                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">% Utilisasi</th>
+                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">Tren 4 Minggu (M1–M4)</th>
+                                <th style="padding: 8px 10px; text-align: center; font-size: 0.74rem; text-transform: uppercase;">MoM Cabang</th>
+                                <th style="padding: 8px 10px; font-size: 0.74rem; text-transform: uppercase;">Status & Rekomendasi Taktis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${displayedBranchUtils.map(b => {
+                                const stBg = b.utilStatus === 'OVERLOAD' ? '#fee2e2' : (b.utilStatus === 'UNDERLOAD' ? '#e0f2fe' : '#dcfce7');
+                                const stCol = b.utilStatus === 'OVERLOAD' ? '#dc2626' : (b.utilStatus === 'UNDERLOAD' ? '#0284c7' : '#16a34a');
+                                const momText = b.branchMomPct !== null
+                                    ? (b.branchMomPct >= 0
+                                        ? `<span style="color:#16a34a; font-weight:700;">▲ +${b.branchMomPct}%</span>`
+                                        : `<span style="color:#dc2626; font-weight:700;">▼ ${b.branchMomPct}%</span>`)
+                                    : '-';
+                                const wText = b.weeks.some(w => w > 0)
+                                    ? `<span style="font-family:monospace; font-size:0.74rem; color:#334155;">${b.weeks.join(' → ')}</span>`
+                                    : '-';
+                                return `
+                                    <tr class="perf-branch-util-row" data-branch="${b.branch}" style="border-bottom: 1px solid #f1f5f9; cursor: pointer; background: ${currentPerfBranch === b.branch ? '#eff6ff' : '#ffffff'};" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${currentPerfBranch === b.branch ? '#eff6ff' : '#ffffff'}'">
+                                        <td style="padding: 7px 10px; font-weight: 800; color: #1d4ed8;">${b.branch}</td>
+                                        <td style="padding: 7px 10px; font-size: 0.74rem; font-weight: 700; color: #475569;">${b.productType}</td>
+                                        <td style="padding: 7px 10px; text-align: center; font-weight: 800;">${b.realTech} Org</td>
+                                        <td style="padding: 7px 10px; text-align: center; color: #64748b;">${b.techCapacityPoints} Poin</td>
+                                        <td style="padding: 7px 10px; text-align: center; font-weight: 800; color: #7c3aed;">${b.loadPoints} Poin</td>
+                                        <td style="padding: 7px 10px; text-align: center;">
+                                            <span style="background: ${stBg}; color: ${stCol}; padding: 2px 8px; border-radius: 10px; font-weight: 800; font-size: 0.78rem;">${b.utilPct}%</span>
+                                        </td>
+                                        <td style="padding: 7px 10px; text-align: center;">${wText}</td>
+                                        <td style="padding: 7px 10px; text-align: center; font-size: 0.76rem;" title="Bulan Lalu: ${b.prevGd} GD | Proyeksi Bulan Ini: ${b.projectedBranchGd} GD">${momText}</td>
+                                        <td style="padding: 7px 10px; font-size: 0.76rem; font-weight: 600; color: ${stCol};">${b.recommendation}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 4 (ITEM 1, ITEM 3, ITEM 4): TABEL UTAMA PRODUKTIVITAS TEKNISI VS CAPACITY PLAN, TREN MOM & KONTRIBUSI LABOR -->
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="padding: 14px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 0.98rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-user-check" style="color: #2563eb;"></i>
+                            DAFTAR PERFORMA PRODUKTIVITAS TEKNISI VS CAPACITY PLAN (${filteredTechs.length} Teknisi)
+                        </h3>
+                        <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #64748b;">
+                            Standar Norma Samsung FTE: <strong>4.0 Poin/Hari Kerja</strong> (MX = 4.0 unit/hari bobot 1x | CE = 1.6 unit/hari bobot 2.5x | Cancel bobot 0.5x). Hari kerja berjalan: <strong>${dataset.workingDays} hari</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left;">
+                        <thead>
+                            <tr style="background: var(--accent-blue, #2563eb); color: #ffffff; border-bottom: 2px solid #1d4ed8;">
+                                <th style="padding: 10px 8px; text-align: center; width: 45px; font-size: 0.75rem; text-transform: uppercase;">Rank</th>
+                                <th style="padding: 10px 10px; font-size: 0.75rem; text-transform: uppercase;">Teknisi & NIK</th>
+                                <th style="padding: 10px 10px; font-size: 0.75rem; text-transform: uppercase;">Cabang & Kategori</th>
+                                <th style="padding: 10px 10px; text-align: center; font-size: 0.75rem; text-transform: uppercase;">Join Date & Masa Kerja</th>
+                                <th style="padding: 10px 10px; text-align: center; font-size: 0.75rem; text-transform: uppercase; background: #1e40af;">Avg GD / Hari vs Norma</th>
+                                <th style="padding: 10px 12px; font-size: 0.75rem; text-transform: uppercase; background: #172554; min-width: 190px;">% Produktivitas vs Capacity Plan</th>
+                                <th style="padding: 10px 10px; text-align: center; font-size: 0.75rem; text-transform: uppercase;">Tren Performa (MoM)</th>
+                                <th style="padding: 10px 10px; text-align: right; font-size: 0.75rem; text-transform: uppercase; background: #0369a1;">Kontribusi Labor (IW / OOW)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredTechs.length === 0 ? `
+                                <tr>
+                                    <td colspan="8" style="padding: 35px; text-align: center; color: #94a3b8; font-weight: 600;">
+                                        Tidak ada data teknisi yang sesuai dengan filter pencarian.
+                                    </td>
+                                </tr>
+                            ` : filteredTechs.map((t, idx) => {
+                                const photoSrc = t.empObj ? getEmployeePhotoSrc(t.empObj) : '';
+                                const barColor = t.productivityPct >= 100 ? '#16a34a' : (t.productivityPct >= 80 ? '#2563eb' : (t.productivityPct >= 60 ? '#d97706' : '#dc2626'));
+                                const barWidth = Math.min(100, Math.max(4, t.productivityPct));
+
+                                const catBadge = t.techCategory === 'CE'
+                                    ? `<span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:700;">🟡 CE (x2.5)</span>`
+                                    : `<span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:700;">🔵 MX (HHP)</span>`;
+
+                                const tenureBadge = t.isNewTech
+                                    ? `<span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:800; display:inline-block; margin-top:2px;">🆕 Baru (&lt; 3 Bln)</span>`
+                                    : (t.tenureMonths !== null
+                                        ? `<span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:1px 6px; border-radius:4px; font-size:0.68rem; font-weight:600; display:inline-block; margin-top:2px;">🎖️ Senior</span>`
+                                        : '');
+
+                                let momHtml = `<span style="color:#94a3b8; font-size:0.75rem;">-</span>`;
+                                if (t.momGrowthPct !== null) {
+                                    const isUp = t.momGrowthPct >= 0;
+                                    const momCol = isUp ? '#16a34a' : '#dc2626';
+                                    const momBg = isUp ? '#dcfce7' : '#fee2e2';
+                                    const arrow = isUp ? '▲ +' : '▼ ';
+                                    momHtml = `
+                                        <div style="display:inline-flex; flex-direction:column; align-items:center;">
+                                            <span style="background:${momBg}; color:${momCol}; font-weight:800; font-size:0.76rem; padding:2px 8px; border-radius:10px;">
+                                                ${arrow}${t.momGrowthPct}%
+                                            </span>
+                                            <span style="font-size:0.68rem; color:#64748b; margin-top:2px;" title="${t.isBranchBenchmarkMoM ? 'Dibandingkan rata-rata GD/teknisi cabang bulan lalu' : 'Dibandingkan GD teknisi bulan lalu'}">
+                                                Proyeksi ${t.projectedMonthlyGd} vs ${t.prevMonthGdBaseline}
+                                            </span>
+                                        </div>
+                                    `;
+                                }
+
+                                return `
+                                    <tr style="border-bottom: 1px solid #f1f5f9; background: #ffffff; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'">
+                                        <td style="padding: 10px 8px; text-align: center; font-weight: 800; color: #475569;">#${idx + 1}</td>
+                                        <td style="padding: 10px 10px;">
+                                            <div style="display: flex; align-items: center; gap: 10px;">
+                                                <div style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 2px solid #e2e8f0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f8fafc;">
+                                                    ${photoSrc ? `<img src="${photoSrc}" alt="${t.displayName}" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span style=\\'font-weight:700; color:#2563eb; font-size:0.75rem;\\'>${getInitials(t.displayName)}</span>';" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="font-weight:700; color:#2563eb; font-size:0.75rem;">${getInitials(t.displayName)}</span>`}
+                                                </div>
+                                                <div>
+                                                    <div style="font-weight: 800; color: #0f172a; font-size: 0.88rem;">${t.displayName}</div>
+                                                    <div style="font-family: monospace; font-size: 0.72rem; color: #64748b;">NIK: ${t.nik}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 10px 10px;">
+                                            <div style="font-weight: 700; color: #1d4ed8; font-size: 0.82rem;">${t.branch}</div>
+                                            <div style="margin-top: 3px;">${catBadge}</div>
+                                        </td>
+                                        <td style="padding: 10px 10px; text-align: center;">
+                                            <div style="font-size: 0.78rem; font-weight: 700; color: #334155;">${t.tenureText}</div>
+                                            <div style="font-size: 0.7rem; color: #64748b;">Masuk: ${t.joinDate}</div>
+                                            ${tenureBadge}
+                                        </td>
+                                        <td style="padding: 10px 10px; text-align: center; background: #f8fafc;">
+                                            <div style="font-size: 0.95rem; font-weight: 900; color: #0f172a;">${t.avgGd} <span style="font-size: 0.72rem; font-weight: 600; color: #64748b;">unit/hr</span></div>
+                                            <div style="font-size: 0.71rem; color: #475569; margin-top: 2px;">Norma Unit: <strong>${t.unitNormPerDay}</strong>/hr</div>
+                                        </td>
+                                        <td style="padding: 10px 12px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                                                <span style="font-size: 0.96rem; font-weight: 900; color: ${barColor};">${t.productivityPct}%</span>
+                                                <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">${t.pointsPerDay} / ${t.pointNormPerDay} Poin/Hr</span>
+                                            </div>
+                                            <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                                                <div style="width: ${barWidth}%; height: 100%; background: ${barColor}; border-radius: 999px;"></div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 10px 10px; text-align: center;">
+                                            ${momHtml}
+                                        </td>
+                                        <td style="padding: 10px 10px; text-align: right; background: #f0f9ff;">
+                                            <div style="font-weight: 800; color: #0369a1; font-size: 0.88rem;">${formatRupiahCompact(t.totalLabor)}</div>
+                                            <div style="font-size: 0.69rem; color: #64748b; margin-top: 2px;">
+                                                IW: ${formatRupiahShort(t.laborIW)} | OOW: ${formatRupiahShort(t.laborOOW)}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        // Bind Utilization Status Filter Buttons
+        wrapper.querySelectorAll('.perf-util-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentPerfUtilFilter = btn.dataset.util;
+                updatePerformanceDynamicView(dataset, userAllowedBranches);
+            });
+        });
+
+        // Clicking a branch row in the Branch Utilization table filters the technician table below (or toggles back to ALL)
+        wrapper.querySelectorAll('.perf-branch-util-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const clickedBranch = row.dataset.branch;
+                currentPerfBranch = (currentPerfBranch === clickedBranch) ? 'ALL' : clickedBranch;
+                const branchSel = document.getElementById('perf-branch-select');
+                if (branchSel) branchSel.value = currentPerfBranch;
+                updatePerformanceDynamicView(dataset, userAllowedBranches);
+            });
+        });
     }
 
     // Helper: Toast notification
