@@ -288,6 +288,16 @@ module.exports = {
     TARGET_GD_MX: 6.4,
     TARGET_GD_CE: 2.4,
 
+    // Target Area Branches for Automated Blasting (Mandat BOS Abdul Khoir)
+    BLAST_ALLOWED_BRANCHES: [
+        'DENPASAR',
+        'DENPASAR - CELLULAR WORLD',
+        'DENPASAR - PLANET GADGET',
+        'KUPANG',
+        'SINGARAJA',
+        'MANADO'
+    ],
+
     // Auto Shutdown Configuration (Mandat BOS)
     AUTO_SHUTDOWN: {
         ENABLED: true,

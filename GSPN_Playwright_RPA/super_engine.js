@@ -6,7 +6,7 @@ const cron = require('node-cron');
 const path = require('path');
 const fs = require('fs');
 const { initializeApp } = require('firebase/app');
-const { getFirestore, doc, setDoc, onSnapshot } = require('firebase/firestore');
+const { getFirestore, doc, getDoc, setDoc, onSnapshot } = require('firebase/firestore');
 
 const config = require('./config');
 const { scrapeAllBranches } = require('./scraper');
@@ -79,7 +79,9 @@ const ALLOWED_ORIGINS = [
     'http://localhost:3001',
     'http://127.0.0.1:3001',
     'https://aging-commander.web.app',
-    'https://aging-commander.firebaseapp.com'
+    'https://aging-commander.firebaseapp.com',
+    'https://management-bujm-dashboard.web.app',
+    'https://management-bujm-dashboard.firebaseapp.com'
 ];
 
 app.use((req, res, next) => {
@@ -87,7 +89,8 @@ app.use((req, res, next) => {
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
         res.header('Access-Control-Allow-Origin', origin || '*');
     }
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Private-Network', 'true');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Private-Network');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     if (req.method === 'OPTIONS') return res.sendStatus(200);
     next();
@@ -367,6 +370,55 @@ app.get('/api/progress', (req, res) => {
     res.json({ isBlasting, progress: blastProgress });
 });
 
+// API: Trigger Smart WA Alert On-Demand (Rule 5.3)
+app.post('/api/trigger-blast', async (req, res) => {
+    if (!clientReady) return res.status(400).json({ error: 'WhatsApp client belum siap / offline' });
+    const session = (req.body && req.body.session) ? req.body.session : 'MIDDAY';
+    const force = (req.body && req.body.force !== undefined) ? req.body.force : true;
+
+    try {
+        console.log(`\n📢 [TRIGGER BLAST API] Permintaan blast on-demand untuk sesi: ${session}...`);
+        const latestDocSnap = await getDoc(doc(db, 'dashboard_data', 'latest'));
+        const latestEngSnap = await getDoc(doc(db, 'dashboard_data', 'latest_eng'));
+
+        if (!latestDocSnap.exists()) {
+            return res.status(404).json({ error: 'Data dashboard_data/latest belum tersedia di Firestore' });
+        }
+
+        const dataLatest = latestDocSnap.data();
+        const dataEng = latestEngSnap.exists() ? latestEngSnap.data() : {};
+
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+        const syncResult = {
+            analytics: {
+                shameList: dataLatest.shameList || [],
+                dosaCabangBills: dataLatest.dosaCabangBills || [],
+                rcStats: dataEng.rcStats || {}
+            },
+            dateStr,
+            timeStr,
+            scheduleSlot: session
+        };
+
+        const result = await handleSmartAlerts(syncResult, {
+            waClient,
+            isReady: clientReady,
+            allowedBranches: config.BLAST_ALLOWED_BRANCHES,
+            forceSession: session,
+            force
+        });
+
+        res.json({ success: true, session, result });
+    } catch (err) {
+        console.error('❌ [TRIGGER BLAST ERROR]', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 const HOST = process.env.HOST || '127.0.0.1';
 const server = app.listen(PORT, HOST, () => {
     console.log(`>>> JARVIS WA Engine aktif di http://${HOST}:${PORT}`);
@@ -443,9 +495,19 @@ async function executeRpaCycle(slotName = 'MANUAL') {
             console.warn('⚠️ [WARN] Daily Ledger VOL IN Warning:', volErr.message);
         }
 
-        await lockManager.updateProgress('NOTIFY', '>>> Mengirim Alert / Notifikasi WA...');
-        // [DISABLED] WA Blasting Backend dinonaktifkan total agar tidak menembak ke semua teknisi
-        // await handleSmartAlerts(syncResult);
+        await lockManager.updateProgress('NOTIFY', '>>> Mengecek & Mengirim Smart Alert WA (Rule 5.3)...');
+        try {
+            const blastRes = await handleSmartAlerts(syncResult, {
+                waClient,
+                isReady: clientReady,
+                allowedBranches: config.BLAST_ALLOWED_BRANCHES
+            });
+            if (blastRes && blastRes.sent) {
+                syncResult.alertsSent = (syncResult.alertsSent || 0) + blastRes.sent;
+            }
+        } catch (alertErr) {
+            console.error('⚠️ [ALERTER] Error saat eksekusi handleSmartAlerts:', alertErr.message);
+        }
 
         console.log(`\n[OK] [CYCLE SUCCESS] SIKLUS ${slotName} BERHASIL!`);
         await lockManager.releaseLock('COMPLETED', {
@@ -506,6 +568,51 @@ async function startRemoteListener() {
                 }
                 console.log(`\n[HTTP] [REMOTE TRIGGER] Perintah dari Web Dashboard (${data.requestedBy || 'User'})...`);
                 executeRpaCycle(data.slot || 'WEB_DASHBOARD');
+            }
+
+            if (data.command === 'TRIGGER_BLAST' && data.status === 'PENDING') {
+                const targetSession = data.session || 'MIDDAY';
+                console.log(`\n📢 [REMOTE BLAST TRIGGER] Perintah blast diterima dari Firestore (${targetSession})...`);
+                setDoc(triggerDocRef, { status: 'RUNNING', progress: `Mengirim blast sesi ${targetSession}...` }, { merge: true }).catch(() => {});
+                (async () => {
+                    try {
+                        const latestDocSnap = await getDoc(doc(db, 'dashboard_data', 'latest'));
+                        const latestEngSnap = await getDoc(doc(db, 'dashboard_data', 'latest_eng'));
+                        const dataLatest = latestDocSnap.exists() ? latestDocSnap.data() : {};
+                        const dataEng = latestEngSnap.exists() ? latestEngSnap.data() : {};
+                        const now = new Date();
+                        const pad = n => String(n).padStart(2, '0');
+                        const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                        const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+                        const syncResult = {
+                            analytics: {
+                                shameList: dataLatest.shameList || [],
+                                dosaCabangBills: dataLatest.dosaCabangBills || [],
+                                rcStats: dataEng.rcStats || {}
+                            },
+                            dateStr,
+                            timeStr,
+                            scheduleSlot: targetSession
+                        };
+
+                        const res = await handleSmartAlerts(syncResult, {
+                            waClient,
+                            isReady: clientReady,
+                            allowedBranches: config.BLAST_ALLOWED_BRANCHES,
+                            forceSession: targetSession,
+                            force: true
+                        });
+
+                        setDoc(triggerDocRef, {
+                            status: 'COMPLETED',
+                            command: 'NONE',
+                            progress: `Blast ${targetSession} selesai. Terkirim: ${res.sent || 0}`
+                        }, { merge: true }).catch(() => {});
+                    } catch (err) {
+                        setDoc(triggerDocRef, { status: 'FAILED', progress: `Error blast: ${err.message}` }, { merge: true }).catch(() => {});
+                    }
+                })();
             }
 
             if (data.command === 'ABORT_SHUTDOWN' || data.command === 'CANCEL_SHUTDOWN') {
