@@ -20,6 +20,59 @@ const agingConfig = {
 
 let agingDb = null;
 
+function parseExcelDate(dateVal, formatHint = 'DD/MM/YYYY', applyCorruptionFix = false) {
+    if (dateVal == null || dateVal === '') return null;
+    let dateObj = null;
+
+    if (typeof dateVal === 'number') {
+        dateObj = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
+        if (applyCorruptionFix && formatHint === 'DD/MM/YYYY') {
+            let m = dateObj.getMonth();
+            let d = dateObj.getDate();
+            let y = dateObj.getFullYear();
+            if (m < 12 && d <= 12) {
+                dateObj = new Date(y, d - 1, m + 1);
+            }
+        }
+    } else if (typeof dateVal === 'string') {
+        let str = dateVal.trim();
+        if (str.match(/[a-zA-Z]/)) {
+            dateObj = new Date(str);
+        } else {
+            const parts = str.split(/[-/ :.]/);
+            if (parts.length >= 3) {
+                if (parts[0].length === 4) {
+                    let y = parts[0];
+                    let m = parts[1].padStart(2, '0');
+                    let d = parts[2].padStart(2, '0');
+                    dateObj = new Date(`${y}-${m}-${d}T00:00:00`);
+                } else {
+                    let p0 = parts[0].padStart(2, '0');
+                    let p1 = parts[1].padStart(2, '0');
+                    let year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+
+                    if (formatHint === 'DD/MM/YYYY') {
+                        dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
+                    } else if (formatHint === 'MM/DD/YYYY') {
+                        dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
+                    } else {
+                        if (parseInt(p0) > 12) {
+                            dateObj = new Date(`${year}-${p1}-${p0}T00:00:00`);
+                        } else {
+                            dateObj = new Date(`${year}-${p0}-${p1}T00:00:00`);
+                        }
+                    }
+                }
+            } else {
+                dateObj = new Date(str);
+            }
+        }
+    }
+
+    if (dateObj && isNaN(dateObj.getTime())) return null;
+    return dateObj;
+}
+
 // The parameter 'db' is the OLD BUJM db. We will IGNORE it and use our own!
 async function trackAgingStates(oldDb, baseData) {
     console.log('\n=============================================================');
@@ -44,6 +97,35 @@ async function trackAgingStates(oldDb, baseData) {
     
     const db = agingDb;
     console.log('  [AGING COMMANDER] Menjalankan Micro-Aging State Tracker...');
+
+    // Detect formatHint for Request Date parsing (identik dengan sync.js untuk Pending Delivery RC)
+    let formatHint = 'DD/MM/YYYY';
+    let hasStringDates = false;
+    let hasNumberDates = false;
+
+    for (let i = 0; i < Math.min(100, baseData.length); i++) {
+        const row = baseData[i];
+        if (!row || row['Request Date'] == null) continue;
+        const dVal = row['Request Date'];
+        if (typeof dVal === 'number') {
+            hasNumberDates = true;
+        } else if (typeof dVal === 'string') {
+            let sVal = dVal.trim();
+            if (sVal.match(/[a-zA-Z,]/) || sVal.startsWith('-')) continue;
+
+            hasStringDates = true;
+            const parts = sVal.split(/[-/ :.]/);
+            if (parts.length >= 3 && parts[0].length !== 4) {
+                let p0 = parseInt(parts[0], 10);
+                let p1 = parseInt(parts[1], 10);
+                if (!isNaN(p0) && !isNaN(p1)) {
+                    if (p0 > 12 && p1 <= 12) formatHint = 'DD/MM/YYYY';
+                    else if (p1 > 12 && p0 <= 12) formatHint = 'MM/DD/YYYY';
+                }
+            }
+        }
+    }
+    const applyCorruptionFix = (hasStringDates && hasNumberDates && formatHint === 'DD/MM/YYYY');
     
     const activeJobsMap = new Map();
     
@@ -90,6 +172,25 @@ async function trackAgingStates(oldDb, baseData) {
 
         let agingDaysStr = row['Pending aging Days'] || row['Pending Aging Days'] || row['Aging Days'] || '0';
         let totalAgingDays = agingDaysStr ? parseInt(agingDaysStr) : 0;
+
+        // LOGIKA TABEL "Pending Delivery (Repair Completed)" DI BUJM DASHBOARD (sync.js baris 793-805):
+        // Di GSPN, kolom 'Pending aging Days' otomatis bernilai 0 saat status menjadi 'Repair Completed' (RC).
+        // Oleh karena itu, untuk unit RC durasi hari aging dihitung dari selisih hari ini dikurangi 'Request Date'.
+        const sUp = status.toUpperCase();
+        const rUp = reason.toUpperCase();
+        if (sUp === 'REPAIR COMPLETED' || sUp.includes('COMPLET') || sUp.includes('COMPLIT') || rUp.includes('REPAIR COMPLET') || rUp.includes('REPAIR COMPLIT')) {
+            const reqDateVal = row['Request Date'];
+            if (reqDateVal) {
+                const reqDateObj = parseExcelDate(reqDateVal, formatHint, applyCorruptionFix);
+                if (reqDateObj && !isNaN(reqDateObj.getTime())) {
+                    const reqMidnight = new Date(reqDateObj.getFullYear(), reqDateObj.getMonth(), reqDateObj.getDate());
+                    const todayMidnight = new Date();
+                    todayMidnight.setHours(0, 0, 0, 0);
+                    const diffTime = todayMidnight.getTime() - reqMidnight.getTime();
+                    totalAgingDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+                }
+            }
+        }
 
         let serviceType = '';
         for (let k in row) {
@@ -311,6 +412,9 @@ async function trackAgingStates(oldDb, baseData) {
             }
 
             let shouldUpdate = isChanged;
+            if ((oldData.totalAgingDays || 0) !== (newData.totalAgingDays || 0)) {
+                shouldUpdate = true; // Langsung update jika durasi hari aging berubah (termasuk untuk unit RC)
+            }
             if (!shouldUpdate && oldData.lastSeen) {
                 const lsDate = new Date(oldData.lastSeen);
                 if (now.getTime() - lsDate.getTime() > 4 * 60 * 60 * 1000) {

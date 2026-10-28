@@ -510,11 +510,14 @@ async function executeRpaCycle(slotName = 'MANUAL') {
             ).catch(() => {});
         };
 
-        // Purge require cache agar perubahan pada scraper & sync selalu dimuat segar setiap siklus
+        // Purge require cache agar perubahan pada scraper, sync, & aging_tracker selalu dimuat segar setiap siklus
         delete require.cache[require.resolve('./scraper')];
         delete require.cache[require.resolve('./sync')];
+        delete require.cache[require.resolve('./aging_tracker')];
+        delete require.cache[require.resolve('./alerter')];
         const { scrapeAllBranches } = require('./scraper');
         const { processAndSyncToFirebase } = require('./sync');
+        const { handleSmartAlerts } = require('./alerter');
 
         // Robot Chrome: Sesuai arahan BOS, disembunyikan agar berjalan di background (headless: true)
         const isHeadless = process.env.HEADLESS !== 'false'; // Default: true (Background / Tersembunyi)
