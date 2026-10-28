@@ -14,7 +14,9 @@
     // State management
     let mpmEmployees = [];
     let capacityData = [];
-    let currentMpmSubTab = 'capacity'; // 'capacity' | 'roster' | 'simulator'
+    let currentMpmSubTab = (function() {
+        try { return localStorage.getItem('bujm_mpm_subtab') || 'capacity'; } catch (_) { return 'capacity'; }
+    })();
     let currentFilterStatus = 'ALL';
     let currentFilterType = 'ALL'; // 'ALL' | 'HYBRID' | 'MX' | 'CE' | 'REVISI'
     let currentFilterBranch = 'ALL';
@@ -227,6 +229,24 @@
         renderActiveSubTab();
     };
 
+    // Helper to reliably obtain window.db even if module scripts initialize asynchronously
+    async function waitForDb(maxWaitMs = 4000) {
+        if (window.db) return window.db;
+        return new Promise((resolve) => {
+            const start = Date.now();
+            const timer = setInterval(() => {
+                if (window.db) {
+                    clearInterval(timer);
+                    resolve(window.db);
+                } else if (Date.now() - start >= maxWaitMs) {
+                    clearInterval(timer);
+                    console.warn('[MPM] Timed out waiting for window.db');
+                    resolve(null);
+                }
+            }, 50);
+        });
+    }
+
     // Load branch service type overrides (BOS Revisions)
     async function loadBranchOverrides() {
         const localCached = localStorage.getItem('bujm_mpm_branch_overrides');
@@ -236,16 +256,20 @@
                 console.log(`[MPM] Loaded ${Object.keys(branchOverrides).length} branch service overrides from LocalStorage.`);
             } catch (_) {}
         }
-        if (window.db) {
-            window.db.collection('dashboard_data').doc('mpm_branch_overrides').get().then(snap => {
+        const db = await waitForDb(2500);
+        if (db) {
+            try {
+                const snap = await db.collection('dashboard_data').doc('mpm_branch_overrides').get();
                 if (snap.exists && snap.data().overrides) {
                     branchOverrides = snap.data().overrides;
-                    localStorage.setItem('bujm_mpm_branch_overrides', JSON.stringify(branchOverrides));
+                    try { localStorage.setItem('bujm_mpm_branch_overrides', JSON.stringify(branchOverrides)); } catch (_) {}
                     console.log(`[MPM] Synced ${Object.keys(branchOverrides).length} branch service overrides from Firestore.`);
                     applyOverridesToCapacityData();
                     if (currentMpmSubTab === 'capacity') renderActiveSubTab();
                 }
-            }).catch(err => console.warn('[MPM] Firestore overrides sync warning:', err.message));
+            } catch (err) {
+                console.warn('[MPM] Firestore overrides sync warning:', err.message);
+            }
         }
     }
 
@@ -308,7 +332,7 @@
         // 2. Fetch local JSON file if localCache is not available
         if (!loadedInitial) {
             try {
-                const res = await fetch('./data/mpm_employees.json');
+                const res = await fetch('./data/mpm_employees.json?v=' + Date.now());
                 if (res.ok) {
                     mpmEmployees = await res.json();
                     mpmEmployees.forEach(normalizeEmployeeFields);
@@ -320,13 +344,29 @@
             }
         }
 
-        // 3. ATTACH REAL-TIME FIRESTORE LISTENER (Mandat Real-time Multi-User Asmen & BOS)
-        // Whenever ANY Asmen or BOS edits any employee, changes sync automatically in real-time
-        if (window.db) {
+        // 3. Actively wait for window.db and fetch latest authoritative data from Firestore
+        const db = await waitForDb(4000);
+        if (db) {
+            try {
+                const snap = await db.collection('dashboard_data').doc('mpm_employees').get();
+                if (snap.exists && Array.isArray(snap.data().employees)) {
+                    mpmEmployees = snap.data().employees;
+                    mpmEmployees.forEach(normalizeEmployeeFields);
+                    try {
+                        localStorage.setItem('bujm_mpm_employees', JSON.stringify(mpmEmployees));
+                    } catch (_) {}
+                    console.log(`[MPM] Firestore authoritative sync loaded ${mpmEmployees.length} employees.`);
+                }
+            } catch (e) {
+                console.warn('[MPM] Firestore employees initial fetch error:', e.message);
+            }
+
+            // ATTACH REAL-TIME FIRESTORE LISTENER (Mandat Real-time Multi-User Asmen & BOS)
+            // Whenever ANY Asmen or BOS edits any employee, changes sync automatically in real-time
             if (!window._mpmEmployeesListenerAttached) {
                 window._mpmEmployeesListenerAttached = true;
-                window.db.collection('dashboard_data').doc('mpm_employees').onSnapshot(snap => {
-                    if (snap.exists && snap.data().employees) {
+                db.collection('dashboard_data').doc('mpm_employees').onSnapshot(snap => {
+                    if (snap.exists && Array.isArray(snap.data().employees)) {
                         const remoteEmployees = snap.data().employees;
                         console.log(`[MPM] Realtime Firestore sync: ${remoteEmployees.length} employees received.`);
                         mpmEmployees = remoteEmployees;
@@ -355,7 +395,7 @@
             }
 
             // 4. Background sync photos from Firestore collection 'mpm_photos' (non-blocking)
-            window.db.collection('mpm_photos').get().then(snap => {
+            db.collection('mpm_photos').get().then(snap => {
                 if (!snap.empty) {
                     snap.forEach(docSnap => {
                         const d = docSnap.data();
@@ -399,12 +439,13 @@
         let dtsIh = {};
 
         // 2. Try Firestore with strict 2-second timeout so it NEVER hangs
-        if (window.db) {
+        const db = await waitForDb(2000);
+        if (db) {
             try {
                 const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 2000));
                 const fetchPromise = Promise.all([
-                    window.db.collection('dashboard_data').doc('latest_prod').get(),
-                    window.db.collection('dashboard_data').doc('latest_eng').get()
+                    db.collection('dashboard_data').doc('latest_prod').get(),
+                    db.collection('dashboard_data').doc('latest_eng').get()
                 ]);
                 const [prodSnap, engSnap] = await Promise.race([fetchPromise, timeoutPromise]);
                 if (prodSnap && prodSnap.exists) {
@@ -831,13 +872,13 @@
 
                 <!-- Sub-Tabs Switcher -->
                 <div style="display: flex; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <button id="mpm-tab-capacity" class="mpm-tab-btn active" style="background: #ffffff; color: var(--accent-blue, #2563eb); border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+                    <button id="mpm-tab-capacity" class="mpm-tab-btn" style="background: ${currentMpmSubTab === 'capacity' ? '#ffffff' : 'transparent'}; color: ${currentMpmSubTab === 'capacity' ? 'var(--accent-blue, #2563eb)' : '#64748b'}; border: 1px solid ${currentMpmSubTab === 'capacity' ? '#cbd5e1' : 'transparent'}; padding: 8px 16px; border-radius: 6px; font-weight: ${currentMpmSubTab === 'capacity' ? '700' : '600'}; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: ${currentMpmSubTab === 'capacity' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none'};">
                         <i class="fa-solid fa-chart-pie"></i> Capacity & Load Ratios
                     </button>
-                    <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                    <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: ${currentMpmSubTab === 'roster' ? '#ffffff' : 'transparent'}; color: ${currentMpmSubTab === 'roster' ? 'var(--accent-blue, #2563eb)' : '#64748b'}; border: 1px solid ${currentMpmSubTab === 'roster' ? '#cbd5e1' : 'transparent'}; padding: 8px 16px; border-radius: 6px; font-weight: ${currentMpmSubTab === 'roster' ? '700' : '600'}; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: ${currentMpmSubTab === 'roster' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none'};">
                         <i class="fa-solid fa-id-card-clip"></i> Data Manpower (${branchStaffCount})
                     </button>
-                    <button id="mpm-tab-simulator" class="mpm-tab-btn" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                    <button id="mpm-tab-simulator" class="mpm-tab-btn" style="background: ${currentMpmSubTab === 'simulator' ? '#ffffff' : 'transparent'}; color: ${currentMpmSubTab === 'simulator' ? 'var(--accent-blue, #2563eb)' : '#64748b'}; border: 1px solid ${currentMpmSubTab === 'simulator' ? '#cbd5e1' : 'transparent'}; padding: 8px 16px; border-radius: 6px; font-weight: ${currentMpmSubTab === 'simulator' ? '700' : '600'}; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: ${currentMpmSubTab === 'simulator' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none'};">
                         <i class="fa-solid fa-scale-balanced"></i> Simulator Mutasi (Zero-Cost)
                     </button>
                 </div>
@@ -860,6 +901,7 @@
 
     function switchMpmSubTab(tabName) {
         currentMpmSubTab = tabName;
+        try { localStorage.setItem('bujm_mpm_subtab', tabName); } catch (_) {}
         document.querySelectorAll('.mpm-tab-btn').forEach(btn => {
             btn.style.background = 'transparent';
             btn.style.color = '#64748b';
@@ -1480,9 +1522,10 @@
                 if (sInp) sInp.value = '';
 
                 // Force re-fetch from Firestore
-                if (window.db) {
+                const db = await waitForDb(3000);
+                if (db) {
                     try {
-                        const snap = await window.db.collection('dashboard_data').doc('mpm_employees').get();
+                        const snap = await db.collection('dashboard_data').doc('mpm_employees').get();
                         if (snap.exists && snap.data().employees) {
                             mpmEmployees = snap.data().employees;
                             mpmEmployees.forEach(normalizeEmployeeFields);
@@ -2044,9 +2087,10 @@
 
             // Atomic merge with latest Firestore data to PREVENT overwriting edits from other Asmens
             let baseEmployees = [...mpmEmployees];
-            if (window.db) {
+            const db = await waitForDb(3000);
+            if (db) {
                 try {
-                    const snap = await window.db.collection('dashboard_data').doc('mpm_employees').get();
+                    const snap = await db.collection('dashboard_data').doc('mpm_employees').get();
                     if (snap.exists && Array.isArray(snap.data().employees)) {
                         baseEmployees = snap.data().employees;
                     }
@@ -2078,9 +2122,9 @@
             } catch (_) {}
 
             // Save to Firestore (which triggers real-time onSnapshot for everyone)
-            if (window.db) {
+            if (db) {
                 try {
-                    await window.db.collection('dashboard_data').doc('mpm_employees').set({
+                    await db.collection('dashboard_data').doc('mpm_employees').set({
                         updatedAt: new Date().toISOString(),
                         totalCount: mpmEmployees.length,
                         employees: mpmEmployees
