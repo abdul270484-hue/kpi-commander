@@ -15,7 +15,10 @@
     let mpmEmployees = [];
     let capacityData = [];
     let currentMpmSubTab = (function() {
-        try { return localStorage.getItem('bujm_mpm_subtab') || 'capacity'; } catch (_) { return 'capacity'; }
+        try {
+            const saved = localStorage.getItem('bujm_mpm_subtab');
+            return (saved && saved !== 'simulator') ? saved : 'capacity';
+        } catch (_) { return 'capacity'; }
     })();
     let currentFilterStatus = 'ALL';
     let currentFilterType = 'ALL'; // 'ALL' | 'HYBRID' | 'MX' | 'CE' | 'REVISI'
@@ -956,9 +959,7 @@
                     <button id="mpm-tab-roster" class="mpm-tab-btn" style="background: ${currentMpmSubTab === 'roster' ? '#ffffff' : 'transparent'}; color: ${currentMpmSubTab === 'roster' ? 'var(--accent-blue, #2563eb)' : '#64748b'}; border: 1px solid ${currentMpmSubTab === 'roster' ? '#cbd5e1' : 'transparent'}; padding: 8px 16px; border-radius: 6px; font-weight: ${currentMpmSubTab === 'roster' ? '700' : '600'}; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: ${currentMpmSubTab === 'roster' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none'};">
                         <i class="fa-solid fa-id-card-clip"></i> Data Manpower (${branchStaffCount})
                     </button>
-                    <button id="mpm-tab-simulator" class="mpm-tab-btn" style="background: ${currentMpmSubTab === 'simulator' ? '#ffffff' : 'transparent'}; color: ${currentMpmSubTab === 'simulator' ? 'var(--accent-blue, #2563eb)' : '#64748b'}; border: 1px solid ${currentMpmSubTab === 'simulator' ? '#cbd5e1' : 'transparent'}; padding: 8px 16px; border-radius: 6px; font-weight: ${currentMpmSubTab === 'simulator' ? '700' : '600'}; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: ${currentMpmSubTab === 'simulator' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none'};">
-                        <i class="fa-solid fa-scale-balanced"></i> Simulator Mutasi (Zero-Cost)
-                    </button>
+                    <!-- Mandat BOS: Tab Simulator Mutasi Taktis disembunyikan sementara belum difungsikan -->
                 </div>
             </div>
 
@@ -972,9 +973,12 @@
         `;
 
         // Sub-Tab Switcher Event Handlers
-        document.getElementById('mpm-tab-capacity').addEventListener('click', () => switchMpmSubTab('capacity'));
-        document.getElementById('mpm-tab-roster').addEventListener('click', () => switchMpmSubTab('roster'));
-        document.getElementById('mpm-tab-simulator').addEventListener('click', () => switchMpmSubTab('simulator'));
+        const tabCap = document.getElementById('mpm-tab-capacity');
+        if (tabCap) tabCap.addEventListener('click', () => switchMpmSubTab('capacity'));
+        const tabRoster = document.getElementById('mpm-tab-roster');
+        if (tabRoster) tabRoster.addEventListener('click', () => switchMpmSubTab('roster'));
+        const tabSim = document.getElementById('mpm-tab-simulator');
+        if (tabSim) tabSim.addEventListener('click', () => switchMpmSubTab('simulator'));
     }
 
     function switchMpmSubTab(tabName) {
@@ -1010,12 +1014,17 @@
         const content = document.getElementById('mpm-subtab-content');
         if (!content) return;
 
+        // Jika sebelumnya tersimpan simulator di local storage, redirect ke capacity
+        if (currentMpmSubTab === 'simulator') {
+            currentMpmSubTab = 'capacity';
+        }
+
         if (currentMpmSubTab === 'capacity') {
             renderCapacitySubTab(content);
         } else if (currentMpmSubTab === 'roster') {
             renderRosterSubTab(content);
-        } else if (currentMpmSubTab === 'simulator') {
-            renderSimulatorSubTab(content);
+        } else {
+            renderCapacitySubTab(content);
         }
     }
 
